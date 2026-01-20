@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+
+{% block title %}Home - Care_4_U Hospitals{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero">
+    <div class="container">
+        <div class="hero-content">
+            <h1>Your Health, Our Priority</h1>
+            <p>Book appointments with top specialists from the comfort of your home. Quality healthcare made simple and accessible.</p>
+            <div class="hero-buttons">
+                {% if not current_user.is_authenticated %}
+                    <a href="{{ url_for('signup') }}" class="btn btn-primary">Get Started</a>
+                    <a href="{{ url_for('doctors') }}" class="btn btn-secondary">Find a Doctor</a>
+                {% else %}
+                    <a href="{{ url_for('doctors') }}" class="btn btn-primary">Book Appointment</a>
+                    <a href="{{ url_for('user_dashboard') if current_user.user_type == 'patient' else url_for('admin_dashboard') }}" class="btn btn-secondary">
+                        My Dashboard
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+        <div class="hero-image">
+            <img src="https://images.unsplash.com/photo-1516549655669-df663b295d4f?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" alt="Doctor consultation">
+        </div>
+    </div>
+</section>
+
+<!-- Features Section -->
+<section class="features">
+    <div class="container">
+        <h2 class="section-title">Why Choose Care_4_U?</h2>
+        <div class="features-grid">
+            <div class="feature-card">
+                <i class="fas fa-calendar-check"></i>
+                <h3>Easy Booking</h3>
+                <p>Book appointments online 24/7 with our user-friendly platform.</p>
+            </div>
+            <div class="feature-card">
+                <i class="fas fa-user-md"></i>
+                <h3>Expert Doctors</h3>
+                <p>Consult with certified specialists and experienced medical professionals.</p>
+            </div>
+            <div class="feature-card">
+                <i class="fas fa-clock"></i>
+                <h3>Quick Service</h3>
+                <p>Minimal waiting time with efficient scheduling and management.</p>
+            </div>
+            <div class="feature-card">
+                <i class="fas fa-shield-alt"></i>
+                <h3>Secure & Private</h3>
+                <p>Your medical data is protected with industry-standard security measures.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Specialties Section -->
+<section class="specialties">
+    <div class="container">
+        <h2 class="section-title">Medical Specialties</h2>
+        <div class="specialties-grid">
+            <div class="specialty-card">
+                <i class="fas fa-heart"></i>
+                <h4>Cardiology</h4>
+                <p>Heart care and cardiovascular diseases</p>
+            </div>
+            <div class="specialty-card">
+                <i class="fas fa-brain"></i>
+                <h4>Neurology</h4>
+                <p>Brain and nervous system disorders</p>
+            </div>
+            <div class="specialty-card">
+                <i class="fas fa-baby"></i>
+                <h4>Pediatrics</h4>
+                <p>Child healthcare and development</p>
+            </div>
+            <div class="specialty-card">
+                <i class="fas fa-bone"></i>
+                <h4>Orthopedics</h4>
+                <p>Bone and joint treatment</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Statistics Section -->
+<section class="stats">
+    <div class="container">
+        <div class="stats-grid">
+            <div class="stat-item">
+                <h3>50+</h3>
+                <p>Expert Doctors</p>
+            </div>
+            <div class="stat-item">
+                <h3>10,000+</h3>
+                <p>Happy Patients</p>
+            </div>
+            <div class="stat-item">
+                <h3>24/7</h3>
+                <p>Online Support</p>
+            </div>
+            <div class="stat-item">
+                <h3>15+</h3>
+                <p>Specialties</p>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,301 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard - Care_4_U Hospitals{% endblock %}
+
+{% block content %}
+<div class="admin-container">
+    <!-- Dashboard Header -->
+    <div class="dashboard-header">
+        <h1>Admin Dashboard</h1>
+        <p class="welcome-message">Welcome back, {{ current_user.username }}!</p>
+    </div>
+    
+    <!-- Stats Cards -->
+    <div class="stats-cards">
+        <div class="stat-card">
+            <div class="stat-icon patients">
+                <i class="fas fa-users"></i>
+            </div>
+            <div class="stat-info">
+                <h3>{{ total_patients }}</h3>
+                <p>Total Patients</p>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon doctors">
+                <i class="fas fa-user-md"></i>
+            </div>
+            <div class="stat-info">
+                <h3>{{ total_doctors }}</h3>
+                <p>Active Doctors</p>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon appointments">
+                <i class="fas fa-calendar-check"></i>
+            </div>
+            <div class="stat-info">
+                <h3>{{ total_appointments }}</h3>
+                <p>Total Appointments</p>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon pending">
+                <i class="fas fa-clock"></i>
+            </div>
+            <div class="stat-info">
+                <h3>{{ pending_appointments }}</h3>
+                <p>Pending Approvals</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Quick Actions -->
+    <div class="quick-actions">
+        <h2>Quick Actions</h2>
+        <div class="action-buttons">
+            <button class="action-btn" data-action="add-doctor">
+                <i class="fas fa-user-plus"></i>
+                <span>Add New Doctor</span>
+            </button>
+            <a href="{{ url_for('manage_appointments') }}" class="action-btn">
+                <i class="fas fa-calendar-alt"></i>
+                <span>Manage Appointments</span>
+            </a>
+            <button class="action-btn" data-action="view-reports">
+                <i class="fas fa-chart-bar"></i>
+                <span>View Reports</span>
+            </button>
+            <button class="action-btn" data-action="system-settings">
+                <i class="fas fa-cog"></i>
+                <span>System Settings</span>
+            </button>
+        </div>
+    </div>
+    
+    <!-- Recent Appointments -->
+    <div class="recent-section">
+        <div class="section-header">
+            <h2>Recent Appointments</h2>
+            <a href="{{ url_for('manage_appointments') }}" class="view-all">View All</a>
+        </div>
+        
+        {% if recent_appointments %}
+            <div class="appointments-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Patient</th>
+                            <th>Doctor</th>
+                            <th>Date & Time</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for appointment in recent_appointments %}
+                            <tr>
+                                <td>#{{ appointment.id }}</td>
+                                <td>{{ appointment.patient.username }}</td>
+                                <td>{{ appointment.doctor.name }}</td>
+                                <td>
+                                    {{ appointment.appointment_date.strftime('%b %d, %Y') }}
+                                    <br>
+                                    <small>{{ appointment.appointment_time }}</small>
+                                </td>
+                                <td>
+                                    <span class="status-badge {{ appointment.status }}">
+                                        {{ appointment.status|title }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="action-buttons">
+                                        {% if appointment.status == 'pending' %}
+                                            <button class="btn-sm btn-success" 
+                                                    onclick="updateAppointment({{ appointment.id }}, 'confirmed')">
+                                                Confirm
+                                            </button>
+                                            <button class="btn-sm btn-danger"
+                                                    onclick="updateAppointment({{ appointment.id }}, 'cancelled')">
+                                                Cancel
+                                            </button>
+                                        {% endif %}
+                                        <button class="btn-sm btn-info" onclick="viewDetails({{ appointment.id }})">
+                                            Details
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="no-data">
+                <i class="fas fa-calendar-times"></i>
+                <p>No appointments found</p>
+            </div>
+        {% endif %}
+    </div>
+    
+    <!-- Add Doctor Modal -->
+    <div id="addDoctorModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Add New Doctor</h3>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="addDoctorForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="doctor_name">Full Name</label>
+                            <input type="text" id="doctor_name" name="name" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="specialization">Specialization</label>
+                            <input type="text" id="specialization" name="specialization" required>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="qualifications">Qualifications</label>
+                            <input type="text" id="qualifications" name="qualifications" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="experience">Experience (Years)</label>
+                            <input type="number" id="experience" name="experience" required>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="email">Email</label>
+                            <input type="email" id="email" name="email" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="phone">Phone</label>
+                            <input type="tel" id="phone" name="phone" required>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="consultation_fee">Consultation Fee ($)</label>
+                            <input type="number" step="0.01" id="consultation_fee" name="consultation_fee" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="available_days">Available Days</label>
+                            <input type="text" id="available_days" name="available_days" 
+                                   placeholder="e.g., Mon,Wed,Fri" required>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="available_time">Available Time</label>
+                        <input type="text" id="available_time" name="available_time" 
+                               placeholder="e.g., 9:00 AM - 5:00 PM" required>
+                    </div>
+                    
+                    <div class="modal-actions">
+                        <button type="button" class="btn btn-secondary close-modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Add Doctor</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Modal functionality
+    const modal = document.getElementById('addDoctorModal');
+    const addDoctorBtn = document.querySelector('[data-action="add-doctor"]');
+    const closeBtns = document.querySelectorAll('.close-modal');
+    
+    addDoctorBtn.addEventListener('click', () => {
+        modal.style.display = 'block';
+    });
+    
+    closeBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            modal.style.display = 'none';
+        });
+    });
+    
+    window.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            modal.style.display = 'none';
+        }
+    });
+    
+    // Add Doctor Form
+    const addDoctorForm = document.getElementById('addDoctorForm');
+    addDoctorForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(this);
+        
+        fetch('{{ url_for("add_doctor") }}', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Doctor added successfully!');
+                modal.style.display = 'none';
+                location.reload(); // Reload to show new doctor
+            } else {
+                alert('Error: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred. Please try again.');
+        });
+    });
+});
+
+// Update appointment status
+function updateAppointment(appointmentId, status) {
+    if (!confirm(`Are you sure you want to ${status} this appointment?`)) {
+        return;
+    }
+    
+    const formData = new FormData();
+    formData.append('status', status);
+    
+    fetch(`/admin/update-appointment/${appointmentId}`, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Error: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred. Please try again.');
+    });
+}
+
+// View appointment details
+function viewDetails(appointmentId) {
+    // In a real application, this would open a detailed view modal
+    alert(`Viewing details for appointment #${appointmentId}`);
+}
+</script>
+{% endblock %}

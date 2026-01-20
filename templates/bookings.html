@@ -1,0 +1,432 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Appointments - Care_4_U Hospitals{% endblock %}
+
+{% block content %}
+<div class="admin-container">
+    <div class="dashboard-header">
+        <h1>Manage Appointments</h1>
+        <div class="header-actions">
+            <a href="{{ url_for('admin_dashboard') }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back to Dashboard
+            </a>
+        </div>
+    </div>
+    
+    <!-- Filters -->
+    <div class="filters-section">
+        <div class="filter-controls">
+            <select id="statusFilter" class="filter-select">
+                <option value="all">All Status</option>
+                <option value="pending">Pending</option>
+                <option value="confirmed">Confirmed</option>
+                <option value="cancelled">Cancelled</option>
+                <option value="completed">Completed</option>
+            </select>
+            
+            <input type="date" id="dateFilter" class="filter-date">
+            
+            <input type="text" id="searchFilter" class="filter-search" placeholder="Search by patient name...">
+            
+            <button class="btn btn-primary" onclick="applyFilters()">
+                <i class="fas fa-filter"></i> Apply Filters
+            </button>
+            
+            <button class="btn btn-secondary" onclick="resetFilters()">
+                <i class="fas fa-redo"></i> Reset
+            </button>
+        </div>
+    </div>
+    
+    <!-- Appointments Table -->
+    <div class="appointments-table-section">
+        {% if appointments %}
+            <div class="table-responsive">
+                <table class="appointments-table">
+                    <thead>
+                        <tr>
+                            <th>Appointment ID</th>
+                            <th>Patient</th>
+                            <th>Doctor</th>
+                            <th>Date & Time</th>
+                            <th>Status</th>
+                            <th>Symptoms</th>
+                            <th>Created</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for appointment in appointments %}
+                            <tr data-status="{{ appointment.status }}">
+                                <td>#{{ appointment.id }}</td>
+                                <td>
+                                    <div class="patient-cell">
+                                        <strong>{{ appointment.patient.username }}</strong>
+                                        <small>{{ appointment.patient.email }}</small>
+                                        {% if appointment.patient.phone %}
+                                            <small>{{ appointment.patient.phone }}</small>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="doctor-cell">
+                                        <strong>Dr. {{ appointment.doctor.name }}</strong>
+                                        <small>{{ appointment.doctor.specialization }}</small>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="datetime-cell">
+                                        <strong>{{ appointment.appointment_date.strftime('%b %d, %Y') }}</strong>
+                                        <div class="time-badge">{{ appointment.appointment_time }}</div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="status-badge {{ appointment.status }}">
+                                        {{ appointment.status|title }}
+                                    </span>
+                                </td>
+                                <td class="symptoms-cell">
+                                    {% if appointment.symptoms %}
+                                        <div class="truncate-text" title="{{ appointment.symptoms }}">
+                                            {{ appointment.symptoms[:50] }}{% if appointment.symptoms|length > 50 %}...{% endif %}
+                                        </div>
+                                    {% else %}
+                                        <em>No symptoms provided</em>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {{ appointment.created_at.strftime('%Y-%m-%d') }}
+                                </td>
+                                <td>
+                                    <div class="action-buttons">
+                                        {% if appointment.status == 'pending' %}
+                                            <button class="btn-action btn-success" 
+                                                    onclick="updateStatus({{ appointment.id }}, 'confirmed')"
+                                                    title="Confirm Appointment">
+                                                <i class="fas fa-check"></i>
+                                            </button>
+                                            <button class="btn-action btn-danger"
+                                                    onclick="updateStatus({{ appointment.id }}, 'cancelled')"
+                                                    title="Cancel Appointment">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        {% endif %}
+                                        
+                                        {% if appointment.status == 'confirmed' %}
+                                            <button class="btn-action btn-primary"
+                                                    onclick="updateStatus({{ appointment.id }}, 'completed')"
+                                                    title="Mark as Completed">
+                                                <i class="fas fa-check-double"></i>
+                                            </button>
+                                        {% endif %}
+                                        
+                                        <button class="btn-action btn-info"
+                                                onclick="viewAppointmentDetails({{ appointment.id }})"
+                                                title="View Details">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        
+                                        <button class="btn-action btn-warning"
+                                                onclick="editAppointment({{ appointment.id }})"
+                                                title="Edit Appointment">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        
+                                        <button class="btn-action btn-secondary"
+                                                onclick="sendReminder({{ appointment.id }})"
+                                                title="Send Reminder">
+                                            <i class="fas fa-bell"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Pagination (simplified) -->
+            <div class="pagination">
+                <button class="page-btn"><i class="fas fa-chevron-left"></i></button>
+                <span class="page-info">Showing 1-{{ appointments|length }} of {{ appointments|length }}</span>
+                <button class="page-btn"><i class="fas fa-chevron-right"></i></button>
+            </div>
+        {% else %}
+            <div class="no-data">
+                <i class="fas fa-calendar-times"></i>
+                <h3>No Appointments Found</h3>
+                <p>There are no appointments in the system yet.</p>
+            </div>
+        {% endif %}
+    </div>
+    
+    <!-- Statistics -->
+    <div class="appointment-stats">
+        <div class="stat-card">
+            <h4>Appointments by Status</h4>
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <span class="stat-label pending">Pending</span>
+                    <span class="stat-value">
+                        {{ appointments|selectattr('status', 'equalto', 'pending')|list|length }}
+                    </span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label confirmed">Confirmed</span>
+                    <span class="stat-value">
+                        {{ appointments|selectattr('status', 'equalto', 'confirmed')|list|length }}
+                    </span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label completed">Completed</span>
+                    <span class="stat-value">
+                        {{ appointments|selectattr('status', 'equalto', 'completed')|list|length }}
+                    </span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label cancelled">Cancelled</span>
+                    <span class="stat-value">
+                        {{ appointments|selectattr('status', 'equalto', 'cancelled')|list|length }}
+                    </span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <h4>Today's Appointments</h4>
+            {% set today_appointments = appointments|selectattr('appointment_date', 'equalto', date.today())|list %}
+            {% if today_appointments %}
+                <ul class="today-list">
+                    {% for app in today_appointments[:5] %}
+                        <li>
+                            <strong>#{{ app.id }}</strong> - Dr. {{ app.doctor.name }}
+                            <span class="time-badge">{{ app.appointment_time }}</span>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p class="no-appointments">No appointments scheduled for today</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Appointment Details Modal -->
+<div id="detailsModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Appointment Details</h3>
+            <button class="close-modal">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div id="appointmentDetails">
+                <!-- Details will be loaded here via AJAX -->
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let currentFilters = {
+    status: 'all',
+    date: '',
+    search: ''
+};
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize filter elements
+    const statusFilter = document.getElementById('statusFilter');
+    const dateFilter = document.getElementById('dateFilter');
+    const searchFilter = document.getElementById('searchFilter');
+    
+    // Restore filters from sessionStorage
+    const savedFilters = sessionStorage.getItem('appointmentFilters');
+    if (savedFilters) {
+        currentFilters = JSON.parse(savedFilters);
+        statusFilter.value = currentFilters.status;
+        dateFilter.value = currentFilters.date;
+        searchFilter.value = currentFilters.search;
+        applyFilters(); // Apply saved filters
+    }
+    
+    // Modal functionality
+    const modal = document.getElementById('detailsModal');
+    const closeBtns = document.querySelectorAll('.close-modal');
+    
+    closeBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            modal.style.display = 'none';
+        });
+    });
+    
+    window.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            modal.style.display = 'none';
+        }
+    });
+});
+
+function applyFilters() {
+    const statusFilter = document.getElementById('statusFilter');
+    const dateFilter = document.getElementById('dateFilter');
+    const searchFilter = document.getElementById('searchFilter');
+    
+    // Update current filters
+    currentFilters = {
+        status: statusFilter.value,
+        date: dateFilter.value,
+        search: searchFilter.value.toLowerCase()
+    };
+    
+    // Save filters to sessionStorage
+    sessionStorage.setItem('appointmentFilters', JSON.stringify(currentFilters));
+    
+    // Filter table rows
+    const rows = document.querySelectorAll('.appointments-table tbody tr');
+    
+    rows.forEach(row => {
+        let showRow = true;
+        
+        // Filter by status
+        if (currentFilters.status !== 'all') {
+            const rowStatus = row.getAttribute('data-status');
+            if (rowStatus !== currentFilters.status) {
+                showRow = false;
+            }
+        }
+        
+        // Filter by date
+        if (currentFilters.date) {
+            const dateCell = row.querySelector('.datetime-cell strong');
+            if (dateCell) {
+                const rowDate = new Date(dateCell.textContent);
+                const filterDate = new Date(currentFilters.date);
+                if (rowDate.toDateString() !== filterDate.toDateString()) {
+                    showRow = false;
+                }
+            }
+        }
+        
+        // Filter by search
+        if (currentFilters.search) {
+            const patientName = row.querySelector('.patient-cell strong').textContent.toLowerCase();
+            const doctorName = row.querySelector('.doctor-cell strong').textContent.toLowerCase();
+            const symptoms = row.querySelector('.symptoms-cell').textContent.toLowerCase();
+            
+            if (!patientName.includes(currentFilters.search) && 
+                !doctorName.includes(currentFilters.search) && 
+                !symptoms.includes(currentFilters.search)) {
+                showRow = false;
+            }
+        }
+        
+        // Show/hide row
+        row.style.display = showRow ? '' : 'none';
+    });
+    
+    // Update showing count
+    const visibleRows = document.querySelectorAll('.appointments-table tbody tr[style=""]').length;
+    const pageInfo = document.querySelector('.page-info');
+    if (pageInfo) {
+        pageInfo.textContent = `Showing 1-${visibleRows} of ${visibleRows}`;
+    }
+}
+
+function resetFilters() {
+    document.getElementById('statusFilter').value = 'all';
+    document.getElementById('dateFilter').value = '';
+    document.getElementById('searchFilter').value = '';
+    
+    currentFilters = { status: 'all', date: '', search: '' };
+    sessionStorage.removeItem('appointmentFilters');
+    
+    // Show all rows
+    const rows = document.querySelectorAll('.appointments-table tbody tr');
+    rows.forEach(row => row.style.display = '');
+    
+    // Reset showing count
+    const pageInfo = document.querySelector('.page-info');
+    if (pageInfo) {
+        pageInfo.textContent = `Showing 1-${rows.length} of ${rows.length}`;
+    }
+}
+
+function updateStatus(appointmentId, status) {
+    if (!confirm(`Are you sure you want to ${status} appointment #${appointmentId}?`)) {
+        return;
+    }
+    
+    const formData = new FormData();
+    formData.append('status', status);
+    
+    fetch(`/admin/update-appointment/${appointmentId}`, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Error: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred. Please try again.');
+    });
+}
+
+function viewAppointmentDetails(appointmentId) {
+    // In a real application, this would fetch details via AJAX
+    const modal = document.getElementById('detailsModal');
+    const detailsDiv = document.getElementById('appointmentDetails');
+    
+    // Simulated details
+    detailsDiv.innerHTML = `
+        <div class="appointment-details">
+            <h4>Appointment #${appointmentId}</h4>
+            <div class="detail-section">
+                <h5>Patient Information</h5>
+                <p><strong>Name:</strong> John Doe</p>
+                <p><strong>Email:</strong> john@example.com</p>
+                <p><strong>Phone:</strong> +1 234-567-8900</p>
+            </div>
+            <div class="detail-section">
+                <h5>Doctor Information</h5>
+                <p><strong>Name:</strong> Dr. Sarah Johnson</p>
+                <p><strong>Specialization:</strong> Cardiology</p>
+                <p><strong>Consultation Fee:</strong> $150</p>
+            </div>
+            <div class="detail-section">
+                <h5>Appointment Details</h5>
+                <p><strong>Date:</strong> December 15, 2024</p>
+                <p><strong>Time:</strong> 10:00 AM</p>
+                <p><strong>Status:</strong> <span class="status-badge confirmed">Confirmed</span></p>
+                <p><strong>Symptoms:</strong> Chest pain and shortness of breath</p>
+            </div>
+            <div class="detail-section">
+                <h5>Notes</h5>
+                <textarea rows="3" placeholder="Add notes here..."></textarea>
+            </div>
+        </div>
+    `;
+    
+    modal.style.display = 'block';
+}
+
+function editAppointment(appointmentId) {
+    // In a real application, this would open an edit form
+    alert(`Edit appointment #${appointmentId}\nThis would open a form to modify appointment details.`);
+}
+
+function sendReminder(appointmentId) {
+    if (confirm(`Send reminder for appointment #${appointmentId}?`)) {
+        // In a real application, this would send an email/SMS reminder
+        alert(`Reminder sent for appointment #${appointmentId}`);
+    }
+}
+</script>
+{% endblock %}

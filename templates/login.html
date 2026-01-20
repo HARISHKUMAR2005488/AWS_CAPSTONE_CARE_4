@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+
+{% block title %}Login - Care_4_U Hospitals{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <div class="auth-card">
+        <h2>Welcome Back</h2>
+        <p class="auth-subtitle">Login to your account</p>
+        
+        <form method="POST" action="{{ url_for('login') }}" class="auth-form">
+            <div class="form-group">
+                <label for="email">Email Address</label>
+                <input type="email" id="email" name="email" required 
+                       placeholder="Enter your email">
+                <i class="fas fa-envelope"></i>
+            </div>
+            
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" required 
+                       placeholder="Enter your password">
+                <i class="fas fa-lock"></i>
+                <button type="button" class="toggle-password" data-target="password">
+                    <i class="fas fa-eye"></i>
+                </button>
+            </div>
+            
+            <div class="form-group remember">
+                <input type="checkbox" id="remember" name="remember">
+                <label for="remember">Remember me</label>
+                <a href="#" class="forgot-password">Forgot Password?</a>
+            </div>
+            
+            <button type="submit" class="btn btn-primary btn-block">Login</button>
+        </form>
+        
+        <div class="auth-footer">
+            <p>Don't have an account? <a href="{{ url_for('signup') }}">Sign up here</a></p>
+        </div>
+        
+        <div class="demo-credentials">
+            <h4>Demo Credentials:</h4>
+            <p><strong>Admin:</strong> admin@care4u.com / admin123</p>
+            <p><strong>Doctor:</strong> sarah.j@care4u.com / doctor123</p>
+            <p><strong>Patient:</strong> Create your own account</p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Toggle password visibility
+    document.querySelectorAll('.toggle-password').forEach(button => {
+        button.addEventListener('click', function() {
+            const targetId = this.getAttribute('data-target');
+            const passwordInput = document.getElementById(targetId);
+            const icon = this.querySelector('i');
+            
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                passwordInput.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

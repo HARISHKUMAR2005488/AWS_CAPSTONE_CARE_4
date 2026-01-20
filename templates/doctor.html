@@ -1,0 +1,384 @@
+{% extends "base.html" %}
+
+{% block title %}Doctor Dashboard - Care_4_U Hospitals{% endblock %}
+
+{% block content %}
+<div class="doctor-container">
+    <!-- Dashboard Header -->
+    <div class="dashboard-header">
+        <h1>Doctor Dashboard</h1>
+        <p class="welcome-message">Welcome, {{ doctor.name }}!</p>
+    </div>
+    
+    <!-- Stats Cards -->
+    <div class="stats-cards">
+        <div class="stat-card">
+            <div class="stat-icon total">
+                <i class="fas fa-calendar-alt"></i>
+            </div>
+            <div class="stat-info">
+                <h3>{{ total_appointments }}</h3>
+                <p>Total Appointments</p>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon pending">
+                <i class="fas fa-clock"></i>
+            </div>
+            <div class="stat-info">
+                <h3>{{ pending_count }}</h3>
+                <p>Pending</p>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon confirmed">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <div class="stat-info">
+                <h3>{{ confirmed_count }}</h3>
+                <p>Confirmed</p>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon completed">
+                <i class="fas fa-clipboard-check"></i>
+            </div>
+            <div class="stat-info">
+                <h3>{{ completed_count }}</h3>
+                <p>Completed</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Doctor Profile Section -->
+    <div class="doctor-profile-card">
+        <div class="profile-header">
+            <div class="profile-avatar">
+                <i class="fas fa-user-md"></i>
+            </div>
+            <div class="profile-info">
+                <h2>{{ doctor.name }}</h2>
+                <p class="specialization">{{ doctor.specialization }}</p>
+                <p class="qualifications">{{ doctor.qualifications }}</p>
+            </div>
+        </div>
+        <div class="profile-details">
+            <div class="detail-item">
+                <i class="fas fa-briefcase"></i>
+                <span>{{ doctor.experience }} years experience</span>
+            </div>
+            <div class="detail-item">
+                <i class="fas fa-envelope"></i>
+                <span>{{ doctor.email }}</span>
+            </div>
+            <div class="detail-item">
+                <i class="fas fa-phone"></i>
+                <span>{{ doctor.phone }}</span>
+            </div>
+            <div class="detail-item">
+                <i class="fas fa-dollar-sign"></i>
+                <span>Consultation Fee: ${{ "%.2f"|format(doctor.consultation_fee) }}</span>
+            </div>
+            <div class="detail-item">
+                <i class="fas fa-calendar"></i>
+                <span>Available: {{ doctor.available_days }}</span>
+            </div>
+            <div class="detail-item">
+                <i class="fas fa-clock"></i>
+                <span>{{ doctor.available_time }}</span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Today's Appointments -->
+    <div class="appointments-section">
+        <div class="section-header">
+            <h2>Today's Appointments ({{ today.strftime('%B %d, %Y') }})</h2>
+        </div>
+        
+        {% if today_appointments %}
+            <div class="appointments-grid">
+                {% for appointment in today_appointments %}
+                    <div class="appointment-card {{ appointment.status }}">
+                        <div class="appointment-header">
+                            <span class="appointment-id">#{{ appointment.id }}</span>
+                            <span class="status-badge {{ appointment.status }}">
+                                {{ appointment.status|title }}
+                            </span>
+                        </div>
+                        <div class="appointment-body">
+                            <div class="patient-info">
+                                <i class="fas fa-user"></i>
+                                <div>
+                                    <p class="patient-name">{{ appointment.patient.username }}</p>
+                                    <p class="patient-contact">{{ appointment.patient.email }}</p>
+                                </div>
+                            </div>
+                            <div class="appointment-time">
+                                <i class="fas fa-clock"></i>
+                                <span>{{ appointment.appointment_time }}</span>
+                            </div>
+                            {% if appointment.symptoms %}
+                                <div class="symptoms">
+                                    <i class="fas fa-notes-medical"></i>
+                                    <p>{{ appointment.symptoms }}</p>
+                                </div>
+                            {% endif %}
+                            {% if appointment.notes %}
+                                <div class="notes">
+                                    <i class="fas fa-sticky-note"></i>
+                                    <p>{{ appointment.notes }}</p>
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="appointment-actions">
+                            {% if appointment.status == 'pending' %}
+                                <button class="btn-sm btn-success" 
+                                        onclick="updateAppointmentStatus({{ appointment.id }}, 'confirmed')">
+                                    <i class="fas fa-check"></i> Confirm
+                                </button>
+                                <button class="btn-sm btn-danger"
+                                        onclick="updateAppointmentStatus({{ appointment.id }}, 'cancelled')">
+                                    <i class="fas fa-times"></i> Cancel
+                                </button>
+                            {% elif appointment.status == 'confirmed' %}
+                                <button class="btn-sm btn-primary" 
+                                        onclick="completeAppointment({{ appointment.id }})">
+                                    <i class="fas fa-check-double"></i> Mark Complete
+                                </button>
+                                <button class="btn-sm btn-warning"
+                                        onclick="addNotes({{ appointment.id }})">
+                                    <i class="fas fa-edit"></i> Add Notes
+                                </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="no-data">
+                <i class="fas fa-calendar-times"></i>
+                <p>No appointments scheduled for today</p>
+            </div>
+        {% endif %}
+    </div>
+    
+    <!-- Upcoming Appointments -->
+    <div class="appointments-section">
+        <div class="section-header">
+            <h2>Upcoming Appointments</h2>
+        </div>
+        
+        {% if upcoming_appointments %}
+            <div class="appointments-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Patient</th>
+                            <th>Date & Time</th>
+                            <th>Symptoms</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for appointment in upcoming_appointments %}
+                            <tr>
+                                <td>#{{ appointment.id }}</td>
+                                <td>
+                                    <div class="patient-cell">
+                                        <strong>{{ appointment.patient.username }}</strong>
+                                        <small>{{ appointment.patient.email }}</small>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="datetime-cell">
+                                        <span class="date">{{ appointment.appointment_date.strftime('%b %d, %Y') }}</span>
+                                        <span class="time">{{ appointment.appointment_time }}</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="symptoms-text">{{ appointment.symptoms[:50] }}{% if appointment.symptoms|length > 50 %}...{% endif %}</span>
+                                </td>
+                                <td>
+                                    <span class="status-badge {{ appointment.status }}">
+                                        {{ appointment.status|title }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="action-buttons">
+                                        {% if appointment.status == 'pending' %}
+                                            <button class="btn-sm btn-success" 
+                                                    onclick="updateAppointmentStatus({{ appointment.id }}, 'confirmed')">
+                                                Confirm
+                                            </button>
+                                            <button class="btn-sm btn-danger"
+                                                    onclick="updateAppointmentStatus({{ appointment.id }}, 'cancelled')">
+                                                Cancel
+                                            </button>
+                                        {% elif appointment.status == 'confirmed' %}
+                                            <button class="btn-sm btn-primary" 
+                                                    onclick="completeAppointment({{ appointment.id }})">
+                                                Complete
+                                            </button>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="no-data">
+                <i class="fas fa-calendar-times"></i>
+                <p>No upcoming appointments</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Add Notes Modal -->
+<div id="notesModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Add Appointment Notes</h3>
+            <button class="close-modal">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form id="notesForm">
+                <input type="hidden" id="appointment_id" name="appointment_id">
+                <div class="form-group">
+                    <label for="notes">Notes</label>
+                    <textarea id="notes" name="notes" rows="5" required 
+                              placeholder="Enter appointment notes, diagnosis, or recommendations..."></textarea>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary close-modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Notes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Modal functionality
+    const modal = document.getElementById('notesModal');
+    const closeBtns = document.querySelectorAll('.close-modal');
+    
+    closeBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            modal.style.display = 'none';
+        });
+    });
+    
+    window.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            modal.style.display = 'none';
+        }
+    });
+    
+    // Notes Form
+    const notesForm = document.getElementById('notesForm');
+    notesForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const appointmentId = document.getElementById('appointment_id').value;
+        const notes = document.getElementById('notes').value;
+        const formData = new FormData();
+        formData.append('status', 'confirmed');
+        formData.append('notes', notes);
+        
+        fetch(`/doctor/update-appointment/${appointmentId}`, {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Notes saved successfully!');
+                modal.style.display = 'none';
+                location.reload();
+            } else {
+                alert('Error: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred. Please try again.');
+        });
+    });
+});
+
+// Update appointment status
+function updateAppointmentStatus(appointmentId, status) {
+    if (!confirm(`Are you sure you want to ${status} this appointment?`)) {
+        return;
+    }
+    
+    const formData = new FormData();
+    formData.append('status', status);
+    
+    fetch(`/doctor/update-appointment/${appointmentId}`, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message);
+            location.reload();
+        } else {
+            alert('Error: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred. Please try again.');
+    });
+}
+
+// Complete appointment with notes
+function completeAppointment(appointmentId) {
+    if (!confirm('Mark this appointment as completed?')) {
+        return;
+    }
+    
+    const formData = new FormData();
+    formData.append('status', 'completed');
+    
+    fetch(`/doctor/update-appointment/${appointmentId}`, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message);
+            location.reload();
+        } else {
+            alert('Error: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred. Please try again.');
+    });
+}
+
+// Add notes
+function addNotes(appointmentId) {
+    document.getElementById('appointment_id').value = appointmentId;
+    document.getElementById('notes').value = '';
+    document.getElementById('notesModal').style.display = 'block';
+}
+</script>
+{% endblock %}

@@ -1,0 +1,259 @@
+{% extends "base.html" %}
+
+{% block title %}My Dashboard - Care_4_U Hospitals{% endblock %}
+
+{% block content %}
+<div class="user-container">
+    <!-- User Profile Header -->
+    <div class="profile-header">
+        <div class="profile-info">
+            <div class="profile-avatar">
+                <i class="fas fa-user-circle"></i>
+            </div>
+            <div class="profile-details">
+                <h2>Welcome, {{ current_user.username }}!</h2>
+                <p>{{ current_user.email }}</p>
+                {% if current_user.phone %}
+                    <p><i class="fas fa-phone"></i> {{ current_user.phone }}</p>
+                {% endif %}
+                <a href="#" class="btn-edit-profile">
+                    <i class="fas fa-edit"></i> Edit Profile
+                </a>
+            </div>
+        </div>
+        
+        <div class="profile-stats">
+            <div class="stat-item">
+                <h3>{{ appointments|length }}</h3>
+                <p>Total Appointments</p>
+            </div>
+            <div class="stat-item">
+                <h3>{{ appointments|selectattr('status', 'equalto', 'confirmed')|list|length }}</h3>
+                <p>Confirmed</p>
+            </div>
+            <div class="stat-item">
+                <h3>{{ appointments|selectattr('status', 'equalto', 'pending')|list|length }}</h3>
+                <p>Pending</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Quick Actions -->
+    <div class="user-actions">
+        <h3>Quick Actions</h3>
+        <div class="action-buttons">
+            <a href="{{ url_for('doctors') }}" class="action-btn primary">
+                <i class="fas fa-search"></i>
+                <span>Find a Doctor</span>
+            </a>
+            <a href="#" class="action-btn">
+                <i class="fas fa-prescription"></i>
+                <span>View Prescriptions</span>
+            </a>
+            <a href="#" class="action-btn">
+                <i class="fas fa-file-medical"></i>
+                <span>Medical Records</span>
+            </a>
+            <a href="#" class="action-btn">
+                <i class="fas fa-bell"></i>
+                <span>Notifications</span>
+            </a>
+        </div>
+    </div>
+    
+    <!-- My Appointments -->
+    <div class="appointments-section">
+        <div class="section-header">
+            <h3>My Appointments</h3>
+            <a href="{{ url_for('doctors') }}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Book New Appointment
+            </a>
+        </div>
+        
+        {% if appointments %}
+            <div class="appointments-list">
+                {% for appointment in appointments %}
+                    <div class="appointment-card {{ appointment.status }}">
+                        <div class="appointment-header">
+                            <div class="appointment-id">
+                                <strong>#{{ appointment.id }}</strong>
+                                <span class="status-badge {{ appointment.status }}">
+                                    {{ appointment.status|title }}
+                                </span>
+                            </div>
+                            <div class="appointment-date">
+                                <i class="fas fa-calendar"></i>
+                                {{ appointment.appointment_date.strftime('%B %d, %Y') }}
+                                <i class="fas fa-clock"></i>
+                                {{ appointment.appointment_time }}
+                            </div>
+                        </div>
+                        
+                        <div class="appointment-body">
+                            <div class="doctor-info">
+                                <h4>Dr. {{ appointment.doctor.name }}</h4>
+                                <p class="specialization">{{ appointment.doctor.specialization }}</p>
+                                <p><i class="fas fa-dollar-sign"></i> Fee: ${{ appointment.doctor.consultation_fee }}</p>
+                            </div>
+                            
+                            {% if appointment.symptoms %}
+                                <div class="appointment-notes">
+                                    <strong>Symptoms:</strong> {{ appointment.symptoms }}
+                                </div>
+                            {% endif %}
+                            
+                            <div class="appointment-created">
+                                <small>
+                                    Booked on: {{ appointment.created_at.strftime('%b %d, %Y at %I:%M %p') }}
+                                </small>
+                            </div>
+                        </div>
+                        
+                        <div class="appointment-actions">
+                            {% if appointment.status in ['pending', 'confirmed'] %}
+                                <a href="{{ url_for('cancel_appointment', appointment_id=appointment.id) }}" 
+                                   class="btn btn-danger btn-sm"
+                                   onclick="return confirm('Are you sure you want to cancel this appointment?')">
+                                    <i class="fas fa-times"></i> Cancel
+                                </a>
+                            {% endif %}
+                            
+                            {% if appointment.status == 'confirmed' %}
+                                <button class="btn btn-success btn-sm" onclick="joinVideoCall()">
+                                    <i class="fas fa-video"></i> Join Call
+                                </button>
+                            {% endif %}
+                            
+                            <button class="btn btn-info btn-sm" onclick="viewDetails({{ appointment.id }})">
+                                <i class="fas fa-info-circle"></i> Details
+                            </button>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="no-appointments">
+                <i class="fas fa-calendar-times"></i>
+                <h4>No Appointments Yet</h4>
+                <p>You haven't booked any appointments. Find a doctor and book your first appointment!</p>
+                <a href="{{ url_for('doctors') }}" class="btn btn-primary">
+                    <i class="fas fa-search"></i> Find a Doctor
+                </a>
+            </div>
+        {% endif %}
+    </div>
+    
+    <!-- Upcoming Appointments -->
+    {% if appointments %}
+        {% set upcoming = appointments|selectattr('status', 'equalto', 'confirmed')|list %}
+        {% if upcoming %}
+            <div class="upcoming-section">
+                <h3>Upcoming Appointments</h3>
+                <div class="upcoming-list">
+                    {% for appointment in upcoming[:3] %}
+                        <div class="upcoming-card">
+                            <div class="upcoming-date">
+                                <strong>{{ appointment.appointment_date.strftime('%b %d') }}</strong>
+                                <small>{{ appointment.appointment_time }}</small>
+                            </div>
+                            <div class="upcoming-info">
+                                <h5>Dr. {{ appointment.doctor.name }}</h5>
+                                <p>{{ appointment.doctor.specialization }}</p>
+                                <div class="upcoming-actions">
+                                    <button class="btn btn-sm btn-outline">Remind Me</button>
+                                    <button class="btn btn-sm btn-outline">Reschedule</button>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        {% endif %}
+    {% endif %}
+</div>
+
+<!-- Edit Profile Modal -->
+<div id="editProfileModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Edit Profile</h3>
+            <button class="close-modal">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form id="editProfileForm">
+                <div class="form-group">
+                    <label for="edit_username">Username</label>
+                    <input type="text" id="edit_username" value="{{ current_user.username }}">
+                </div>
+                <div class="form-group">
+                    <label for="edit_email">Email</label>
+                    <input type="email" id="edit_email" value="{{ current_user.email }}">
+                </div>
+                <div class="form-group">
+                    <label for="edit_phone">Phone Number</label>
+                    <input type="tel" id="edit_phone" value="{{ current_user.phone or '' }}">
+                </div>
+                <div class="form-group">
+                    <label for="edit_address">Address</label>
+                    <textarea id="edit_address" rows="3">{{ current_user.address or '' }}</textarea>
+                </div>
+                <div class="form-group">
+                    <label for="edit_dob">Date of Birth</label>
+                    <input type="date" id="edit_dob">
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary close-modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Edit Profile Modal
+    const editModal = document.getElementById('editProfileModal');
+    const editProfileBtn = document.querySelector('.btn-edit-profile');
+    const closeModalBtns = document.querySelectorAll('.close-modal');
+    
+    editProfileBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        editModal.style.display = 'block';
+    });
+    
+    closeModalBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            editModal.style.display = 'none';
+        });
+    });
+    
+    window.addEventListener('click', (e) => {
+        if (e.target === editModal) {
+            editModal.style.display = 'none';
+        }
+    });
+    
+    // Edit Profile Form
+    const editProfileForm = document.getElementById('editProfileForm');
+    editProfileForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        // In a real application, this would send an AJAX request to update the profile
+        alert('Profile update functionality would be implemented here.');
+        editModal.style.display = 'none';
+    });
+});
+
+function joinVideoCall() {
+    // In a real application, this would integrate with a video call service
+    alert('Video call functionality would be implemented here.\nThis would connect to services like Zoom, Google Meet, or a custom WebRTC solution.');
+}
+
+function viewDetails(appointmentId) {
+    // In a real application, this would show detailed appointment information
+    alert(`Viewing detailed information for appointment #${appointmentId}`);
+}
+</script>
+{% endblock %}

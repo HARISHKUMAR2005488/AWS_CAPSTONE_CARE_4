@@ -1,0 +1,186 @@
+{% extends "base.html" %}
+
+{% block title %}Book Appointment - Care_4_U Hospitals{% endblock %}
+
+{% block content %}
+<div class="booking-container">
+    <div class="booking-card">
+        <div class="booking-header">
+            <h2>Book Appointment</h2>
+            <p>with {{ doctor.name }} - {{ doctor.specialization }}</p>
+        </div>
+        
+        <div class="doctor-summary">
+            <div class="doctor-summary-info">
+                <h3>Doctor Details</h3>
+                <div class="summary-item">
+                    <i class="fas fa-user-md"></i>
+                    <span><strong>Name:</strong> {{ doctor.name }}</span>
+                </div>
+                <div class="summary-item">
+                    <i class="fas fa-stethoscope"></i>
+                    <span><strong>Specialization:</strong> {{ doctor.specialization }}</span>
+                </div>
+                <div class="summary-item">
+                    <i class="fas fa-briefcase"></i>
+                    <span><strong>Experience:</strong> {{ doctor.experience }} years</span>
+                </div>
+                <div class="summary-item">
+                    <i class="fas fa-dollar-sign"></i>
+                    <span><strong>Fee:</strong> ${{ doctor.consultation_fee }}</span>
+                </div>
+            </div>
+        </div>
+        
+        <form method="POST" action="{{ url_for('book_appointment', doctor_id=doctor.id) }}" class="booking-form">
+            <div class="form-section">
+                <h3>Select Date & Time</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="appointment_date">Appointment Date</label>
+                        <input type="date" id="appointment_date" name="appointment_date" required
+                               min="{{ min_date }}">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="appointment_time">Preferred Time</label>
+                        <select id="appointment_time" name="appointment_time" required>
+                            <option value="">Select time slot</option>
+                            {% for slot in available_slots %}
+                                <option value="{{ slot }}">{{ slot }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="time-slots-info">
+                    <p><i class="fas fa-info-circle"></i> Available time slots: {{ doctor.available_time }}</p>
+                    <p><i class="fas fa-calendar"></i> Available days: {{ doctor.available_days }}</p>
+                </div>
+            </div>
+            
+            <div class="form-section">
+                <h3>Medical Information</h3>
+                <div class="form-group">
+                    <label for="symptoms">Symptoms / Reason for Visit</label>
+                    <textarea id="symptoms" name="symptoms" rows="4" 
+                              placeholder="Please describe your symptoms or reason for the appointment..."></textarea>
+                </div>
+            </div>
+            
+            <div class="form-section">
+                <h3>Patient Information</h3>
+                <div class="patient-info">
+                    <div class="info-item">
+                        <strong>Name:</strong> {{ current_user.username }}
+                    </div>
+                    <div class="info-item">
+                        <strong>Email:</strong> {{ current_user.email }}
+                    </div>
+                    {% if current_user.phone %}
+                    <div class="info-item">
+                        <strong>Phone:</strong> {{ current_user.phone }}
+                    </div>
+                    {% endif %}
+                </div>
+                <p class="info-note">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    Please ensure your contact information is up to date. 
+                    <a href="#">Update profile</a>
+                </p>
+            </div>
+            
+            <div class="booking-summary">
+                <h3>Appointment Summary</h3>
+                <div class="summary-details">
+                    <div class="summary-row">
+                        <span>Consultation Fee:</span>
+                        <span>${{ doctor.consultation_fee }}</span>
+                    </div>
+                    <div class="summary-row total">
+                        <span>Total Amount:</span>
+                        <span>${{ doctor.consultation_fee }}</span>
+                    </div>
+                </div>
+                
+                <div class="terms-agreement">
+                    <input type="checkbox" id="confirm_terms" name="confirm_terms" required>
+                    <label for="confirm_terms">
+                        I confirm that I have read and agree to the 
+                        <a href="#">Appointment Terms & Conditions</a>
+                    </label>
+                </div>
+            </div>
+            
+            <div class="booking-actions">
+                <a href="{{ url_for('doctors') }}" class="btn btn-secondary">Cancel</a>
+                <button type="submit" class="btn btn-primary">
+                    Confirm Booking
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const dateInput = document.getElementById('appointment_date');
+    const timeSelect = document.getElementById('appointment_time');
+    
+    // Fetch available slots when date changes
+    dateInput.addEventListener('change', function() {
+        if (this.value) {
+            const doctorId = {{ doctor.id }};
+            fetch(`/api/available-slots/${doctorId}?date=${this.value}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.available_slots) {
+                        // Clear current options
+                        timeSelect.innerHTML = '<option value="">Select time slot</option>';
+                        
+                        // Add new options
+                        data.available_slots.forEach(slot => {
+                            const option = document.createElement('option');
+                            option.value = slot;
+                            option.textContent = slot;
+                            timeSelect.appendChild(option);
+                        });
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+        }
+    });
+    
+    // Form validation
+    const form = document.querySelector('.booking-form');
+    form.addEventListener('submit', function(e) {
+        if (!dateInput.value) {
+            e.preventDefault();
+            alert('Please select a date');
+            dateInput.focus();
+            return false;
+        }
+        
+        if (!timeSelect.value) {
+            e.preventDefault();
+            alert('Please select a time slot');
+            timeSelect.focus();
+            return false;
+        }
+        
+        const selectedDate = new Date(dateInput.value);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        if (selectedDate < today) {
+            e.preventDefault();
+            alert('Please select a future date');
+            dateInput.focus();
+            return false;
+        }
+    });
+});
+</script>
+{% endblock %}

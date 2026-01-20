@@ -1,0 +1,154 @@
+{% extends "base.html" %}
+
+{% block title %}Find Doctors - Care_4_U Hospitals{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="page-hero">
+    <div class="container">
+        <h1>Find Your Specialist</h1>
+        <p>Book appointments with certified medical professionals</p>
+    </div>
+</section>
+
+<!-- Search & Filter -->
+<section class="filter-section">
+    <div class="container">
+        <div class="search-box">
+            <form method="GET" action="{{ url_for('doctors') }}">
+                <div class="search-group">
+                    <input type="text" name="search" placeholder="Search by doctor name..." 
+                           value="{{ request.args.get('search', '') }}">
+                    <select name="specialization">
+                        <option value="all">All Specializations</option>
+                        {% for spec in specializations %}
+                            <option value="{{ spec }}" 
+                                    {% if request.args.get('specialization') == spec %}selected{% endif %}>
+                                {{ spec }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-search"></i> Search
+                    </button>
+                </div>
+            </form>
+        </div>
+        
+        <div class="specialization-tags">
+            <a href="{{ url_for('doctors') }}" 
+               class="tag {% if not request.args.get('specialization') %}active{% endif %}">All</a>
+            {% for spec in specializations[:8] %}
+                <a href="{{ url_for('doctors', specialization=spec) }}" 
+                   class="tag {% if request.args.get('specialization') == spec %}active{% endif %}">
+                    {{ spec }}
+                </a>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<!-- Doctors List -->
+<section class="doctors-section">
+    <div class="container">
+        {% if doctors %}
+            <div class="doctors-grid">
+                {% for doctor in doctors %}
+                    <div class="doctor-card">
+                        <div class="doctor-image">
+                            {% if doctor.profile_image %}
+                                <img src="{{ doctor.profile_image }}" alt="{{ doctor.name }}">
+                            {% else %}
+                                <div class="doctor-avatar">
+                                    <i class="fas fa-user-md"></i>
+                                </div>
+                            {% endif %}
+                            {% if doctor.is_available %}
+                                <span class="availability available">Available</span>
+                            {% else %}
+                                <span class="availability unavailable">Unavailable</span>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="doctor-info">
+                            <h3>{{ doctor.name }}</h3>
+                            <p class="specialization">{{ doctor.specialization }}</p>
+                            <p class="qualifications">{{ doctor.qualifications }}</p>
+                            
+                            <div class="doctor-details">
+                                <div class="detail-item">
+                                    <i class="fas fa-briefcase"></i>
+                                    <span>{{ doctor.experience }} years experience</span>
+                                </div>
+                                <div class="detail-item">
+                                    <i class="fas fa-calendar"></i>
+                                    <span>{{ doctor.available_days }}</span>
+                                </div>
+                                <div class="detail-item">
+                                    <i class="fas fa-clock"></i>
+                                    <span>{{ doctor.available_time }}</span>
+                                </div>
+                                <div class="detail-item">
+                                    <i class="fas fa-phone"></i>
+                                    <span>{{ doctor.phone }}</span>
+                                </div>
+                            </div>
+                            
+                            <div class="doctor-footer">
+                                <div class="fee">
+                                    <strong>Fee: ${{ doctor.consultation_fee }}</strong>
+                                </div>
+                                {% if current_user.is_authenticated and current_user.user_type == 'patient' %}
+                                    <a href="{{ url_for('book_appointment', doctor_id=doctor.id) }}" 
+                                       class="btn btn-primary">
+                                        Book Appointment
+                                    </a>
+                                {% elif not current_user.is_authenticated %}
+                                    <a href="{{ url_for('login') }}" class="btn btn-primary">
+                                        Login to Book
+                                    </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="no-results">
+                <i class="fas fa-search"></i>
+                <h3>No doctors found</h3>
+                <p>Try adjusting your search criteria</p>
+            </div>
+        {% endif %}
+    </div>
+</section>
+
+<!-- How It Works -->
+<section class="how-it-works">
+    <div class="container">
+        <h2 class="section-title">How to Book an Appointment</h2>
+        <div class="steps-grid">
+            <div class="step">
+                <div class="step-number">1</div>
+                <h3>Find a Doctor</h3>
+                <p>Browse specialists by name, specialization, or availability</p>
+            </div>
+            <div class="step">
+                <div class="step-number">2</div>
+                <h3>Choose Time</h3>
+                <p>Select your preferred date and time slot</p>
+            </div>
+            <div class="step">
+                <div class="step-number">3</div>
+                <h3>Book Appointment</h3>
+                <p>Confirm your appointment details</p>
+            </div>
+            <div class="step">
+                <div class="step-number">4</div>
+                <h3>Get Confirmation</h3>
+                <p>Receive appointment confirmation via email/SMS</p>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

@@ -1,8 +1,10 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.utils import secure_filename
 from datetime import datetime, date
 import json
+import os
 
 from config import Config
 from database import db, User, Doctor, Appointment, TimeSlot
@@ -23,6 +25,10 @@ def load_user(user_id):
 # Create tables
 with app.app_context():
     db.create_all()
+
+    # Ensure uploads directory exists
+    uploads_dir = os.path.join(app.instance_path, 'uploads')
+    os.makedirs(uploads_dir, exist_ok=True)
     
     # Add sample admin if none exists
     if not User.query.filter_by(user_type='admin').first():
@@ -319,13 +325,15 @@ def admin_dashboard():
     recent_appointments = Appointment.query.order_by(
         Appointment.created_at.desc()
     ).limit(10).all()
+    doctors = Doctor.query.order_by(Doctor.created_at.desc()).all()
     
     return render_template('admin.html',
                          total_patients=total_patients,
                          total_doctors=total_doctors,
                          total_appointments=total_appointments,
                          pending_appointments=pending_appointments,
-                         recent_appointments=recent_appointments)
+                         recent_appointments=recent_appointments,
+                         doctors=doctors)
 
 @app.route('/admin/appointments')
 @login_required
@@ -338,7 +346,8 @@ def manage_appointments():
         Appointment.appointment_date.desc()
     ).all()
     
-    return render_template('bookings.html', appointments=appointments)
+    # Pass date context for template helpers (used in bookings.html)
+    return render_template('bookings.html', appointments=appointments, today=date.today())
 
 @app.route('/admin/update-appointment/<int:appointment_id>', methods=['POST'])
 @login_required
@@ -384,6 +393,54 @@ def add_doctor():
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)})
 
+@app.route('/admin/update-doctor/<int:doctor_id>', methods=['POST'])
+@login_required
+def update_doctor(doctor_id):
+    if current_user.user_type != 'admin':
+        return jsonify({'success': False, 'message': 'Access denied'})
+
+    doctor = Doctor.query.get_or_404(doctor_id)
+
+    try:
+        doctor.name = request.form.get('name', doctor.name)
+        doctor.specialization = request.form.get('specialization', doctor.specialization)
+        doctor.qualifications = request.form.get('qualifications', doctor.qualifications)
+        doctor.experience = int(request.form.get('experience', doctor.experience or 0))
+        doctor.phone = request.form.get('phone', doctor.phone)
+        doctor.email = request.form.get('email', doctor.email)
+        doctor.consultation_fee = float(request.form.get('consultation_fee', doctor.consultation_fee or 0))
+        doctor.available_days = request.form.get('available_days', doctor.available_days)
+        doctor.available_time = request.form.get('available_time', doctor.available_time)
+
+        db.session.commit()
+        return jsonify({'success': True, 'message': 'Doctor updated successfully'})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': str(e)})
+
+@app.route('/admin/delete-doctor/<int:doctor_id>', methods=['POST'])
+@login_required
+def delete_doctor(doctor_id):
+    if current_user.user_type != 'admin':
+        return jsonify({'success': False, 'message': 'Access denied'})
+
+    doctor = Doctor.query.get_or_404(doctor_id)
+
+    # Prevent deletion if the doctor has any appointments
+    existing_appointments = Appointment.query.filter_by(doctor_id=doctor_id).count()
+    if existing_appointments > 0:
+        return jsonify({'success': False, 'message': 'Cannot delete doctor with existing appointments'})
+
+    # Remove linked doctor user accounts
+    doctor_users = User.query.filter_by(doctor_id=doctor_id).all()
+    for user in doctor_users:
+        db.session.delete(user)
+
+    db.session.delete(doctor)
+    db.session.commit()
+
+    return jsonify({'success': True, 'message': 'Doctor removed successfully'})
+
 @app.route('/api/available-slots/<int:doctor_id>')
 def available_slots(doctor_id):
     date_str = request.args.get('date')
@@ -419,6 +476,29 @@ def available_slots(doctor_id):
         return jsonify({'available_slots': available_slots})
     except ValueError:
         return jsonify({'error': 'Invalid date format'}), 400
+
+@app.route('/user/upload-document', methods=['POST'])
+@login_required
+def upload_document():
+    if current_user.user_type != 'patient':
+        return jsonify({'success': False, 'message': 'Access denied'})
+
+    file = request.files.get('document')
+    description = request.form.get('description', '')
+
+    if not file or file.filename == '':
+        return jsonify({'success': False, 'message': 'No file provided'})
+
+    filename = secure_filename(file.filename)
+    safe_name = f"{datetime.utcnow().strftime('%Y%m%d%H%M%S')}_{filename}"
+    dest_dir = os.path.join(app.instance_path, 'uploads', str(current_user.id))
+    os.makedirs(dest_dir, exist_ok=True)
+
+    try:
+        file.save(os.path.join(dest_dir, safe_name))
+        return jsonify({'success': True, 'message': 'Document uploaded', 'description': description})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})
 
 @app.route('/cancel-appointment/<int:appointment_id>')
 @login_required
@@ -464,6 +544,242 @@ def doctor_update_appointment(appointment_id):
         return jsonify({'success': True, 'message': f'Appointment {new_status} successfully'})
     
     return jsonify({'success': False, 'message': 'Invalid status'})
+
+# AI Health Assistant Chatbot Endpoint
+@app.route('/user/chat-assistant', methods=['POST'])
+@login_required
+def chat_assistant():
+    """AI-powered health symptom analyzer and doctor recommendation engine"""
+    if current_user.user_type != 'patient':
+        return jsonify({'success': False, 'message': 'This feature is for patients only'})
+    
+    data = request.get_json()
+    symptoms = data.get('symptoms', '').lower().strip()
+    
+    if not symptoms:
+        return jsonify({'success': False, 'message': 'Please describe your symptoms'})
+    
+    # Analyze symptoms using AI-based logic
+    analysis = analyze_symptoms(symptoms)
+    
+    return jsonify({
+        'success': True,
+        'response': analysis['response'],
+        'is_emergency': analysis['is_emergency'],
+        'specializations': analysis['specializations'],
+        'severity_score': analysis['severity_score']
+    })
+
+def analyze_symptoms(symptoms_text):
+    """
+    AI-based symptom analysis engine
+    Detects emergency conditions, suggests specializations, and calculates severity
+    """
+    symptoms_text_lower = symptoms_text.lower()
+    
+    # Emergency keyword mapping with weights
+    emergency_indicators = {
+        'chest pain': 3,
+        'heart attack': 5,
+        'stroke': 5,
+        'seizure': 4,
+        'difficulty breathing': 4,
+        'shortness of breath': 4,
+        'severe bleeding': 5,
+        'unconscious': 5,
+        'severe allergic': 4,
+        'anaphylaxis': 5,
+        'poisoning': 5,
+        'overdose': 5,
+        'severe trauma': 5,
+        'severe burns': 5,
+        'loss of consciousness': 5,
+        'severe head injury': 4,
+        'drowning': 5,
+        'choking': 4,
+        'unable to breathe': 5,
+        'severe abdominal pain': 3,
+        'rupture': 4,
+        'serious injury': 3,
+        'bleeding heavily': 4,
+        'gunshot': 5,
+        'stab wound': 4,
+    }
+    
+    # Specialization mapping with keyword associations
+    specialization_map = {
+        'Cardiology': {
+            'keywords': ['chest pain', 'heart', 'palpitation', 'arrhythmia', 'hypertension', 'blood pressure', 'cardiac', 'angina', 'irregular heartbeat', 'shortness of breath'],
+            'base_score': 0
+        },
+        'Neurology': {
+            'keywords': ['headache', 'migraine', 'dizziness', 'stroke', 'seizure', 'tremor', 'nerve', 'neuropathy', 'numbness', 'paralysis', 'vertigo', 'brain'],
+            'base_score': 0
+        },
+        'Orthopedics': {
+            'keywords': ['fracture', 'bone', 'joint', 'arthritis', 'back pain', 'knee pain', 'shoulder pain', 'ankle', 'sprain', 'ligament'],
+            'base_score': 0
+        },
+        'Gastroenterology': {
+            'keywords': ['stomach', 'abdominal', 'nausea', 'vomiting', 'diarrhea', 'constipation', 'acid reflux', 'heartburn', 'liver', 'digestive', 'intestinal'],
+            'base_score': 0
+        },
+        'Pulmonology': {
+            'keywords': ['cough', 'asthma', 'lung', 'bronchitis', 'pneumonia', 'respiratory', 'breathing', 'wheezing', 'shortness of breath', 'tuberculosis'],
+            'base_score': 0
+        },
+        'Dermatology': {
+            'keywords': ['rash', 'skin', 'acne', 'eczema', 'psoriasis', 'mole', 'wart', 'itching', 'fungal', 'allergy'],
+            'base_score': 0
+        },
+        'Ophthalmology': {
+            'keywords': ['eye', 'vision', 'blind', 'blurred', 'eye pain', 'glaucoma', 'cataract', 'contact lens', 'glasses'],
+            'base_score': 0
+        },
+        'ENT (Otolaryngology)': {
+            'keywords': ['ear', 'nose', 'throat', 'hearing', 'tinnitus', 'sinus', 'sinusitis', 'sore throat', 'hoarse', 'vertigo'],
+            'base_score': 0
+        },
+        'Pediatrics': {
+            'keywords': ['baby', 'child', 'infant', 'kid', 'vaccination', 'fever', 'crying', 'development', 'growth'],
+            'base_score': 0
+        },
+        'Psychiatry': {
+            'keywords': ['depression', 'anxiety', 'stress', 'panic', 'mental', 'psychological', 'emotional', 'insomnia', 'sleep', 'mood'],
+            'base_score': 0
+        }
+    }
+    
+    # Check emergency conditions with AI-based reasoning
+    emergency_score = 0
+    emergency_reasons = []
+    
+    for emergency_keyword, weight in emergency_indicators.items():
+        if emergency_keyword in symptoms_text_lower:
+            emergency_score += weight
+            emergency_reasons.append(emergency_keyword)
+    
+    # AI emergency detection logic (not just keywords)
+    # Check for multiple critical indicators
+    is_emergency = emergency_score >= 4
+    
+    # Additional AI logic: context analysis
+    critical_phrases = ['severe', 'sudden', 'critical', 'emergency', 'urgent', 'immediate']
+    has_critical_modifier = any(phrase in symptoms_text_lower for phrase in critical_phrases)
+    
+    if has_critical_modifier and emergency_score >= 2:
+        is_emergency = True
+    
+    # Calculate severity score (0-100)
+    severity_score = min(emergency_score * 15, 100)
+    if symptoms_text_lower.count(' ') > 10:  # More detailed symptoms
+        severity_score = min(severity_score + 10, 100)
+    
+    # Match specializations based on symptom keywords
+    matching_specializations = []
+    
+    for specialty, info in specialization_map.items():
+        keyword_matches = 0
+        for keyword in info['keywords']:
+            if keyword in symptoms_text_lower:
+                keyword_matches += 1
+        
+        if keyword_matches > 0:
+            score = keyword_matches
+            matching_specializations.append({
+                'name': specialty,
+                'score': score,
+                'keywords_matched': keyword_matches
+            })
+    
+    # Sort by match score (highest first)
+    matching_specializations.sort(key=lambda x: x['score'], reverse=True)
+    
+    # Take top 2-3 specializations
+    top_specializations = matching_specializations[:3]
+    
+    # If no specializations matched, suggest based on general health
+    if not top_specializations:
+        top_specializations = [
+            {'name': 'General Practice', 'score': 1, 'keywords_matched': 0}
+        ]
+    
+    # Format specializations with reasoning
+    formatted_specializations = []
+    for spec in top_specializations:
+        reason_parts = []
+        
+        if spec['name'] != 'General Practice':
+            keywords_found = []
+            for keyword in specialization_map[spec['name']]['keywords']:
+                if keyword in symptoms_text_lower:
+                    keywords_found.append(keyword)
+            
+            if keywords_found:
+                reason = f"Based on your mention of {', '.join(keywords_found[:2])}"
+                if len(keywords_found) > 2:
+                    reason += f" and other {spec['name'].lower()} symptoms"
+            else:
+                reason = f"Recommended for overall assessment"
+        else:
+            reason = "For general health evaluation and preliminary diagnosis"
+        
+        formatted_specializations.append({
+            'name': spec['name'],
+            'reason': reason
+        })
+    
+    # Generate AI response message
+    response_message = generate_assistant_response(symptoms_text, is_emergency, formatted_specializations, severity_score)
+    
+    return {
+        'response': response_message,
+        'is_emergency': is_emergency,
+        'specializations': formatted_specializations,
+        'severity_score': severity_score
+    }
+
+def generate_assistant_response(symptoms, is_emergency, specializations, severity):
+    """Generate a helpful AI response message"""
+    
+    if is_emergency:
+        response = (
+            "🚨 <strong>URGENT: Please Seek Immediate Medical Attention</strong><br><br>"
+            "Based on your description, this appears to be a medical emergency. "
+            "Please call emergency services (911 in the US) or visit the nearest emergency room immediately. "
+            "Do not wait for an appointment.<br><br>"
+            f"Your symptoms indicate potential {specializations[0]['name'] if specializations else 'medical'} concerns."
+        )
+    else:
+        response = f"<strong>Thank you for sharing your symptoms.</strong><br><br>"
+        
+        if severity >= 70:
+            response += (
+                "Your symptoms appear to be significant and require prompt medical attention. "
+                "We recommend scheduling an appointment with a specialist as soon as possible.<br><br>"
+            )
+        elif severity >= 40:
+            response += (
+                "Your symptoms suggest you would benefit from a medical evaluation. "
+                "Please consider scheduling an appointment within the next few days.<br><br>"
+            )
+        else:
+            response += (
+                "Based on your description, it's good to get these symptoms evaluated by a medical professional. "
+                "You can schedule a consultation when convenient.<br><br>"
+            )
+        
+        if specializations:
+            response += f"<strong>Recommended specialists:</strong> "
+            spec_names = [s['name'] for s in specializations[:2]]
+            response += ", ".join(spec_names) + ".<br><br>"
+        
+        response += (
+            "<em>Note: This is an AI-powered preliminary assessment only and does not replace "
+            "professional medical advice. Always consult with a qualified healthcare provider.</em>"
+        )
+    
+    return response
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)

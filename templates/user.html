@@ -46,18 +46,26 @@
                 <i class="fas fa-search"></i>
                 <span>Find a Doctor</span>
             </a>
-            <a href="#" class="action-btn">
-                <i class="fas fa-prescription"></i>
-                <span>View Prescriptions</span>
-            </a>
-            <a href="#" class="action-btn">
+            <button class="action-btn" data-action="upload-document">
+                <i class="fas fa-upload"></i>
+                <span>Upload Document</span>
+            </button>
+            <button class="action-btn" data-action="prescriptions">
+                <i class="fas fa-prescription-bottle"></i>
+                <span>Prescriptions</span>
+            </button>
+            <button class="action-btn" data-action="view-descriptions">
+                <i class="fas fa-info-circle"></i>
+                <span>View Descriptions</span>
+            </button>
+            <button class="action-btn" data-action="medical-records">
                 <i class="fas fa-file-medical"></i>
                 <span>Medical Records</span>
-            </a>
-            <a href="#" class="action-btn">
+            </button>
+            <button class="action-btn" data-action="notifications">
                 <i class="fas fa-bell"></i>
                 <span>Notifications</span>
-            </a>
+            </button>
         </div>
     </div>
     
@@ -172,6 +180,62 @@
     {% endif %}
 </div>
 
+<!-- Prescriptions Modal -->
+<div id="prescriptionsModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Prescriptions</h3>
+            <button class="close-modal">&times;</button>
+        </div>
+        <div class="modal-body">
+            {% if appointments %}
+                {% set scripted = appointments|selectattr('notes')|list %}
+                {% if scripted %}
+                    <div class="appointments-list">
+                        {% for app in scripted %}
+                            <div class="appointment-card {{ app.status }}">
+                                <div class="appointment-header">
+                                    <div class="appointment-id">
+                                        <strong>#{{ app.id }}</strong>
+                                        <span class="status-badge {{ app.status }}">{{ app.status|title }}</span>
+                                    </div>
+                                    <div class="appointment-date">
+                                        {{ app.appointment_date.strftime('%b %d, %Y') }} — {{ app.appointment_time }}
+                                    </div>
+                                </div>
+                                <div class="appointment-body">
+                                    <div class="doctor-info">
+                                        <h4>Dr. {{ app.doctor.name }}</h4>
+                                        <p class="specialization">{{ app.doctor.specialization }}</p>
+                                    </div>
+                                    <div class="appointment-notes">
+                                        <strong>Prescription / Notes:</strong> {{ app.notes }}
+                                    </div>
+                                    {% if app.symptoms %}
+                                        <div class="appointment-notes">
+                                            <strong>Symptoms:</strong> {{ app.symptoms }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="no-data">
+                        <i class="fas fa-prescription"></i>
+                        <p>No prescriptions available yet.</p>
+                    </div>
+                {% endif %}
+            {% else %}
+                <div class="no-data">
+                    <i class="fas fa-prescription"></i>
+                    <p>No appointments found.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
 <!-- Edit Profile Modal -->
 <div id="editProfileModal" class="modal">
     <div class="modal-content">
@@ -209,6 +273,208 @@
         </div>
     </div>
 </div>
+
+<!-- Upload Document Modal -->
+<div id="uploadDocumentModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Upload Document</h3>
+            <button class="close-modal">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form id="uploadDocumentForm" enctype="multipart/form-data">
+                <div class="form-group">
+                    <label for="document_file">Choose File <span class="required">*</span></label>
+                    <input type="file" id="document_file" name="document" accept=".pdf,.jpg,.jpeg,.png" required>
+                    <small class="form-help">Allowed: PDF, JPG, PNG</small>
+                </div>
+                <div class="form-group">
+                    <label for="document_desc">Description</label>
+                    <textarea id="document_desc" name="description" rows="3" placeholder="Optional description"></textarea>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary close-modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-upload"></i> Upload</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Descriptions Modal -->
+<div id="descriptionsModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Appointment Descriptions</h3>
+            <button class="close-modal">&times;</button>
+        </div>
+        <div class="modal-body">
+            {% if appointments %}
+                {% set described = [] %}
+                {% for app in appointments %}
+                    {% if app.symptoms %}
+                        {% set described = described + [app] %}
+                    {% endif %}
+                {% endfor %}
+                
+                {% if described %}
+                    <div class="appointments-list">
+                        {% for app in described %}
+                            <div class="appointment-card {{ app.status }}">
+                                <div class="appointment-header">
+                                    <div class="appointment-id">
+                                        <strong>#{{ app.id }}</strong>
+                                        <span class="status-badge {{ app.status }}">{{ app.status|title }}</span>
+                                    </div>
+                                    <div class="appointment-date">
+                                        {{ app.appointment_date.strftime('%b %d, %Y') }} — {{ app.appointment_time }}
+                                    </div>
+                                </div>
+                                <div class="appointment-body">
+                                    <div class="doctor-info">
+                                        <h4>Dr. {{ app.doctor.name }}</h4>
+                                        <p class="specialization">{{ app.doctor.specialization }}</p>
+                                    </div>
+                                    <div class="appointment-notes">
+                                        <strong>Symptoms:</strong> {{ app.symptoms }}
+                                    </div>
+                                    {% if app.notes %}
+                                        <div class="appointment-notes">
+                                            <strong>Doctor Notes:</strong> {{ app.notes }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="no-data">
+                        <i class="fas fa-info-circle"></i>
+                        <p>No descriptions available yet. Book an appointment and add symptoms to see them here.</p>
+                    </div>
+                {% endif %}
+            {% else %}
+                <div class="no-data">
+                    <i class="fas fa-info-circle"></i>
+                    <p>No appointments found.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Medical Records Modal -->
+<div id="recordsModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Medical Records</h3>
+            <button class="close-modal">&times;</button>
+        </div>
+        <div class="modal-body">
+            {% if appointments %}
+                <div class="appointments-table">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Doctor</th>
+                                <th>Specialization</th>
+                                <th>Status</th>
+                                <th>Symptoms / Notes</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for app in appointments %}
+                                <tr>
+                                    <td>{{ app.appointment_date.strftime('%b %d, %Y') }}</td>
+                                    <td>{{ app.doctor.name }}</td>
+                                    <td>{{ app.doctor.specialization }}</td>
+                                    <td><span class="status-badge {{ app.status }}">{{ app.status|title }}</span></td>
+                                    <td>
+                                        {% if app.symptoms %}<div><strong>Symptoms:</strong> {{ app.symptoms }}</div>{% endif %}
+                                        {% if app.notes %}<div><strong>Notes:</strong> {{ app.notes }}</div>{% endif %}
+                                        {% if not app.symptoms and not app.notes %}<em>None</em>{% endif %}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="no-data">
+                    <i class="fas fa-file-medical"></i>
+                    <p>No records available.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Notifications Modal -->
+<div id="notificationsModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Notifications</h3>
+            <button class="close-modal">&times;</button>
+        </div>
+        <div class="modal-body">
+            {% set notif_list = appointments|map(attribute='status')|list if appointments else [] %}
+            {% if appointments %}
+                <ul class="today-list">
+                    {% for app in appointments[:5] %}
+                        <li>
+                            <strong>Appointment #{{ app.id }}</strong>
+                            <span class="status-badge {{ app.status }}">{{ app.status|title }}</span>
+                            <small>{{ app.appointment_date.strftime('%b %d, %Y') }} at {{ app.appointment_time }}</small>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <div class="no-data">
+                    <i class="fas fa-bell-slash"></i>
+                    <p>No notifications yet.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Floating AI Health Assistant Button -->
+<button id="floatingAiBtn" class="floating-ai-btn" title="Open AI Health Assistant">
+    <i class="fas fa-robot"></i>
+</button>
+
+<!-- AI Health Assistant Modal -->
+<div id="aiAssistantModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3><i class="fas fa-robot"></i> AI Health Assistant</h3>
+            <button class="close-modal">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="chatbot-container">
+                <div id="chatMessages" class="chat-messages">
+                    <div class="chat-message bot">
+                        <div class="message-content">
+                            <p>Hello! I'm your AI Health Assistant. I can help you:</p>
+                            <ul>
+                                <li>Analyze your symptoms</li>
+                                <li>Suggest appropriate doctor specializations</li>
+                                <li>Detect if you need emergency care</li>
+                                <li>Help you book an appointment</li>
+                            </ul>
+                            <p><strong>Please describe your symptoms:</strong></p>
+                        </div>
+                    </div>
+                </div>
+                <form id="chatForm" class="chat-input-area">
+                    <textarea id="symptomInput" placeholder="e.g., I have severe chest pain and difficulty breathing..." rows="3" required></textarea>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-paper-plane"></i> Send</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
@@ -218,41 +484,201 @@ document.addEventListener('DOMContentLoaded', function() {
     const editModal = document.getElementById('editProfileModal');
     const editProfileBtn = document.querySelector('.btn-edit-profile');
     const closeModalBtns = document.querySelectorAll('.close-modal');
+    const descriptionsModal = document.getElementById('descriptionsModal');
+    const recordsModal = document.getElementById('recordsModal');
+    const notificationsModal = document.getElementById('notificationsModal');
+    const prescriptionsModal = document.getElementById('prescriptionsModal');
+    const uploadDocumentModal = document.getElementById('uploadDocumentModal');
+    const aiAssistantModal = document.getElementById('aiAssistantModal');
+    const actionButtons = {
+        ai: document.querySelector('[data-action="ai-assistant"]'),
+        upload: document.querySelector('[data-action="upload-document"]'),
+        prescriptions: document.querySelector('[data-action="prescriptions"]'),
+        descriptions: document.querySelector('[data-action="view-descriptions"]'),
+        records: document.querySelector('[data-action="medical-records"]'),
+        notifications: document.querySelector('[data-action="notifications"]')
+    };
     
     editProfileBtn.addEventListener('click', (e) => {
         e.preventDefault();
         editModal.style.display = 'block';
     });
+
+    const openModal = (modalEl) => {
+        if (!modalEl) return;
+        modalEl.style.display = 'flex';
+    };
+
+    // Floating AI button
+    const floatingAiBtn = document.getElementById('floatingAiBtn');
+    floatingAiBtn?.addEventListener('click', () => openModal(aiAssistantModal));
+
+    actionButtons.ai?.addEventListener('click', () => openModal(aiAssistantModal));
+    actionButtons.upload?.addEventListener('click', () => openModal(uploadDocumentModal));
+    actionButtons.prescriptions?.addEventListener('click', () => openModal(prescriptionsModal));
+    actionButtons.descriptions?.addEventListener('click', () => openModal(descriptionsModal));
+    actionButtons.records?.addEventListener('click', () => openModal(recordsModal));
+    actionButtons.notifications?.addEventListener('click', () => openModal(notificationsModal));
     
     closeModalBtns.forEach(btn => {
         btn.addEventListener('click', () => {
-            editModal.style.display = 'none';
+            [editModal, uploadDocumentModal, prescriptionsModal, descriptionsModal, recordsModal, notificationsModal, aiAssistantModal].forEach(m => {
+                if (m) m.style.display = 'none';
+            });
         });
     });
     
     window.addEventListener('click', (e) => {
-        if (e.target === editModal) {
-            editModal.style.display = 'none';
-        }
+        [editModal, uploadDocumentModal, prescriptionsModal, descriptionsModal, recordsModal, notificationsModal, aiAssistantModal].forEach(m => {
+            if (e.target === m) {
+                m.style.display = 'none';
+            }
+        });
     });
+    
+    // Upload Document Form
+    const uploadDocumentForm = document.getElementById('uploadDocumentForm');
+    if (uploadDocumentForm) {
+        uploadDocumentForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const fileInput = document.getElementById('document_file');
+            if (!fileInput.files.length) {
+                alert('Please choose a file to upload.');
+                return;
+            }
+            const formData = new FormData(this);
+            fetch('/user/upload-document', {
+                method: 'POST',
+                body: formData
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Document uploaded successfully');
+                    uploadDocumentModal.style.display = 'none';
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            })
+            .catch(err => {
+                console.error('Error:', err);
+                alert('Upload failed. Please try again.');
+            });
+        });
+    }
+
+    // AI Chatbot Form
+    const chatForm = document.getElementById('chatForm');
+    if (chatForm) {
+        chatForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const symptomInput = document.getElementById('symptomInput');
+            const userMessage = symptomInput.value.trim();
+            
+            if (!userMessage) return;
+
+            // Add user message to chat
+            addChatMessage('user', userMessage);
+            symptomInput.value = '';
+
+            // Send to backend
+            fetch('/user/chat-assistant', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ symptoms: userMessage })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    addChatMessage('bot', data.response, data);
+                } else {
+                    addChatMessage('bot', 'Sorry, I encountered an error. Please try again.');
+                }
+            })
+            .catch(err => {
+                console.error('Error:', err);
+                addChatMessage('bot', 'Sorry, I encountered a connection error. Please try again.');
+            });
+        });
+    }
+
+    // Chat message helper
+    function addChatMessage(sender, text, data = null) {
+        const messagesDiv = document.getElementById('chatMessages');
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `chat-message ${sender}`;
+        
+        let html = `<div class="message-bubble">`;
+        
+        if (sender === 'bot' && data) {
+            // For bot messages with data, render HTML content
+            html += `<div class="message-content">${text}</div>`;
+            
+            if (data.is_emergency) {
+                html += `<div class="emergency-warning"><i class="fas fa-exclamation-triangle"></i><span class="emergency-warning-text">⚠️ EMERGENCY DETECTED - SEEK IMMEDIATE MEDICAL ATTENTION</span></div>`;
+            }
+            
+            if (data.specializations && data.specializations.length > 0) {
+                html += `<div class="recommendations">
+                    <h4><i class="fas fa-stethoscope"></i> Recommended Specializations</h4>
+                    <ul class="recommendation-list">`;
+                data.specializations.forEach(spec => {
+                    const specNameSafe = escapeHtml(spec.name);
+                    html += `<li class="recommendation-item">
+                        <span class="spec-name">${specNameSafe}</span>
+                        <span class="spec-reason">${escapeHtml(spec.reason)}</span>
+                        <button class="book-btn" onclick="bookAppointment('${specNameSafe}')"><i class="fas fa-calendar-check"></i> Book</button>
+                    </li>`;
+                });
+                html += `</ul></div>`;
+            }
+            
+            if (data.severity_score !== undefined) {
+                const severity = Math.round(data.severity_score);
+                const color = severity > 70 ? '#ef4444' : severity > 40 ? '#f59e0b' : '#10b981';
+                html += `<div class="severity-score">
+                    <span class="severity-label">Severity Level:</span>
+                    <div class="severity-bar">
+                        <div class="severity-fill" style="width: ${severity}%; background: linear-gradient(90deg, #fbbf24, #f59e0b);">
+                            ${severity}%
+                        </div>
+                    </div>
+                </div>`;
+            }
+        } else {
+            // For user messages and simple bot messages
+            html += `<p>${sender === 'bot' ? text : escapeHtml(text)}</p>`;
+        }
+        
+        html += '</div>';
+        messageDiv.innerHTML = html;
+        messagesDiv.appendChild(messageDiv);
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    }
+
+    function escapeHtml(text) {
+        const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+        return text.replace(/[&<>"']/g, m => map[m]);
+    }
+
+    window.bookAppointment = function(specialization) {
+        window.location.href = '/doctors?specialization=' + encodeURIComponent(specialization);
+    };
     
     // Edit Profile Form
     const editProfileForm = document.getElementById('editProfileForm');
     editProfileForm.addEventListener('submit', function(e) {
         e.preventDefault();
-        // In a real application, this would send an AJAX request to update the profile
         alert('Profile update functionality would be implemented here.');
         editModal.style.display = 'none';
     });
 });
 
 function joinVideoCall() {
-    // In a real application, this would integrate with a video call service
     alert('Video call functionality would be implemented here.\nThis would connect to services like Zoom, Google Meet, or a custom WebRTC solution.');
 }
 
 function viewDetails(appointmentId) {
-    // In a real application, this would show detailed appointment information
     alert(`Viewing detailed information for appointment #${appointmentId}`);
 }
 </script>

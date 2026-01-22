@@ -5,30 +5,36 @@
 {% block content %}
 <div class="auth-container">
     <div class="auth-card">
-        <h2>Create Account</h2>
-        <p class="auth-subtitle">Join Care_4_U Hospitals today</p>
+        <h2>Create Your Account</h2>
+        <p class="auth-subtitle">Join Care_4_U Hospitals and start your healthcare journey</p>
         
         <form method="POST" action="{{ url_for('signup') }}" class="auth-form" id="signupForm">
             <div class="form-group">
-                <label for="username">Username</label>
+                <label for="username">Full Name</label>
                 <input type="text" id="username" name="username" required 
-                       placeholder="Choose a username" minlength="3">
+                       placeholder="Enter your full name" minlength="3">
                 <i class="fas fa-user"></i>
             </div>
             
             <div class="form-group">
                 <label for="email">Email Address</label>
                 <input type="email" id="email" name="email" required 
-                       placeholder="Enter your email">
+                       placeholder="your.email@example.com">
                 <i class="fas fa-envelope"></i>
+            </div>
+            
+            <div class="form-group">
+                <label for="phone">Phone Number</label>
+                <input type="tel" id="phone" name="phone" 
+                       placeholder="+1 (555) 000-0000" pattern="[0-9+\-\s()]*">
+                <i class="fas fa-phone"></i>
             </div>
             
             <div class="form-row">
                 <div class="form-group">
                     <label for="password">Password</label>
                     <input type="password" id="password" name="password" required 
-                           placeholder="Create password" minlength="6">
-                    <i class="fas fa-lock"></i>
+                           placeholder="Min. 6 characters" minlength="6">
                     <button type="button" class="toggle-password" data-target="password">
                         <i class="fas fa-eye"></i>
                     </button>
@@ -37,19 +43,11 @@
                 <div class="form-group">
                     <label for="confirm_password">Confirm Password</label>
                     <input type="password" id="confirm_password" name="confirm_password" required 
-                           placeholder="Confirm password">
-                    <i class="fas fa-lock"></i>
+                           placeholder="Re-enter password">
                     <button type="button" class="toggle-password" data-target="confirm_password">
                         <i class="fas fa-eye"></i>
                     </button>
                 </div>
-            </div>
-            
-            <div class="form-group">
-                <label for="phone">Phone Number</label>
-                <input type="tel" id="phone" name="phone" 
-                       placeholder="Enter phone number">
-                <i class="fas fa-phone"></i>
             </div>
             
             <div class="form-group terms">
@@ -61,7 +59,7 @@
         </form>
         
         <div class="auth-footer">
-            <p>Already have an account? <a href="{{ url_for('login') }}">Login here</a></p>
+            <p>Already have an account? <a href="{{ url_for('login') }}">Sign in here</a></p>
         </div>
     </div>
 </div>

@@ -150,8 +150,13 @@
                                     <i class="fas fa-check-double"></i> Mark Complete
                                 </button>
                                 <button class="btn-sm btn-warning"
-                                        onclick="addNotes({{ appointment.id }})">
-                                    <i class="fas fa-edit"></i> Add Notes
+                                        onclick="addPrescription({{ appointment.id }}, '{{ appointment.status }}')">
+                                    <i class="fas fa-prescription"></i> Add Prescription
+                                </button>
+                            {% elif appointment.status == 'completed' %}
+                                <button class="btn-sm btn-warning"
+                                        onclick="addPrescription({{ appointment.id }}, '{{ appointment.status }}')">
+                                    <i class="fas fa-prescription"></i> Add Prescription
                                 </button>
                             {% endif %}
                         </div>
@@ -246,20 +251,21 @@
 <div id="notesModal" class="modal">
     <div class="modal-content">
         <div class="modal-header">
-            <h3>Add Appointment Notes</h3>
+            <h3>Add Prescription</h3>
             <button class="close-modal">&times;</button>
         </div>
         <div class="modal-body">
             <form id="notesForm">
                 <input type="hidden" id="appointment_id" name="appointment_id">
+                <input type="hidden" id="appointment_status" name="appointment_status">
                 <div class="form-group">
-                    <label for="notes">Notes</label>
+                    <label for="notes">Prescription / Notes</label>
                     <textarea id="notes" name="notes" rows="5" required 
-                              placeholder="Enter appointment notes, diagnosis, or recommendations..."></textarea>
+                              placeholder="Enter prescription, diagnosis, or recommendations..."></textarea>
                 </div>
                 <div class="modal-actions">
                     <button type="button" class="btn btn-secondary close-modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Save Notes</button>
+                    <button type="submit" class="btn btn-primary">Save Prescription</button>
                 </div>
             </form>
         </div>
@@ -292,9 +298,10 @@ document.addEventListener('DOMContentLoaded', function() {
         e.preventDefault();
         
         const appointmentId = document.getElementById('appointment_id').value;
+        const appointmentStatus = document.getElementById('appointment_status').value;
         const notes = document.getElementById('notes').value;
         const formData = new FormData();
-        formData.append('status', 'confirmed');
+        formData.append('status', appointmentStatus || 'confirmed');
         formData.append('notes', notes);
         
         fetch(`/doctor/update-appointment/${appointmentId}`, {
@@ -374,9 +381,10 @@ function completeAppointment(appointmentId) {
     });
 }
 
-// Add notes
-function addNotes(appointmentId) {
+// Add prescription / notes
+function addPrescription(appointmentId, status) {
     document.getElementById('appointment_id').value = appointmentId;
+    document.getElementById('appointment_status').value = status || 'confirmed';
     document.getElementById('notes').value = '';
     document.getElementById('notesModal').style.display = 'block';
 }

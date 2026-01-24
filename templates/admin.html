@@ -378,6 +378,48 @@
         </div>
     </div>
 
+    <!-- Appointment Details Modal -->
+    <div id="appointmentDetailsModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Appointment Details</h3>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-section">
+                    <h4>Appointment Information</h4>
+                    <div class="summary-row">
+                        <span>Appointment ID</span>
+                        <strong id="detailId">-</strong>
+                    </div>
+                    <div class="summary-row">
+                        <span>Patient Name</span>
+                        <strong id="detailPatient">-</strong>
+                    </div>
+                    <div class="summary-row">
+                        <span>Doctor Name</span>
+                        <strong id="detailDoctor">-</strong>
+                    </div>
+                    <div class="summary-row">
+                        <span>Date</span>
+                        <strong id="detailDate">-</strong>
+                    </div>
+                    <div class="summary-row">
+                        <span>Time</span>
+                        <strong id="detailTime">-</strong>
+                    </div>
+                    <div class="summary-row">
+                        <span>Status</span>
+                        <strong id="detailStatus">-</strong>
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button class="btn btn-secondary close-modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Reports Modal -->
     <div id="reportsModal" class="modal">
         <div class="modal-content">
@@ -409,7 +451,6 @@
                     <h4>Export</h4>
                     <p>Download appointment data for external analysis.</p>
                     <div class="modal-actions">
-                        <a class="btn btn-primary" href="{{ url_for('manage_appointments') }}">Go to Appointments</a>
                         <button class="btn btn-secondary close-modal">Close</button>
                     </div>
                 </div>
@@ -626,8 +667,42 @@ function openEditDoctor(button) {
 
 // View appointment details
 function viewDetails(appointmentId) {
-    // In a real application, this would open a detailed view modal
-    alert(`Viewing details for appointment #${appointmentId}`);
+    // Find the appointment row in the table
+    const rows = document.querySelectorAll('.appointments-table tbody tr');
+    let appointmentData = null;
+    
+    rows.forEach(row => {
+        if (row.textContent.includes(`#${appointmentId}`)) {
+            const cells = row.querySelectorAll('td');
+            appointmentData = {
+                id: cells[0].textContent.trim(),
+                patient: cells[1].textContent.trim(),
+                doctor: cells[2].textContent.trim(),
+                dateTime: cells[3].textContent.trim(),
+                status: cells[4].textContent.trim()
+            };
+        }
+    });
+    
+    if (appointmentData) {
+        // Extract date and time
+        const dateTimeParts = appointmentData.dateTime.split('\n').map(p => p.trim());
+        const date = dateTimeParts[0] || '-';
+        const time = dateTimeParts[1] || '-';
+        
+        // Populate modal fields
+        document.getElementById('detailId').textContent = appointmentData.id;
+        document.getElementById('detailPatient').textContent = appointmentData.patient;
+        document.getElementById('detailDoctor').textContent = appointmentData.doctor;
+        document.getElementById('detailDate').textContent = date;
+        document.getElementById('detailTime').textContent = time;
+        document.getElementById('detailStatus').textContent = appointmentData.status;
+        
+        // Open modal
+        const modal = document.getElementById('appointmentDetailsModal');
+        modal.style.display = 'flex';
+        modal.classList.add('active');
+    }
 }
 </script>
 {% endblock %}

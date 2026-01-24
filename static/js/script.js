@@ -1,6 +1,54 @@
 // Main JavaScript for Care_4_U Hospitals
 
 document.addEventListener('DOMContentLoaded', function() {
+    // Dark Mode Toggle
+    const themeToggle = document.getElementById('themeToggle');
+    const htmlElement = document.documentElement;
+    const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const savedTheme = localStorage.getItem('theme') || (prefersDark ? 'dark' : 'light');
+
+    // Set initial theme (use attribute only for dark)
+    if (savedTheme === 'dark') {
+        htmlElement.setAttribute('data-theme', 'dark');
+    } else {
+        htmlElement.removeAttribute('data-theme');
+    }
+    updateThemeIcon(savedTheme);
+    
+    if (themeToggle) {
+        themeToggle.addEventListener('click', () => {
+            const isDark = htmlElement.getAttribute('data-theme') === 'dark';
+            const newTheme = isDark ? 'light' : 'dark';
+
+            if (newTheme === 'dark') {
+                htmlElement.setAttribute('data-theme', 'dark');
+            } else {
+                htmlElement.removeAttribute('data-theme');
+            }
+            localStorage.setItem('theme', newTheme);
+            updateThemeIcon(newTheme);
+            
+            // Add smooth transition animation
+            document.body.style.transition = 'background-color 0.3s ease, color 0.3s ease';
+            setTimeout(() => {
+                document.body.style.transition = '';
+            }, 300);
+        });
+    }
+    
+    function updateThemeIcon(theme) {
+        if (!themeToggle) return;
+        const icon = themeToggle.querySelector('i');
+        if (!icon) return;
+        if (theme === 'dark') {
+            icon.classList.remove('fa-moon');
+            icon.classList.add('fa-sun');
+        } else {
+            icon.classList.remove('fa-sun');
+            icon.classList.add('fa-moon');
+        }
+    }
+    
     // Mobile Navigation Toggle
     const mobileToggle = document.querySelector('.mobile-toggle');
     const navMenu = document.querySelector('.nav-menu');
@@ -260,6 +308,48 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // Utility Functions
+// Global password toggle accessible from inline onclick
+window.togglePassword = function(button) {
+    try {
+        // If called with a button (eye icon), toggle that specific input
+        if (button && button.getAttribute) {
+            const targetId = button.getAttribute('data-target');
+            const input = document.getElementById(targetId);
+            if (!input) return false;
+            const icon = button.querySelector('i');
+            const toText = input.type === 'password';
+            input.type = toText ? 'text' : 'password';
+            if (icon) {
+                icon.classList.toggle('fa-eye', !toText);
+                icon.classList.toggle('fa-eye-slash', toText);
+            }
+            button.setAttribute('aria-pressed', toText ? 'true' : 'false');
+            return false;
+        }
+
+        // If called without arguments (from checkbox), toggle both password fields
+        const pwd = document.getElementById('password');
+        const confirm = document.getElementById('confirm_password');
+        const show = document.getElementById('show_password');
+        if (!pwd && !confirm) return false;
+        const toText = show && show.checked ? true : false;
+        if (pwd) pwd.type = toText ? 'text' : 'password';
+        if (confirm) confirm.type = toText ? 'text' : 'password';
+        return false;
+    } catch (e) {
+        console.error('Password toggle error:', e);
+        return false;
+    }
+};
+
+// Event delegation for all password toggle buttons
+document.addEventListener('click', function(e) {
+    const btn = e.target.closest('.toggle-password');
+    if (btn) {
+        e.preventDefault();
+        window.togglePassword(btn);
+    }
+});
 function showToast(message, type = 'info') {
     const toast = document.createElement('div');
     toast.className = `toast toast-${type}`;

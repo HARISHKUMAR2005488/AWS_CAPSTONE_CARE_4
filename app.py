@@ -30,71 +30,6 @@ with app.app_context():
     uploads_dir = os.path.join(app.instance_path, 'uploads')
     os.makedirs(uploads_dir, exist_ok=True)
     
-    # Add sample admin if none exists
-    if not User.query.filter_by(user_type='admin').first():
-        admin = User(
-            username='admin',
-            email='admin@care4u.com',
-            password=generate_password_hash('admin123', method='pbkdf2:sha256'),
-            user_type='admin'
-        )
-        db.session.add(admin)
-        db.session.commit()
-    
-    # Add sample doctors if none exists
-    if not Doctor.query.first():
-        doctors = [
-            Doctor(
-                name='Dr. Sarah Johnson',
-                specialization='Cardiology',
-                qualifications='MD, FACC',
-                experience=15,
-                phone='+1-555-0101',
-                email='sarah.j@care4u.com',
-                consultation_fee=150.00,
-                available_days='Mon,Tue,Wed,Thu',
-                available_time='9:00 AM - 4:00 PM'
-            ),
-            Doctor(
-                name='Dr. Michael Chen',
-                specialization='Neurology',
-                qualifications='MD, PhD',
-                experience=12,
-                phone='+1-555-0102',
-                email='michael.c@care4u.com',
-                consultation_fee=180.00,
-                available_days='Tue,Wed,Thu,Fri',
-                available_time='10:00 AM - 6:00 PM'
-            ),
-            Doctor(
-                name='Dr. Emily Davis',
-                specialization='Pediatrics',
-                qualifications='MD, FAAP',
-                experience=8,
-                phone='+1-555-0103',
-                email='emily.d@care4u.com',
-                consultation_fee=120.00,
-                available_days='Mon,Tue,Thu,Fri',
-                available_time='8:00 AM - 3:00 PM'
-            )
-        ]
-        db.session.add_all(doctors)
-        db.session.commit()
-    
-    # Create doctor login accounts if they don't exist
-    doctors = Doctor.query.all()
-    for doctor in doctors:
-        if not User.query.filter_by(doctor_id=doctor.id).first():
-            doctor_user = User(
-                username=doctor.name.lower().replace(' ', '_').replace('.', ''),
-                email=doctor.email,
-                password=generate_password_hash('doctor123', method='pbkdf2:sha256'),
-                user_type='doctor',
-                doctor_id=doctor.id,
-                phone=doctor.phone
-            )
-            db.session.add(doctor_user)
-    db.session.commit()
 
 # Routes
 @app.route('/')
@@ -142,6 +77,18 @@ def signup():
         password = request.form.get('password')
         confirm_password = request.form.get('confirm_password')
         phone = request.form.get('phone')
+        user_type = request.form.get('user_type', 'patient')
+        # Doctor-specific fields
+        specialization = request.form.get('specialization')
+        qualifications = request.form.get('qualifications')
+        experience = request.form.get('experience')
+        consultation_fee = request.form.get('consultation_fee')
+        available_days = request.form.get('available_days')
+        available_time = request.form.get('available_time')
+        
+        valid_roles = {'patient', 'doctor', 'admin'}
+        if user_type not in valid_roles:
+            user_type = 'patient'
         
         # Validation
         if password != confirm_password:
@@ -156,14 +103,30 @@ def signup():
             flash('Username already taken', 'danger')
             return redirect(url_for('signup'))
         
-        # Create new user
         new_user = User(
             username=username,
             email=email,
             password=generate_password_hash(password, method='pbkdf2:sha256'),
             phone=phone,
-            user_type='patient'
+            user_type=user_type
         )
+        
+        # If doctor, create linked Doctor profile
+        if user_type == 'doctor':
+            doctor = Doctor(
+                name=username,
+                specialization=specialization or 'General',
+                qualifications=qualifications or '',
+                experience=int(experience) if experience else 0,
+                phone=phone,
+                email=email,
+                consultation_fee=float(consultation_fee) if consultation_fee else 0.0,
+                available_days=available_days or '',
+                available_time=available_time or ''
+            )
+            db.session.add(doctor)
+            db.session.flush()
+            new_user.doctor_id = doctor.id
         
         db.session.add(new_user)
         db.session.commit()
@@ -426,20 +389,26 @@ def delete_doctor(doctor_id):
 
     doctor = Doctor.query.get_or_404(doctor_id)
 
-    # Prevent deletion if the doctor has any appointments
-    existing_appointments = Appointment.query.filter_by(doctor_id=doctor_id).count()
-    if existing_appointments > 0:
-        return jsonify({'success': False, 'message': 'Cannot delete doctor with existing appointments'})
+    try:
+        # Admin has full access to delete doctors regardless of appointments
+        # Delete all appointments associated with this doctor
+        existing_appointments = Appointment.query.filter_by(doctor_id=doctor_id).all()
+        for appointment in existing_appointments:
+            db.session.delete(appointment)
 
-    # Remove linked doctor user accounts
-    doctor_users = User.query.filter_by(doctor_id=doctor_id).all()
-    for user in doctor_users:
-        db.session.delete(user)
+        # Remove linked doctor user accounts
+        doctor_users = User.query.filter_by(doctor_id=doctor_id).all()
+        for user in doctor_users:
+            db.session.delete(user)
 
-    db.session.delete(doctor)
-    db.session.commit()
+        # Delete the doctor
+        db.session.delete(doctor)
+        db.session.commit()
 
-    return jsonify({'success': True, 'message': 'Doctor removed successfully'})
+        return jsonify({'success': True, 'message': 'Doctor and all associated appointments removed successfully'})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': f'Error deleting doctor: {str(e)}'})
 
 @app.route('/api/available-slots/<int:doctor_id>')
 def available_slots(doctor_id):

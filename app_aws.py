@@ -1,14 +1,12 @@
 import os
 import uuid
-import base64
 from datetime import datetime
 from functools import lru_cache
 
 import boto3
 from botocore.exceptions import ClientError
-from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
+from flask import Flask, render_template, request, redirect, url_for, session, flash
 from werkzeug.security import check_password_hash, generate_password_hash
-from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
 app.secret_key = os.getenv("FLASK_SECRET_KEY", "change_me")
@@ -22,16 +20,10 @@ sns = boto3.client("sns", region_name=REGION)
 USERS_TABLE = os.getenv("USERS_TABLE", "Users")
 DOCTORS_TABLE = os.getenv("DOCTORS_TABLE", "Doctors")
 APPOINTMENTS_TABLE = os.getenv("APPOINTMENTS_TABLE", "Appointments")
-MEDICAL_RECORDS_TABLE = os.getenv("MEDICAL_RECORDS_TABLE", "MedicalRecords")
 
 users_table = dynamodb.Table(USERS_TABLE)
 doctors_table = dynamodb.Table(DOCTORS_TABLE)
 appointments_table = dynamodb.Table(APPOINTMENTS_TABLE)
-medical_records_table = dynamodb.Table(MEDICAL_RECORDS_TABLE)
-
-# File upload configuration
-MAX_FILE_SIZE = 1 * 1024 * 1024  # 1MB limit for DynamoDB storage
-ALLOWED_EXTENSIONS = {'pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx'}
 
 # SNS topic for booking notifications (subscribe email endpoints to this topic)
 SNS_TOPIC_ARN = os.getenv("SNS_TOPIC_ARN")
@@ -44,10 +36,6 @@ def get_user(username: str):
 
 def send_notification(subject: str, message: str) -> None:
     if not SNS_TOPIC_ARN:
-
-
-def allowed_file(filename: str) -> bool:
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
         app.logger.warning("SNS_TOPIC_ARN not set; skipping notification")
         return
     try:
@@ -305,147 +293,6 @@ def my_appointments():
             KeyConditionExpression=boto3.dynamodb.conditions.Key("username").eq(username),
         )
         if has_username_index()
-@app.route("/user/upload-document", methods=["POST"])
-def upload_document():
-    if "username" not in session:
-        return jsonify({"success": False, "message": "Not authenticated"}), 401
-
-    username = session["username"]
-    user = get_user(username)
-    
-    if not user or user.get("role") != "user":
-        return jsonify({"success": False, "message": "Access denied"}), 403
-
-    file = request.files.get("document")
-    description = request.form.get("description", "").strip()
-
-    if not file or file.filename == "":
-        return jsonify({"success": False, "message": "No file provided"}), 400
-
-    if not allowed_file(file.filename):
-        return jsonify({
-            "success": False, 
-            "message": f"File type not allowed. Allowed types: {', '.join(ALLOWED_EXTENSIONS)}"
-        }), 400
-
-    try:
-        # Read file content
-        file_content = file.read()
-        file_size = len(file_content)
-
-        # Check file size (DynamoDB has 400KB item limit, we set 1MB app limit)
-        if file_size > MAX_FILE_SIZE:
-            return jsonify({
-                "success": False,
-                "message": f"File too large. Maximum size: {MAX_FILE_SIZE / (1024*1024)}MB"
-            }), 400
-
-        # Encode file as base64 for storage in DynamoDB
-        file_base64 = base64.b64encode(file_content).decode('utf-8')
-        
-        filename = secure_filename(file.filename)
-        file_type = filename.rsplit('.', 1)[1].lower() if '.' in filename else 'unknown'
-        
-        # Create medical record
-        record_id = str(uuid.uuid4())
-        medical_records_table.put_item(
-            Item={
-                "id": record_id,
-                "username": username,
-                "filename": filename,
-                "description": description,
-                "file_type": file_type,
-                "file_size": file_size,
-                "file_data": file_base64,  # Base64 encoded file
-                "upload_date": datetime.utcnow().isoformat(),
-            }
-        )
-
-        return jsonify({
-            "success": True,
-            "message": "Document uploaded successfully",
-            "description": description
-        })
-
-    except ClientError as exc:
-        app.logger.error("DynamoDB error: %s", exc)
-        return jsonify({"success": False, "message": "Database error"}), 500
-    except Exception as exc:
-        app.logger.error("Upload error: %s", exc)
-        return jsonify({"success": False, "message": str(exc)}), 500
-
-
-@app.route("/user/medical-records")
-def medical_records():
-    if "username" not in session:
-        return redirect(url_for("login"))
-
-    username = session["username"]
-    
-    try:
-        # Query medical records for this user
-        response = medical_records_table.scan(
-            FilterExpression=boto3.dynamodb.conditions.Attr("username").eq(username)
-        )
-        
-        records = response.get("Items", [])
-        
-        # Remove file_data from response to avoid sending large base64 in list view
-        for record in records:
-            if "file_data" in record:
-                del record["file_data"]
-        
-        # Sort by upload date (newest first)
-        records.sort(key=lambda x: x.get("upload_date", ""), reverse=True)
-        
-        return render_template("patient_records.html", medical_records=records)
-        
-    except ClientError as exc:
-        app.logger.error("Error fetching medical records: %s", exc)
-        flash("Error loading medical records", "danger")
-        return redirect(url_for("home"))
-
-
-@app.route("/user/download-document/<record_id>")
-def download_document(record_id):
-    if "username" not in session:
-        return jsonify({"success": False, "message": "Not authenticated"}), 401
-
-    username = session["username"]
-    
-    try:
-        # Get the medical record
-        response = medical_records_table.get_item(Key={"id": record_id})
-        record = response.get("Item")
-        
-        if not record:
-            return jsonify({"success": False, "message": "Record not found"}), 404
-        
-        # Verify ownership
-        if record.get("username") != username:
-            return jsonify({"success": False, "message": "Access denied"}), 403
-        
-        # Decode base64 file data
-        file_data = base64.b64decode(record.get("file_data", ""))
-        
-        from flask import send_file
-        import io
-        
-        return send_file(
-            io.BytesIO(file_data),
-            download_name=record.get("filename", "document"),
-            as_attachment=True,
-            mimetype=f'application/{record.get("file_type", "octet-stream")}'
-        )
-        
-    except ClientError as exc:
-        app.logger.error("Error downloading document: %s", exc)
-        return jsonify({"success": False, "message": "Database error"}), 500
-    except Exception as exc:
-        app.logger.error("Download error: %s", exc)
-        return jsonify({"success": False, "message": str(exc)}), 500
-
-
         else appointments_table.scan()
     )
 

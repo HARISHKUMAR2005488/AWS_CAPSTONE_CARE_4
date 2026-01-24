@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, send_from_directory
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
@@ -7,7 +7,7 @@ import json
 import os
 
 from config import Config
-from database import db, User, Doctor, Appointment, TimeSlot
+from database import db, User, Doctor, Appointment, TimeSlot, MedicalRecord
 
 app = Flask(__name__)
 app.config.from_object(Config)
@@ -495,9 +495,28 @@ def upload_document():
     os.makedirs(dest_dir, exist_ok=True)
 
     try:
-        file.save(os.path.join(dest_dir, safe_name))
+        file_path = os.path.join(dest_dir, safe_name)
+        file.save(file_path)
+        
+        # Get file size and type
+        file_size = os.path.getsize(file_path)
+        file_type = filename.rsplit('.', 1)[1].lower() if '.' in filename else 'unknown'
+        
+        # Create medical record entry in database
+        medical_record = MedicalRecord(
+            patient_id=current_user.id,
+            filename=safe_name,
+            original_filename=filename,
+            description=description,
+            file_type=file_type,
+            file_size=file_size
+        )
+        db.session.add(medical_record)
+        db.session.commit()
+        
         return jsonify({'success': True, 'message': 'Document uploaded', 'description': description})
     except Exception as e:
+        db.session.rollback()
         return jsonify({'success': False, 'message': str(e)})
 
 @app.route('/cancel-appointment/<int:appointment_id>')
@@ -544,6 +563,113 @@ def doctor_update_appointment(appointment_id):
         return jsonify({'success': True, 'message': f'Appointment {new_status} successfully'})
     
     return jsonify({'success': False, 'message': 'Invalid status'})
+
+@app.route('/doctor/patients')
+@login_required
+def doctor_patients():
+    if current_user.user_type != 'doctor':
+        flash('Access denied', 'danger')
+        return redirect(url_for('index'))
+    
+    doctor = Doctor.query.get(current_user.doctor_id)
+    
+    # Get all unique patients who have appointments with this doctor
+    patient_ids = db.session.query(Appointment.patient_id).filter_by(
+        doctor_id=doctor.id
+    ).distinct().all()
+    
+    patient_ids = [pid[0] for pid in patient_ids]
+    patients = User.query.filter(User.id.in_(patient_ids)).all()
+    
+    # Get appointment counts for each patient
+    patient_data = []
+    for patient in patients:
+        appointments = Appointment.query.filter_by(
+            patient_id=patient.id,
+            doctor_id=doctor.id
+        ).all()
+        
+        patient_data.append({
+            'patient': patient,
+            'total_appointments': len(appointments),
+            'last_appointment': max([a.appointment_date for a in appointments]) if appointments else None,
+            'medical_records_count': MedicalRecord.query.filter_by(patient_id=patient.id).count()
+        })
+    
+    return render_template('doctor_patients.html', 
+                         doctor=doctor,
+                         patient_data=patient_data)
+
+@app.route('/doctor/patient/<int:patient_id>/records')
+@login_required
+def doctor_view_patient_records(patient_id):
+    if current_user.user_type != 'doctor':
+        flash('Access denied', 'danger')
+        return redirect(url_for('index'))
+    
+    doctor = Doctor.query.get(current_user.doctor_id)
+    patient = User.query.get_or_404(patient_id)
+    
+    # Verify that this doctor has treated this patient
+    appointment_exists = Appointment.query.filter_by(
+        patient_id=patient_id,
+        doctor_id=doctor.id
+    ).first()
+    
+    if not appointment_exists:
+        flash('You can only view records of your patients', 'danger')
+        return redirect(url_for('doctor_patients'))
+    
+    # Get patient's medical records
+    medical_records = MedicalRecord.query.filter_by(
+        patient_id=patient_id
+    ).order_by(MedicalRecord.upload_date.desc()).all()
+    
+    # Get patient's appointments with this doctor
+    appointments = Appointment.query.filter_by(
+        patient_id=patient_id,
+        doctor_id=doctor.id
+    ).order_by(Appointment.appointment_date.desc()).all()
+    
+    return render_template('patient_records.html',
+                         doctor=doctor,
+                         patient=patient,
+                         medical_records=medical_records,
+                         appointments=appointments)
+
+@app.route('/doctor/download-record/<int:record_id>')
+@login_required
+def doctor_download_record(record_id):
+    if current_user.user_type != 'doctor':
+        flash('Access denied', 'danger')
+        return redirect(url_for('index'))
+    
+    doctor = Doctor.query.get(current_user.doctor_id)
+    medical_record = MedicalRecord.query.get_or_404(record_id)
+    
+    # Verify that this doctor has treated this patient
+    appointment_exists = Appointment.query.filter_by(
+        patient_id=medical_record.patient_id,
+        doctor_id=doctor.id
+    ).first()
+    
+    if not appointment_exists:
+        flash('You can only access records of your patients', 'danger')
+        return redirect(url_for('doctor_patients'))
+    
+    # Construct file path
+    upload_dir = os.path.join(app.instance_path, 'uploads', str(medical_record.patient_id))
+    
+    try:
+        return send_from_directory(
+            upload_dir, 
+            medical_record.filename,
+            as_attachment=True,
+            download_name=medical_record.original_filename
+        )
+    except FileNotFoundError:
+        flash('File not found', 'danger')
+        return redirect(url_for('doctor_view_patient_records', patient_id=medical_record.patient_id))
 
 # AI Health Assistant Chatbot Endpoint
 @app.route('/user/chat-assistant', methods=['POST'])

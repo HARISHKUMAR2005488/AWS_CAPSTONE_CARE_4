@@ -97,6 +97,9 @@
     <div class="appointments-section">
         <div class="section-header">
             <h2>Today's Appointments ({{ today.strftime('%B %d, %Y') }})</h2>
+            <a href="{{ url_for('doctor_patients') }}" class="btn btn-primary">
+                <i class="fas fa-users"></i> View All Patients & Records
+            </a>
         </div>
         
         {% if today_appointments %}

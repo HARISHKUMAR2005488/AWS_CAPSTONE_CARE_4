@@ -67,3 +67,20 @@ class TimeSlot(db.Model):
     
     def __repr__(self):
         return f'<TimeSlot {self.day_of_week} {self.start_time}-{self.end_time}>'
+
+class MedicalRecord(db.Model):
+    __tablename__ = 'medical_records'
+    id = db.Column(db.Integer, primary_key=True)
+    patient_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    filename = db.Column(db.String(255), nullable=False)
+    original_filename = db.Column(db.String(255), nullable=False)
+    description = db.Column(db.Text)
+    file_type = db.Column(db.String(50))
+    file_size = db.Column(db.Integer)
+    upload_date = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Relationship to patient
+    patient = db.relationship('User', backref=db.backref('medical_records', lazy=True))
+    
+    def __repr__(self):
+        return f'<MedicalRecord {self.original_filename}>'

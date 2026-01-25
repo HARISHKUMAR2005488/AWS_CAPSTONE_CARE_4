@@ -77,7 +77,11 @@ def signup():
         password = request.form.get('password')
         confirm_password = request.form.get('confirm_password')
         phone = request.form.get('phone')
-        user_type = request.form.get('user_type', 'patient')
+        # Fix: Get user_type from 'role' field in the form
+        user_type = request.form.get('role') or request.form.get('user_type', 'patient')
+        # Convert 'user' to 'patient' for consistency
+        if user_type == 'user':
+            user_type = 'patient'
         # Doctor-specific fields
         specialization = request.form.get('specialization')
         qualifications = request.form.get('qualifications')
@@ -89,6 +93,9 @@ def signup():
         valid_roles = {'patient', 'doctor', 'admin'}
         if user_type not in valid_roles:
             user_type = 'patient'
+        
+        # Debug logging
+        print(f"DEBUG SIGNUP: user_type = '{user_type}'")
         
         # Validation
         if password != confirm_password:
@@ -113,6 +120,7 @@ def signup():
         
         # If doctor, create linked Doctor profile
         if user_type == 'doctor':
+            print(f"DEBUG: Creating doctor profile for {username}")
             doctor = Doctor(
                 name=username,
                 specialization=specialization or 'General',
@@ -122,16 +130,19 @@ def signup():
                 email=email,
                 consultation_fee=float(consultation_fee) if consultation_fee else 0.0,
                 available_days=available_days or '',
-                available_time=available_time or ''
+                available_time=available_time or '',
+                is_available=True
             )
             db.session.add(doctor)
             db.session.flush()
             new_user.doctor_id = doctor.id
+            print(f"DEBUG: Doctor created with ID {doctor.id}, linked to user")
         
         db.session.add(new_user)
         db.session.commit()
         
-        flash('Registration successful! Please login.', 'success')
+        success_msg = f"Registration successful as {user_type}! Please login."
+        flash(success_msg, 'success')
         return redirect(url_for('login'))
     
     return render_template('signup.html')
@@ -157,6 +168,11 @@ def doctors():
     
     doctors_list = query.all()
     specializations = db.session.query(Doctor.specialization).distinct().all()
+    
+    # Debug logging
+    print(f"DEBUG: Found {len(doctors_list)} doctors")
+    for doc in doctors_list:
+        print(f"  - {doc.name}, {doc.specialization}, Available: {doc.is_available}")
     
     return render_template('doctors.html', 
                          doctors=doctors_list, 

@@ -7,7 +7,7 @@ import json
 import os
 
 from config import Config
-from database import db, User, Doctor, Appointment, TimeSlot, MedicalRecord
+from database import db, User, Doctor, Appointment, TimeSlot, MedicalRecord, Feedback
 
 app = Flask(__name__)
 app.config.from_object(Config)
@@ -169,13 +169,31 @@ def doctors():
     doctors_list = query.all()
     specializations = db.session.query(Doctor.specialization).distinct().all()
     
-    # Debug logging
-    print(f"DEBUG: Found {len(doctors_list)} doctors")
+    # Calculate ratings for each doctor
+    doctors_with_ratings = []
     for doc in doctors_list:
-        print(f"  - {doc.name}, {doc.specialization}, Available: {doc.is_available}")
+        feedback = Feedback.query.filter_by(doctor_id=doc.id).all()
+        if feedback:
+            average_rating = sum([f.rating for f in feedback]) / len(feedback)
+            total_reviews = len(feedback)
+        else:
+            average_rating = 0
+            total_reviews = 0
+        
+        doctors_with_ratings.append({
+            'doctor': doc,
+            'average_rating': round(average_rating, 1),
+            'total_reviews': total_reviews
+        })
+    
+    # Debug logging
+    print(f"DEBUG: Found {len(doctors_with_ratings)} doctors")
+    for item in doctors_with_ratings:
+        doc = item['doctor']
+        print(f"  - {doc.name}, {doc.specialization}, Rating: {item['average_rating']}/5 ({item['total_reviews']} reviews)")
     
     return render_template('doctors.html', 
-                         doctors=doctors_list, 
+                         doctors_with_ratings=doctors_with_ratings, 
                          specializations=[s[0] for s in specializations])
 
 @app.route('/book-appointment/<int:doctor_id>', methods=['GET', 'POST'])
@@ -244,7 +262,58 @@ def user_dashboard():
         patient_id=current_user.id
     ).order_by(Appointment.appointment_date.desc()).all()
     
-    return render_template('user.html', appointments=appointments)
+    # Get feedback data for appointments
+    feedback_dict = {}
+    for appointment in appointments:
+        feedback = Feedback.query.filter_by(appointment_id=appointment.id).first()
+        feedback_dict[appointment.id] = feedback
+    
+    return render_template('user.html', appointments=appointments, feedback_dict=feedback_dict)
+
+@app.route('/submit-feedback/<int:appointment_id>', methods=['POST'])
+@login_required
+def submit_feedback(appointment_id):
+    if current_user.user_type != 'patient':
+        return jsonify({'success': False, 'message': 'Only patients can submit feedback'})
+    
+    appointment = Appointment.query.get_or_404(appointment_id)
+    
+    # Verify this is the patient's appointment
+    if appointment.patient_id != current_user.id:
+        return jsonify({'success': False, 'message': 'Unauthorized'})
+    
+    # Check if appointment is completed
+    if appointment.status != 'completed':
+        return jsonify({'success': False, 'message': 'Can only provide feedback for completed appointments'})
+    
+    # Check if feedback already exists
+    existing_feedback = Feedback.query.filter_by(appointment_id=appointment_id).first()
+    if existing_feedback:
+        return jsonify({'success': False, 'message': 'Feedback already submitted for this appointment'})
+    
+    try:
+        rating = int(request.form.get('rating'))
+        comment = request.form.get('comment', '').strip()
+        
+        if rating < 1 or rating > 5:
+            return jsonify({'success': False, 'message': 'Rating must be between 1 and 5 stars'})
+        
+        feedback = Feedback(
+            appointment_id=appointment_id,
+            patient_id=current_user.id,
+            doctor_id=appointment.doctor_id,
+            rating=rating,
+            comment=comment
+        )
+        
+        db.session.add(feedback)
+        db.session.commit()
+        
+        flash('Thank you for your feedback!', 'success')
+        return jsonify({'success': True, 'message': 'Feedback submitted successfully!'})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': str(e)})
 
 @app.route('/doctor/dashboard')
 @login_required
@@ -277,6 +346,15 @@ def doctor_dashboard():
     confirmed_count = len([a for a in all_appointments if a.status == 'confirmed'])
     completed_count = len([a for a in all_appointments if a.status == 'completed'])
     
+    # Get feedback statistics
+    all_feedback = Feedback.query.filter_by(doctor_id=doctor.id).all()
+    if all_feedback:
+        average_rating = sum([f.rating for f in all_feedback]) / len(all_feedback)
+        total_reviews = len(all_feedback)
+    else:
+        average_rating = 0
+        total_reviews = 0
+    
     return render_template('doctor.html',
                          doctor=doctor,
                          today_appointments=today_appointments,
@@ -285,6 +363,8 @@ def doctor_dashboard():
                          pending_count=pending_count,
                          confirmed_count=confirmed_count,
                          completed_count=completed_count,
+                         average_rating=average_rating,
+                         total_reviews=total_reviews,
                          today=today)
 
 @app.route('/admin/dashboard')
@@ -352,24 +432,56 @@ def add_doctor():
         return jsonify({'success': False, 'message': 'Access denied'})
     
     try:
+        username = request.form.get('username')
+        email = request.form.get('email')
+        password = request.form.get('password')
+        name = request.form.get('name')
+        
+        # Validate required fields
+        if not username or not email or not password or not name:
+            return jsonify({'success': False, 'message': 'Username, email, password, and name are required'})
+        
+        # Check if username or email already exists
+        if User.query.filter_by(username=username).first():
+            return jsonify({'success': False, 'message': 'Username already exists'})
+        
+        if User.query.filter_by(email=email).first():
+            return jsonify({'success': False, 'message': 'Email already registered'})
+        
+        # Create Doctor profile first
         doctor = Doctor(
-            name=request.form.get('name'),
+            name=name,
             specialization=request.form.get('specialization'),
             qualifications=request.form.get('qualifications'),
             experience=int(request.form.get('experience', 0)),
             phone=request.form.get('phone'),
-            email=request.form.get('email'),
+            email=email,
             consultation_fee=float(request.form.get('consultation_fee', 0)),
             available_days=request.form.get('available_days'),
-            available_time=request.form.get('available_time')
+            available_time=request.form.get('available_time'),
+            is_available=True
         )
         
         db.session.add(doctor)
+        db.session.flush()  # Get the doctor ID
+        
+        # Create User account linked to Doctor
+        user = User(
+            username=username,
+            email=email,
+            password=generate_password_hash(password, method='pbkdf2:sha256'),
+            phone=request.form.get('phone'),
+            user_type='doctor',
+            doctor_id=doctor.id
+        )
+        
+        db.session.add(user)
         db.session.commit()
         
-        flash('Doctor added successfully', 'success')
-        return jsonify({'success': True})
+        flash(f'Doctor {name} added successfully! Login credentials: {username}', 'success')
+        return jsonify({'success': True, 'message': f'Doctor added successfully! Username: {username}'})
     except Exception as e:
+        db.session.rollback()
         return jsonify({'success': False, 'message': str(e)})
 
 @app.route('/admin/update-doctor/<int:doctor_id>', methods=['POST'])
@@ -503,6 +615,70 @@ def upload_document():
     except Exception as e:
         db.session.rollback()
         return jsonify({'success': False, 'message': str(e)})
+
+@app.route('/upload-profile-picture', methods=['POST'])
+@login_required
+def upload_profile_picture():
+    """Upload profile picture for user (patient/doctor/admin)"""
+    
+    # File validation
+    if 'profile_picture' not in request.files:
+        return jsonify({'success': False, 'message': 'No file provided'})
+    
+    file = request.files['profile_picture']
+    if file.filename == '':
+        return jsonify({'success': False, 'message': 'No file selected'})
+    
+    # Allowed image extensions
+    ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
+    
+    # Validate file extension
+    if '.' not in file.filename or file.filename.rsplit('.', 1)[1].lower() not in ALLOWED_EXTENSIONS:
+        return jsonify({'success': False, 'message': 'Only image files are allowed (png, jpg, jpeg, gif, webp)'})
+    
+    try:
+        filename = secure_filename(file.filename)
+        safe_name = f"{datetime.utcnow().strftime('%Y%m%d%H%M%S')}_profile_{filename}"
+        
+        # Create directory for profile pictures
+        profile_pic_dir = os.path.join(app.instance_path, 'uploads', 'profile_pictures')
+        os.makedirs(profile_pic_dir, exist_ok=True)
+        
+        # Save the file
+        file_path = os.path.join(profile_pic_dir, safe_name)
+        file.save(file_path)
+        
+        # Store the relative path in database
+        relative_path = f'profile_pictures/{safe_name}'
+        
+        # Update user's profile picture
+        if current_user.user_type == 'doctor':
+            # Update doctor's profile image
+            doctor = Doctor.query.get(current_user.doctor_id)
+            if doctor:
+                doctor.profile_image = relative_path
+                db.session.commit()
+                return jsonify({'success': True, 'message': 'Profile picture updated successfully'})
+            else:
+                return jsonify({'success': False, 'message': 'Doctor profile not found'})
+        else:
+            # Update user's profile picture (patient or admin)
+            current_user.profile_picture = relative_path
+            db.session.commit()
+            return jsonify({'success': True, 'message': 'Profile picture updated successfully'})
+            
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': f'Error uploading file: {str(e)}'})
+
+@app.route('/uploads/profile_pictures/<path:filename>')
+def serve_profile_picture(filename):
+    """Serve profile pictures from the instance uploads folder"""
+    uploads_dir = os.path.join(app.instance_path, 'uploads')
+    try:
+        return send_from_directory(uploads_dir, f'profile_pictures/{filename}')
+    except FileNotFoundError:
+        return jsonify({'error': 'File not found'}), 404
 
 @app.route('/cancel-appointment/<int:appointment_id>')
 @login_required

@@ -57,8 +57,16 @@
     <div class="doctor-profile-card">
         <div class="profile-header">
             <div class="profile-avatar">
-                <i class="fas fa-user-md"></i>
+                {% if doctor.profile_image %}
+                    <img src="{{ url_for('serve_profile_picture', filename=doctor.profile_image.split('/')[-1]) }}" alt="{{ doctor.name }}">
+                {% else %}
+                    <i class="fas fa-user-md"></i>
+                {% endif %}
+                <button class="btn-upload-profile" onclick="document.getElementById('doctorProfilePictureInput').click()" title="Upload Profile Picture">
+                    <i class="fas fa-camera"></i>
+                </button>
             </div>
+            <input type="file" id="doctorProfilePictureInput" accept="image/*" style="display: none;" onchange="uploadDoctorProfilePicture()">
             <div class="profile-info">
                 <h2>{{ doctor.name }}</h2>
                 <p class="specialization">{{ doctor.specialization }}</p>
@@ -278,6 +286,33 @@
 
 {% block scripts %}
 <script>
+// Upload Doctor Profile Picture
+function uploadDoctorProfilePicture() {
+    const fileInput = document.getElementById('doctorProfilePictureInput');
+    if (!fileInput.files.length) return;
+    
+    const formData = new FormData();
+    formData.append('profile_picture', fileInput.files[0]);
+    
+    fetch('/upload-profile-picture', {
+        method: 'POST',
+        body: formData
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            alert('Profile picture updated successfully');
+            location.reload();
+        } else {
+            alert('Error: ' + data.message);
+        }
+    })
+    .catch(err => {
+        console.error('Error:', err);
+        alert('Upload failed. Please try again.');
+    });
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     // Modal functionality
     const modal = document.getElementById('notesModal');

@@ -3,7 +3,8 @@
 {% block title %}My Patients - Care_4_U Hospitals{% endblock %}
 
 {% block content %}
-<div class="doctor-container">
+<div class="container">
+    <div class="doctor-container">
     <!-- Page Header -->
     <div class="dashboard-header">
         <h1>My Patients</h1>
@@ -82,9 +83,58 @@
             </div>
         {% endif %}
     </div>
+    </div>
 </div>
 
 <style>
+/* Doctor Patients Page Styles */
+.doctor-container {
+    background: var(--gray-lighter);
+    min-height: 100vh;
+    padding: 2rem 0;
+}
+
+.dashboard-header {
+    background: white;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow-sm);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.dashboard-header h1 {
+    color: var(--dark);
+    margin-bottom: 0.5rem;
+}
+
+.welcome-message {
+    color: var(--gray);
+    margin-bottom: 0;
+}
+
+.appointments-section {
+    background: white;
+    border-radius: var(--border-radius);
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: var(--shadow-sm);
+}
+
+.section-header {
+    margin-bottom: 1.5rem;
+    border-bottom: 2px solid var(--gray-light);
+    padding-bottom: 1rem;
+}
+
+.section-header h2 {
+    color: var(--dark);
+    font-size: 1.5rem;
+    margin: 0;
+}
+
 .patient-cell {
     display: flex;
     align-items: center;
@@ -93,54 +143,114 @@
 
 .patient-cell i {
     font-size: 1.5rem;
-    color: #4f46e5;
+    color: var(--primary);
+}
+
+.patient-cell strong {
+    color: var(--dark);
+    font-weight: 600;
 }
 
 .badge {
     display: inline-block;
-    padding: 4px 12px;
-    background: #e0e7ff;
-    color: #4338ca;
-    border-radius: 12px;
+    padding: 6px 14px;
+    background: var(--primary-light);
+    color: var(--primary);
+    border-radius: 20px;
     font-size: 0.875rem;
-    font-weight: 500;
+    font-weight: 600;
+    text-align: center;
 }
 
 .badge-success {
-    background: #d1fae5;
-    color: #065f46;
+    background: var(--secondary-light);
+    color: var(--secondary);
 }
 
 .badge-secondary {
-    background: #f3f4f6;
-    color: #6b7280;
+    background: var(--gray-lighter);
+    color: var(--gray);
+}
+
+.appointments-table {
+    overflow-x: auto;
 }
 
 .appointments-table table {
     width: 100%;
     border-collapse: collapse;
     background: white;
-    border-radius: 8px;
+    border-radius: var(--border-radius-sm);
     overflow: hidden;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .appointments-table th {
-    background: #f9fafb;
-    padding: 12px 16px;
+    background: var(--gray-lighter);
+    padding: 14px 16px;
     text-align: left;
     font-weight: 600;
-    color: #374151;
-    border-bottom: 2px solid #e5e7eb;
+    color: var(--dark);
+    border-bottom: 2px solid var(--gray-light);
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
 .appointments-table td {
-    padding: 12px 16px;
-    border-bottom: 1px solid #f3f4f6;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--gray-light);
+    color: var(--dark);
+}
+
+.appointments-table tbody tr {
+    transition: var(--transition-fast);
 }
 
 .appointments-table tbody tr:hover {
-    background: #f9fafb;
+    background: var(--primary-light);
+}
+
+.btn-sm {
+    padding: 6px 12px;
+    font-size: 0.875rem;
+    border-radius: var(--border-radius-sm);
+}
+
+.no-data {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: var(--gray);
+}
+
+.no-data i {
+    font-size: 4rem;
+    color: var(--gray-light);
+    margin-bottom: 1rem;
+}
+
+.no-data p {
+    font-size: 1.125rem;
+    margin: 0.5rem 0;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .dashboard-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+    
+    .appointments-table {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    .appointments-table th,
+    .appointments-table td {
+        padding: 10px 8px;
+        font-size: 0.875rem;
+    }
 }
 </style>
 {% endblock %}

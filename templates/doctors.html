@@ -51,13 +51,14 @@
 <!-- Doctors List -->
 <section class="doctors-section">
     <div class="container">
-        {% if doctors %}
+        {% if doctors_with_ratings %}
             <div class="doctors-grid">
-                {% for doctor in doctors %}
+                {% for item in doctors_with_ratings %}
+                    {% set doctor = item.doctor %}
                     <div class="doctor-card">
                         <div class="doctor-image">
                             {% if doctor.profile_image %}
-                                <img src="{{ doctor.profile_image }}" alt="{{ doctor.name }}">
+                                <img src="{{ url_for('serve_profile_picture', filename=doctor.profile_image.split('/')[-1]) }}" alt="{{ doctor.name }}">
                             {% else %}
                                 <div class="doctor-avatar">
                                     <i class="fas fa-user-md"></i>
@@ -68,12 +69,36 @@
                             {% else %}
                                 <span class="availability unavailable">Unavailable</span>
                             {% endif %}
+                            
+                            <!-- Rating Badge -->
+                            {% if item.total_reviews > 0 %}
+                                <div class="rating-badge">
+                                    <i class="fas fa-star"></i>
+                                    <span class="rating-value">{{ item.average_rating }}</span>
+                                    <span class="rating-count">({{ item.total_reviews }})</span>
+                                </div>
+                            {% endif %}
                         </div>
                         
                         <div class="doctor-info">
                             <h3>{{ doctor.name }}</h3>
                             <p class="specialization">{{ doctor.specialization }}</p>
                             <p class="qualifications">{{ doctor.qualifications }}</p>
+                            
+                            <!-- Star Rating Display -->
+                            {% if item.average_rating > 0 %}
+                                <div class="star-rating-display">
+                                    {% for i in range(1, 6) %}
+                                        <i class="fas fa-star {% if i <= item.average_rating|round %}filled{% else %}empty{% endif %}"></i>
+                                    {% endfor %}
+                                    <span class="rating-text">{{ item.average_rating }}/5.0</span>
+                                    <span class="review-count">{{ item.total_reviews }} {% if item.total_reviews == 1 %}review{% else %}reviews{% endif %}</span>
+                                </div>
+                            {% else %}
+                                <div class="no-rating">
+                                    <p>No ratings yet</p>
+                                </div>
+                            {% endif %}
                             
                             <div class="doctor-details">
                                 <div class="detail-item">

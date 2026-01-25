@@ -15,6 +15,7 @@ class User(UserMixin, db.Model):
     date_of_birth = db.Column(db.Date)
     user_type = db.Column(db.String(20), default='patient')  # 'patient', 'doctor', or 'admin'
     doctor_id = db.Column(db.Integer, db.ForeignKey('doctors.id'), nullable=True)  # Link to doctor if user_type is 'doctor'
+    profile_picture = db.Column(db.String(200))  # Path to user's profile picture
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     appointments = db.relationship('Appointment', backref='patient', lazy=True)
     
@@ -84,3 +85,21 @@ class MedicalRecord(db.Model):
     
     def __repr__(self):
         return f'<MedicalRecord {self.original_filename}>'
+
+class Feedback(db.Model):
+    __tablename__ = 'feedback'
+    id = db.Column(db.Integer, primary_key=True)
+    appointment_id = db.Column(db.Integer, db.ForeignKey('appointments.id'), nullable=False, unique=True)
+    patient_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    doctor_id = db.Column(db.Integer, db.ForeignKey('doctors.id'), nullable=False)
+    rating = db.Column(db.Integer, nullable=False)  # 1-5 stars
+    comment = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    appointment = db.relationship('Appointment', backref=db.backref('feedback', uselist=False, lazy=True))
+    patient = db.relationship('User', backref=db.backref('feedback_given', lazy=True))
+    doctor = db.relationship('Doctor', backref=db.backref('feedback_received', lazy=True))
+    
+    def __repr__(self):
+        return f'<Feedback {self.id} - Rating: {self.rating}>'

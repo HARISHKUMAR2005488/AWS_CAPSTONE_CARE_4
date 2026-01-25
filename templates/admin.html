@@ -10,6 +10,28 @@
         <p class="welcome-message">Welcome back, {{ current_user.username }}!</p>
     </div>
     
+    <!-- Admin Profile Card -->
+    <div class="admin-profile-card">
+        <div class="profile-section">
+            <div class="profile-avatar">
+                {% if current_user.profile_picture %}
+                    <img src="{{ url_for('serve_profile_picture', filename=current_user.profile_picture.split('/')[-1]) }}" alt="{{ current_user.username }}">
+                {% else %}
+                    <i class="fas fa-user-shield"></i>
+                {% endif %}
+                <button class="btn-upload-profile" onclick="document.getElementById('adminProfilePictureInput').click()" title="Upload Profile Picture">
+                    <i class="fas fa-camera"></i>
+                </button>
+            </div>
+            <input type="file" id="adminProfilePictureInput" accept="image/*" style="display: none;" onchange="uploadAdminProfilePicture()">
+            <div class="profile-info">
+                <h3>{{ current_user.username }}</h3>
+                <p>{{ current_user.email }}</p>
+                <p class="admin-role">Administrator</p>
+            </div>
+        </div>
+    </div>
+    
     <!-- Stats Cards -->
     <div class="stats-cards">
         <div class="stat-card">
@@ -220,6 +242,23 @@
             </div>
             <div class="modal-body">
                 <form id="addDoctorForm">
+                    <!-- Login Credentials -->
+                    <div class="form-section">
+                        <h4>Login Credentials</h4>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="username">Username <span class="required">*</span></label>
+                                <input type="text" id="username" name="username" placeholder="doctor_username" required minlength="3">
+                                <small class="form-help">Used for login (minimum 3 characters)</small>
+                            </div>
+                            <div class="form-group">
+                                <label for="password">Temporary Password <span class="required">*</span></label>
+                                <input type="password" id="password" name="password" placeholder="Enter password" required minlength="6">
+                                <small class="form-help">Doctor can change this later (minimum 6 characters)</small>
+                            </div>
+                        </div>
+                    </div>
+                    
                     <!-- Personal Information -->
                     <div class="form-section">
                         <h4>Personal Information</h4>
@@ -498,6 +537,33 @@
 
 {% block scripts %}
 <script>
+// Upload Admin Profile Picture
+function uploadAdminProfilePicture() {
+    const fileInput = document.getElementById('adminProfilePictureInput');
+    if (!fileInput.files.length) return;
+    
+    const formData = new FormData();
+    formData.append('profile_picture', fileInput.files[0]);
+    
+    fetch('/upload-profile-picture', {
+        method: 'POST',
+        body: formData
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            alert('Profile picture updated successfully');
+            location.reload();
+        } else {
+            alert('Error: ' + data.message);
+        }
+    })
+    .catch(err => {
+        console.error('Error:', err);
+        alert('Upload failed. Please try again.');
+    });
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     // Modal functionality (supports multiple modals)
     const modals = document.querySelectorAll('.modal');

@@ -82,7 +82,7 @@
                                 </td>
                                 <td>
                                     <span class="status-badge {{ appointment.status }}">
-                                        {{ appointment.status|title }}
+                                        {{ 'Approved' if appointment.status == 'confirmed' else appointment.status|title }}
                                     </span>
                                 </td>
                                 <td class="symptoms-cell">

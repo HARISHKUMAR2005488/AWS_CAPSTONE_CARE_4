@@ -8,99 +8,209 @@
         <h2>Create Your Account</h2>
         <p class="auth-subtitle">Join Care_4_U Hospitals and start your healthcare journey</p>
         
-        <form method="POST" action="{{ url_for('signup') }}" class="auth-form" id="signupForm">
-            <div class="form-group">
-                <label for="username">Full Name</label>
-                <input type="text" id="username" name="username" required 
-                       placeholder="Enter your full name" minlength="3">
-                <i class="fas fa-user"></i>
-            </div>
+        <form method="POST" action="{{ url_for('signup') }}" class="auth-form" id="signupForm" novalidate>
             
-            <div class="form-group">
-                <label for="email">Email Address</label>
-                <input type="email" id="email" name="email" required 
-                       placeholder="your.email@example.com">
-                <i class="fas fa-envelope"></i>
-            </div>
-            
-            <div class="form-group">
-                <label for="phone">Phone Number</label>
-                <input type="tel" id="phone" name="phone" 
-                       placeholder="+1 (555) 000-0000" pattern="[0-9+\-\s()]*">
-                <i class="fas fa-phone"></i>
-            </div>
-
-            <div class="form-group">
-                <label for="role">Account Type</label>
-                <select id="role" name="role" required>
-                    <option value="user" selected>Patient</option>
-                    <option value="doctor">Doctor</option>
-                    <option value="admin">Admin</option>
-                </select>
-                <i class="fas fa-user-shield"></i>
-            </div>
-
-            <div id="adminFields" style="display: none;">
+            <fieldset class="form-section">
+                <legend class="form-section-title">
+                    <i class="fas fa-user-circle"></i> Basic Information
+                </legend>
+                
                 <div class="form-group">
-                    <label for="admin_key">Admin Access Key</label>
-                    <input type="password" id="admin_key" name="admin_key" placeholder="Enter admin key">
-                </div>
-            </div>
-
-            <div id="doctorFields" style="display: none;">
-                <div class="form-group">
-                    <label for="specialization">Specialization</label>
-                    <input type="text" id="specialization" name="specialization" placeholder="Cardiology">
-                </div>
-
-                <div class="form-group">
-                    <label for="qualifications">Qualifications</label>
-                    <input type="text" id="qualifications" name="qualifications" placeholder="MBBS, MD">
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="experience">Experience (Years)</label>
-                        <input type="number" id="experience" name="experience" min="0" placeholder="5">
-                    </div>
-                    <div class="form-group">
-                        <label for="consultation_fee">Consultation Fee ($)</label>
-                        <input type="number" step="0.01" id="consultation_fee" name="consultation_fee" min="0" placeholder="100.00">
-                    </div>
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="available_days">Available Days</label>
-                        <input type="text" id="available_days" name="available_days" placeholder="Mon,Wed,Fri">
-                    </div>
-                    <div class="form-group">
-                        <label for="available_time">Available Time</label>
-                        <input type="text" id="available_time" name="available_time" placeholder="9:00 AM - 5:00 PM">
-                    </div>
-                </div>
-            </div>
-            
-            <div class="form-row">
-                <div class="form-group">
-                    <label for="password">Password</label>
-                    <input type="password" id="password" name="password" required 
-                           placeholder="Min. 6 characters" minlength="6">
+                    <label for="username">
+                        <i class="fas fa-user"></i>
+                        Full Name <span class="form-required">*</span>
+                    </label>
+                    <input type="text" id="username" name="username" class="form-input" required 
+                           placeholder="Enter your full name" minlength="3"
+                           aria-label="Full Name"
+                           aria-required="true">
+                    <span class="form-feedback"></span>
                 </div>
                 
                 <div class="form-group">
-                    <label for="confirm_password">Confirm Password</label>
-                    <input type="password" id="confirm_password" name="confirm_password" required 
-                           placeholder="Re-enter password">
+                    <label for="email">
+                        <i class="fas fa-envelope"></i>
+                        Email Address <span class="form-required">*</span>
+                    </label>
+                    <input type="email" id="email" name="email" class="form-input" required 
+                           placeholder="your.email@example.com"
+                           aria-label="Email Address"
+                           aria-required="true">
+                    <span class="form-feedback"></span>
+                </div>
+                
+                <div class="form-group">
+                    <label for="phone">
+                        <i class="fas fa-phone"></i>
+                        Phone Number
+                    </label>
+                    <input type="tel" id="phone" name="phone" class="form-input"
+                           placeholder="+1 (555) 000-0000" pattern="[0-9+\-\s()]*"
+                           aria-label="Phone Number">
+                    <span class="form-help">Optional - helps us contact you about appointments</span>
+                </div>
+                
+                <div class="form-group">
+                    <label for="role">
+                        <i class="fas fa-user-shield"></i>
+                        Account Type <span class="form-required">*</span>
+                    </label>
+                    <select id="role" name="role" class="form-input form-select" required
+                            aria-label="Account Type"
+                            aria-required="true">
+                        <option value="">Select your account type</option>
+                        <option value="user" selected>Patient</option>
+                        <option value="doctor">Doctor</option>
+                        <option value="admin">Admin</option>
+                    </select>
+                    <span class="form-feedback"></span>
+                </div>
+            </fieldset>
+
+            <div id="adminFields" class="form-section" style="display: none;">
+                <legend class="form-section-title">
+                    <i class="fas fa-lock"></i> Admin Credentials
+                </legend>
+                <div class="form-group">
+                    <label for="admin_key">
+                        <i class="fas fa-key"></i>
+                        Admin Access Key <span class="form-required">*</span>
+                    </label>
+                    <input type="password" id="admin_key" name="admin_key" class="form-input"
+                           placeholder="Enter admin access key"
+                           aria-label="Admin Access Key">
+                    <span class="form-feedback"></span>
                 </div>
             </div>
-            
-            <div class="form-group terms">
-                <input type="checkbox" id="terms" name="terms" required>
-                <label for="terms">I agree to the <a href="#">Terms & Conditions</a> and <a href="#">Privacy Policy</a></label>
+
+            <div id="doctorFields" class="form-section" style="display: none;">
+                <legend class="form-section-title">
+                    <i class="fas fa-stethoscope"></i> Medical Credentials
+                </legend>
+                
+                <div class="form-group">
+                    <label for="specialization">
+                        <i class="fas fa-briefcase"></i>
+                        Specialization <span class="form-required">*</span>
+                    </label>
+                    <input type="text" id="specialization" name="specialization" class="form-input"
+                           placeholder="e.g., Cardiology, Neurology"
+                           aria-label="Specialization">
+                    <span class="form-feedback"></span>
+                </div>
+
+                <div class="form-group">
+                    <label for="qualifications">
+                        <i class="fas fa-certificate"></i>
+                        Qualifications <span class="form-required">*</span>
+                    </label>
+                    <input type="text" id="qualifications" name="qualifications" class="form-input"
+                           placeholder="e.g., MBBS, MD, MRCP"
+                           aria-label="Qualifications">
+                    <span class="form-feedback"></span>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="experience">
+                            <i class="fas fa-clock"></i>
+                            Experience (Years) <span class="form-required">*</span>
+                        </label>
+                        <input type="number" id="experience" name="experience" class="form-input" min="0" 
+                               placeholder="5" aria-label="Years of Experience">
+                        <span class="form-feedback"></span>
+                    </div>
+                    <div class="form-group">
+                        <label for="consultation_fee">
+                            <i class="fas fa-dollar-sign"></i>
+                            Consultation Fee ($) <span class="form-required">*</span>
+                        </label>
+                        <input type="number" step="0.01" id="consultation_fee" name="consultation_fee" 
+                               class="form-input" min="0" placeholder="100.00"
+                               aria-label="Consultation Fee">
+                        <span class="form-feedback"></span>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="available_days">
+                            <i class="fas fa-calendar"></i>
+                            Available Days <span class="form-required">*</span>
+                        </label>
+                        <input type="text" id="available_days" name="available_days" class="form-input"
+                               placeholder="Mon, Wed, Fri"
+                               aria-label="Available Days">
+                        <span class="form-help">Comma-separated days (e.g., Mon,Tue,Thu)</span>
+                    </div>
+                    <div class="form-group">
+                        <label for="available_time">
+                            <i class="fas fa-hourglass-start"></i>
+                            Available Time <span class="form-required">*</span>
+                        </label>
+                        <input type="text" id="available_time" name="available_time" class="form-input"
+                               placeholder="9:00 AM - 5:00 PM"
+                               aria-label="Available Time">
+                        <span class="form-help">Format: 9:00 AM - 5:00 PM</span>
+                    </div>
+                </div>
             </div>
+
+            <fieldset class="form-section">
+                <legend class="form-section-title">
+                    <i class="fas fa-lock"></i> Security
+                </legend>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="password">
+                            <i class="fas fa-lock"></i>
+                            Password <span class="form-required">*</span>
+                        </label>
+                        <div class="password-input-wrapper">
+                            <input type="password" id="password" name="password" class="form-input" required 
+                                   placeholder="Min. 6 characters" minlength="6"
+                                   aria-label="Password"
+                                   aria-required="true">
+                            <button type="button" class="password-toggle" data-target="password" aria-label="Toggle password visibility">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                        <span class="form-feedback"></span>
+                        <span class="form-help">At least 6 characters</span>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="confirm_password">
+                            <i class="fas fa-lock"></i>
+                            Confirm Password <span class="form-required">*</span>
+                        </label>
+                        <div class="password-input-wrapper">
+                            <input type="password" id="confirm_password" name="confirm_password" class="form-input" required 
+                                   placeholder="Re-enter password"
+                                   aria-label="Confirm Password"
+                                   aria-required="true">
+                            <button type="button" class="password-toggle" data-target="confirm_password" aria-label="Toggle password visibility">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                        <span class="form-feedback"></span>
+                    </div>
+                </div>
+                
+                <div class="form-group form-checkbox-group">
+                    <input type="checkbox" id="terms" name="terms" required>
+                    <label for="terms">
+                        I agree to the <a href="#">Terms & Conditions</a> and <a href="#">Privacy Policy</a>
+                        <span class="form-required">*</span>
+                    </label>
+                    <span class="form-feedback"></span>
+                </div>
+            </fieldset>
             
-            <button type="submit" class="btn btn-primary btn-block">Create Account</button>
+            <button type="submit" class="btn btn-primary btn-block btn-lg">
+                <i class="fas fa-user-plus"></i> Create Account
+            </button>
         </form>
         
         <div class="auth-footer">

@@ -4,6 +4,11 @@
 
 {% block content %}
 <div class="user-container">
+    <div class="dashboard-header">
+        <h1><i class="fas fa-user"></i> Patient Dashboard</h1>
+        <p class="welcome-message">Overview of your appointments and health profile</p>
+    </div>
+
     <!-- User Profile Header -->
     <div class="profile-header">
         <div class="profile-info">
@@ -140,7 +145,7 @@
     
     <!-- Quick Actions -->
     <div class="user-actions">
-        <h3>Quick Actions</h3>
+        <h3><i class="fas fa-bolt"></i> Quick Actions</h3>
         <div class="action-buttons">
             <a href="{{ url_for('doctors') }}" class="action-btn primary">
                 <i class="fas fa-search"></i>
@@ -172,7 +177,7 @@
     <!-- My Appointments -->
     <div class="appointments-section">
         <div class="section-header">
-            <h3>My Appointments</h3>
+            <h3><i class="fas fa-calendar-check"></i> My Appointments</h3>
             <a href="{{ url_for('doctors') }}" class="btn btn-primary">
                 <i class="fas fa-plus"></i> Book New Appointment
             </a>
@@ -186,7 +191,7 @@
                             <div class="appointment-id">
                                 <strong>#{{ appointment.id }}</strong>
                                 <span class="status-badge {{ appointment.status }}">
-                                    {{ appointment.status|title }}
+                                    {{ 'Approved' if appointment.status == 'confirmed' else appointment.status|title }}
                                 </span>
                             </div>
                             <div class="appointment-date">

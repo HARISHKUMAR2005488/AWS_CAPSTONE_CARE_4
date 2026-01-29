@@ -9,6 +9,21 @@
             <h2>Book Appointment</h2>
             <p>with {{ doctor.name }} - {{ doctor.specialization }}</p>
         </div>
+
+        <div class="booking-progress">
+            <div class="progress-step is-active">
+                <span class="step-number">1</span>
+                <span class="step-label">Select Date & Time</span>
+            </div>
+            <div class="progress-step">
+                <span class="step-number">2</span>
+                <span class="step-label">Medical Details</span>
+            </div>
+            <div class="progress-step">
+                <span class="step-number">3</span>
+                <span class="step-label">Confirm & Book</span>
+            </div>
+        </div>
         
         <div class="doctor-summary">
             <div class="doctor-summary-info">
@@ -32,90 +47,153 @@
             </div>
         </div>
         
-        <form method="POST" action="{{ url_for('book_appointment', doctor_id=doctor.id) }}" class="booking-form">
+        <form method="POST" action="{{ url_for('book_appointment', doctor_id=doctor.id) }}" class="booking-form" id="bookingForm" novalidate>
+            
             <div class="form-section">
-                <h3>Select Date & Time</h3>
+                <h3 class="form-section-title">
+                    <i class="fas fa-calendar-check"></i> Select Date & Time
+                </h3>
                 <div class="form-row">
                     <div class="form-group">
-                        <label for="appointment_date">Appointment Date</label>
-                        <input type="date" id="appointment_date" name="appointment_date" required
-                               min="{{ min_date }}">
+                        <label for="appointment_date">
+                            <i class="fas fa-calendar"></i>
+                            Appointment Date <span class="form-required">*</span>
+                        </label>
+                        <input type="date" id="appointment_date" name="appointment_date" class="form-input" required
+                               min="{{ min_date }}"
+                               aria-label="Appointment Date"
+                               aria-required="true">
+                        <span class="form-feedback"></span>
                     </div>
                     
                     <div class="form-group">
-                        <label for="appointment_time">Preferred Time</label>
-                        <select id="appointment_time" name="appointment_time" required>
+                        <label for="appointment_time">
+                            <i class="fas fa-clock"></i>
+                            Preferred Time <span class="form-required">*</span>
+                        </label>
+                        <select id="appointment_time" name="appointment_time" class="form-input form-select" required
+                                aria-label="Preferred Time"
+                                aria-required="true">
                             <option value="">Select time slot</option>
                             {% for slot in available_slots %}
                                 <option value="{{ slot }}">{{ slot }}</option>
                             {% endfor %}
                         </select>
+                        <span class="form-feedback"></span>
                     </div>
                 </div>
                 
-                <div class="time-slots-info">
-                    <p><i class="fas fa-info-circle"></i> Available time slots: {{ doctor.available_time }}</p>
-                    <p><i class="fas fa-calendar"></i> Available days: {{ doctor.available_days }}</p>
-                </div>
-            </div>
-            
-            <div class="form-section">
-                <h3>Medical Information</h3>
-                <div class="form-group">
-                    <label for="symptoms">Symptoms / Reason for Visit</label>
-                    <textarea id="symptoms" name="symptoms" rows="4" 
-                              placeholder="Please describe your symptoms or reason for the appointment..."></textarea>
-                </div>
-            </div>
-            
-            <div class="form-section">
-                <h3>Patient Information</h3>
-                <div class="patient-info">
+                <div class="availability-info">
                     <div class="info-item">
-                        <strong>Name:</strong> {{ current_user.username }}
+                        <i class="fas fa-info-circle"></i>
+                        <span><strong>Available times:</strong> {{ doctor.available_time }}</span>
                     </div>
                     <div class="info-item">
-                        <strong>Email:</strong> {{ current_user.email }}
+                        <i class="fas fa-calendar-days"></i>
+                        <span><strong>Available days:</strong> {{ doctor.available_days }}</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-section">
+                <h3 class="form-section-title">
+                    <i class="fas fa-notes-medical"></i> Medical Information
+                </h3>
+                <div class="form-group">
+                    <label for="symptoms">
+                        <i class="fas fa-stethoscope"></i>
+                        Symptoms / Reason for Visit <span class="form-required">*</span>
+                    </label>
+                    <textarea id="symptoms" name="symptoms" class="form-input form-textarea" rows="4" 
+                              placeholder="Please describe your symptoms or reason for the appointment..."
+                              aria-label="Symptoms or Reason for Visit"
+                              aria-required="true"></textarea>
+                    <span class="form-help">Be as detailed as possible to help the doctor prepare for your visit</span>
+                    <span class="form-feedback"></span>
+                    <span class="form-char-count"><span id="charCount">0</span>/500 characters</span>
+                </div>
+            </div>
+            
+            <div class="form-section">
+                <h3 class="form-section-title">
+                    <i class="fas fa-user-check"></i> Patient Information
+                </h3>
+                <div class="patient-info-display">
+                    <div class="info-item">
+                        <i class="fas fa-user"></i>
+                        <div>
+                            <span class="info-label">Name:</span>
+                            <span class="info-value">{{ current_user.username }}</span>
+                        </div>
+                    </div>
+                    <div class="info-item">
+                        <i class="fas fa-envelope"></i>
+                        <div>
+                            <span class="info-label">Email:</span>
+                            <span class="info-value">{{ current_user.email }}</span>
+                        </div>
                     </div>
                     {% if current_user.phone %}
                     <div class="info-item">
-                        <strong>Phone:</strong> {{ current_user.phone }}
+                        <i class="fas fa-phone"></i>
+                        <div>
+                            <span class="info-label">Phone:</span>
+                            <span class="info-value">{{ current_user.phone }}</span>
+                        </div>
                     </div>
                     {% endif %}
                 </div>
                 <p class="info-note">
-                    <i class="fas fa-exclamation-triangle"></i>
+                    <i class="fas fa-exclamation-circle"></i>
                     Please ensure your contact information is up to date. 
-                    <a href="#">Update profile</a>
+                    <a href="#" class="form-link">Update profile</a>
                 </p>
             </div>
             
             <div class="booking-summary">
-                <h3>Appointment Summary</h3>
+                <h3 class="form-section-title">
+                    <i class="fas fa-receipt"></i> Appointment Summary
+                </h3>
                 <div class="summary-details">
                     <div class="summary-row">
-                        <span>Consultation Fee:</span>
-                        <span>${{ doctor.consultation_fee }}</span>
+                        <span class="summary-label">Doctor:</span>
+                        <span class="summary-value">{{ doctor.name }} - {{ doctor.specialization }}</span>
+                    </div>
+                    <div class="summary-row">
+                        <span class="summary-label">Selected Date:</span>
+                        <span class="summary-value" id="selectedDate">Not selected</span>
+                    </div>
+                    <div class="summary-row">
+                        <span class="summary-label">Selected Time:</span>
+                        <span class="summary-value" id="selectedTime">Not selected</span>
+                    </div>
+                    <div class="summary-row separator">
+                        <span class="summary-label">Consultation Fee:</span>
+                        <span class="summary-value">${{ doctor.consultation_fee }}</span>
                     </div>
                     <div class="summary-row total">
-                        <span>Total Amount:</span>
-                        <span>${{ doctor.consultation_fee }}</span>
+                        <span class="summary-label">Total Amount:</span>
+                        <span class="summary-value">${{ doctor.consultation_fee }}</span>
                     </div>
                 </div>
                 
-                <div class="terms-agreement">
+                <div class="form-checkbox-group">
                     <input type="checkbox" id="confirm_terms" name="confirm_terms" required>
                     <label for="confirm_terms">
                         I confirm that I have read and agree to the 
-                        <a href="#">Appointment Terms & Conditions</a>
+                        <a href="#" class="form-link">Appointment Terms & Conditions</a>
+                        <span class="form-required">*</span>
                     </label>
+                    <span class="form-feedback"></span>
                 </div>
             </div>
             
             <div class="booking-actions">
-                <a href="{{ url_for('doctors') }}" class="btn btn-secondary">Cancel</a>
-                <button type="submit" class="btn btn-primary">
-                    Confirm Booking
+                <a href="{{ url_for('doctors') }}" class="btn btn-secondary btn-lg">
+                    <i class="fas fa-arrow-left"></i> Cancel
+                </a>
+                <button type="submit" class="btn btn-primary btn-lg">
+                    <i class="fas fa-check-circle"></i> Confirm Booking
                 </button>
             </div>
         </form>

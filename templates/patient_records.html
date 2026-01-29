@@ -5,557 +5,175 @@
 {% block content %}
 <div class="container">
     <div class="doctor-container">
-    <!-- Page Header -->
-    <div class="dashboard-header">
-        <h1>Patient Medical Records</h1>
-        <p class="welcome-message">{{ patient.username }} - {{ patient.email }}</p>
-        <a href="{{ url_for('doctor_patients') }}" class="btn btn-secondary">
-            <i class="fas fa-arrow-left"></i> Back to Patients
-        </a>
-    </div>
-    
-    <!-- Patient Information Card -->
-    <div class="patient-info-card">
-        <div class="info-header">
-            <div class="patient-avatar">
-                <i class="fas fa-user-circle"></i>
+        <!-- Page Header -->
+        <div class="dashboard-header">
+            <h1>Patient Medical Records</h1>
+            <p class="welcome-message">{{ patient.username }} - {{ patient.email }}</p>
+            <a href="{{ url_for('doctor_patients') }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back to Patients
+            </a>
+        </div>
+
+        <!-- Patient Information Card -->
+        <div class="patient-info-card">
+            <div class="info-header">
+                <div class="patient-avatar">
+                    <i class="fas fa-user-circle"></i>
+                </div>
+                <div class="patient-details">
+                    <h2>{{ patient.username }}</h2>
+                    <div class="detail-grid">
+                        <div class="detail-item">
+                            <i class="fas fa-envelope"></i>
+                            <span>{{ patient.email }}</span>
+                        </div>
+                        {% if patient.phone %}
+                        <div class="detail-item">
+                            <i class="fas fa-phone"></i>
+                            <span>{{ patient.phone }}</span>
+                        </div>
+                        {% endif %}
+                        {% if patient.date_of_birth %}
+                        <div class="detail-item">
+                            <i class="fas fa-birthday-cake"></i>
+                            <span>DOB: {{ patient.date_of_birth.strftime('%B %d, %Y') }}</span>
+                        </div>
+                        {% endif %}
+                        {% if patient.address %}
+                        <div class="detail-item">
+                            <i class="fas fa-map-marker-alt"></i>
+                            <span>{{ patient.address }}</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
             </div>
-            <div class="patient-details">
-                <h2>{{ patient.username }}</h2>
-                <div class="detail-grid">
-                    <div class="detail-item">
-                        <i class="fas fa-envelope"></i>
-                        <span>{{ patient.email }}</span>
-                    </div>
-                    {% if patient.phone %}
-                    <div class="detail-item">
-                        <i class="fas fa-phone"></i>
-                        <span>{{ patient.phone }}</span>
-                    </div>
-                    {% endif %}
-                    {% if patient.date_of_birth %}
-                    <div class="detail-item">
-                        <i class="fas fa-birthday-cake"></i>
-                        <span>DOB: {{ patient.date_of_birth.strftime('%B %d, %Y') }}</span>
-                    </div>
-                    {% endif %}
-                    {% if patient.address %}
-                    <div class="detail-item">
-                        <i class="fas fa-map-marker-alt"></i>
-                        <span>{{ patient.address }}</span>
-                    </div>
-                    {% endif %}
+            <div class="info-stats">
+                <div class="stat-box">
+                    <h3>{{ appointments|length }}</h3>
+                    <p>Total Appointments</p>
+                </div>
+                <div class="stat-box">
+                    <h3>{{ medical_records|length }}</h3>
+                    <p>Medical Documents</p>
                 </div>
             </div>
         </div>
-        <div class="info-stats">
-            <div class="stat-box">
-                <h3>{{ appointments|length }}</h3>
-                <p>Total Appointments</p>
+
+        <!-- Medical Documents Section -->
+        <div class="appointments-section">
+            <div class="section-header">
+                <h2><i class="fas fa-file-medical"></i> Medical Documents</h2>
             </div>
-            <div class="stat-box">
-                <h3>{{ medical_records|length }}</h3>
-                <p>Medical Documents</p>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Medical Documents Section -->
-    <div class="appointments-section">
-        <div class="section-header">
-            <h2><i class="fas fa-file-medical"></i> Medical Documents</h2>
-        </div>
-        
-        {% if medical_records %}
-            <div class="medical-records-grid">
-                {% for record in medical_records %}
-                    <div class="record-card">
-                        <div class="record-icon">
-                            {% if record.file_type in ['pdf'] %}
-                                <i class="fas fa-file-pdf"></i>
-                            {% elif record.file_type in ['jpg', 'jpeg', 'png'] %}
-                                <i class="fas fa-file-image"></i>
-                            {% else %}
-                                <i class="fas fa-file"></i>
-                            {% endif %}
-                        </div>
-                        <div class="record-info">
-                            <h4>{{ record.original_filename }}</h4>
-                            {% if record.description %}
-                                <p class="record-description">{{ record.description }}</p>
-                            {% endif %}
-                            <div class="record-meta">
-                                <small>
-                                    <i class="fas fa-calendar"></i>
-                                    Uploaded: {{ record.upload_date.strftime('%b %d, %Y at %I:%M %p') }}
-                                </small>
-                                <small>
-                                    <i class="fas fa-hdd"></i>
-                                    Size: {{ (record.file_size / 1024)|round(2) }} KB
-                                </small>
-                                <small>
-                                    <i class="fas fa-file-alt"></i>
-                                    Type: {{ record.file_type.upper() }}
-                                </small>
+
+            {% if medical_records %}
+                <div class="medical-records-grid">
+                    {% for record in medical_records %}
+                        <div class="record-card">
+                            <div class="record-icon">
+                                {% if record.file_type in ['pdf'] %}
+                                    <i class="fas fa-file-pdf"></i>
+                                {% elif record.file_type in ['jpg', 'jpeg', 'png'] %}
+                                    <i class="fas fa-file-image"></i>
+                                {% else %}
+                                    <i class="fas fa-file"></i>
+                                {% endif %}
+                            </div>
+                            <div class="record-info">
+                                <h4>{{ record.original_filename }}</h4>
+                                {% if record.description %}
+                                    <p class="record-description">{{ record.description }}</p>
+                                {% endif %}
+                                <div class="record-meta">
+                                    <small>
+                                        <i class="fas fa-calendar"></i>
+                                        Uploaded: {{ record.upload_date.strftime('%b %d, %Y at %I:%M %p') }}
+                                    </small>
+                                    <small>
+                                        <i class="fas fa-hdd"></i>
+                                        Size: {{ (record.file_size / 1024)|round(2) }} KB
+                                    </small>
+                                    <small>
+                                        <i class="fas fa-file-alt"></i>
+                                        Type: {{ record.file_type.upper() }}
+                                    </small>
+                                </div>
+                            </div>
+                            <div class="record-actions">
+                                <a href="{{ url_for('doctor_download_record', record_id=record.id) }}" class="btn btn-primary btn-sm">
+                                    <i class="fas fa-download"></i> Download
+                                </a>
                             </div>
                         </div>
-                        <div class="record-actions">
-                            <a href="{{ url_for('doctor_download_record', record_id=record.id) }}" 
-                               class="btn btn-primary btn-sm">
-                                <i class="fas fa-download"></i> Download
-                            </a>
-                        </div>
-                    </div>
-                {% endfor %}
-            </div>
-        {% else %}
-            <div class="no-data">
-                <i class="fas fa-file-medical-alt"></i>
-                <p>No medical documents uploaded yet.</p>
-                <small>The patient hasn't uploaded any medical documents to their profile.</small>
-            </div>
-        {% endif %}
-    </div>
-    
-    <!-- Appointment History Section -->
-    <div class="appointments-section">
-        <div class="section-header">
-            <h2><i class="fas fa-history"></i> Appointment History</h2>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="no-data">
+                    <i class="fas fa-file-medical-alt"></i>
+                    <p>No medical documents uploaded yet.</p>
+                    <small>The patient hasn't uploaded any medical documents to their profile.</small>
+                </div>
+            {% endif %}
         </div>
-        
-        {% if appointments %}
-            <div class="appointments-table">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Date & Time</th>
-                            <th>Symptoms</th>
-                            <th>Status</th>
-                            <th>Notes/Prescription</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for appointment in appointments %}
+
+        <!-- Appointment History Section -->
+        <div class="appointments-section">
+            <div class="section-header">
+                <h2><i class="fas fa-history"></i> Appointment History</h2>
+            </div>
+
+            {% if appointments %}
+                <div class="appointments-table">
+                    <table>
+                        <thead>
                             <tr>
-                                <td>#{{ appointment.id }}</td>
-                                <td>
-                                    <div class="datetime-cell">
-                                        <span class="date">{{ appointment.appointment_date.strftime('%b %d, %Y') }}</span>
-                                        <span class="time">{{ appointment.appointment_time }}</span>
-                                    </div>
-                                </td>
-                                <td>
-                                    {% if appointment.symptoms %}
-                                        <span class="symptoms-text">{{ appointment.symptoms[:100] }}{% if appointment.symptoms|length > 100 %}...{% endif %}</span>
-                                    {% else %}
-                                        <em class="text-muted">None</em>
-                                    {% endif %}
-                                </td>
-                                <td>
-                                    <span class="status-badge {{ appointment.status }}">
-                                        {{ appointment.status|title }}
-                                    </span>
-                                </td>
-                                <td>
-                                    {% if appointment.notes %}
-                                        <div class="notes-preview">{{ appointment.notes[:100] }}{% if appointment.notes|length > 100 %}...{% endif %}</div>
-                                    {% else %}
-                                        <em class="text-muted">No notes</em>
-                                    {% endif %}
-                                </td>
+                                <th>ID</th>
+                                <th>Date & Time</th>
+                                <th>Symptoms</th>
+                                <th>Status</th>
+                                <th>Notes/Prescription</th>
                             </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        {% else %}
-            <div class="no-data">
-                <i class="fas fa-calendar-times"></i>
-                <p>No appointment history found.</p>
-            </div>
-        {% endif %}
-    </div>
+                        </thead>
+                        <tbody>
+                            {% for appointment in appointments %}
+                                <tr>
+                                    <td>#{{ appointment.id }}</td>
+                                    <td>
+                                        <div class="datetime-cell">
+                                            <span class="date">{{ appointment.appointment_date.strftime('%b %d, %Y') }}</span>
+                                            <span class="time">{{ appointment.appointment_time }}</span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        {% if appointment.symptoms %}
+                                            <span class="symptoms-text">{{ appointment.symptoms[:100] }}{% if appointment.symptoms|length > 100 %}...{% endif %}</span>
+                                        {% else %}
+                                            <em class="text-muted">None</em>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="status-badge {{ appointment.status }}">
+                                            {{ 'Approved' if appointment.status == 'confirmed' else appointment.status|title }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% if appointment.notes %}
+                                            <div class="notes-preview">{{ appointment.notes[:100] }}{% if appointment.notes|length > 100 %}...{% endif %}</div>
+                                        {% else %}
+                                            <em class="text-muted">No notes</em>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="no-data">
+                    <i class="fas fa-calendar-times"></i>
+                    <p>No appointment history found.</p>
+                </div>
+            {% endif %}
+        </div>
     </div>
 </div>
-
-<style>
-/* Patient Records Page Styles */
-.doctor-container {
-    background: var(--gray-lighter);
-    min-height: 100vh;
-    padding: 2rem 0;
-}
-
-.dashboard-header {
-    background: white;
-    padding: 2rem;
-    margin-bottom: 2rem;
-    border-radius: var(--border-radius);
-    box-shadow: var(--shadow-sm);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.dashboard-header h1 {
-    color: var(--dark);
-    margin-bottom: 0.5rem;
-}
-
-.welcome-message {
-    color: var(--gray);
-    margin-bottom: 0;
-}
-
-.patient-info-card {
-    background: white;
-    border-radius: var(--border-radius);
-    padding: 2rem;
-    margin-bottom: 2rem;
-    box-shadow: var(--shadow-sm);
-}
-
-.info-header {
-    display: flex;
-    gap: 2rem;
-    margin-bottom: 2rem;
-    padding-bottom: 2rem;
-    border-bottom: 2px solid var(--gray-light);
-}
-
-.patient-avatar {
-    font-size: 4rem;
-    color: var(--primary);
-    min-width: 80px;
-    text-align: center;
-}
-
-.patient-details h2 {
-    margin: 0 0 1rem 0;
-    color: var(--dark);
-    font-size: 1.75rem;
-}
-
-.detail-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 1rem;
-}
-
-.detail-item {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    color: var(--gray);
-}
-
-.detail-item i {
-    color: var(--primary);
-    font-size: 1.1rem;
-}
-
-.info-stats {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-    gap: 1.5rem;
-}
-
-.stat-box {
-    text-align: center;
-    padding: 1.5rem;
-    background: var(--primary-light);
-    border-radius: var(--border-radius-sm);
-    transition: var(--transition-fast);
-}
-
-.stat-box:hover {
-    box-shadow: var(--shadow);
-    transform: translateY(-2px);
-}
-
-.stat-box h3 {
-    margin: 0;
-    font-size: 2.5rem;
-    color: var(--primary);
-}
-
-.stat-box p {
-    margin: 0.5rem 0 0 0;
-    color: var(--gray);
-    font-size: 0.875rem;
-    font-weight: 500;
-}
-
-.appointments-section {
-    background: white;
-    border-radius: var(--border-radius);
-    padding: 2rem;
-    margin-bottom: 2rem;
-    box-shadow: var(--shadow-sm);
-}
-
-.section-header {
-    margin-bottom: 1.5rem;
-    border-bottom: 2px solid var(--gray-light);
-    padding-bottom: 1rem;
-}
-
-.section-header h2 {
-    color: var(--dark);
-    font-size: 1.5rem;
-    margin: 0;
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-}
-
-.section-header i {
-    color: var(--primary);
-}
-
-.medical-records-grid {
-    display: grid;
-    gap: 1rem;
-}
-
-.record-card {
-    background: var(--gray-lighter);
-    border: 1px solid var(--gray-light);
-    border-radius: var(--border-radius-sm);
-    padding: 1.5rem;
-    display: flex;
-    gap: 1.5rem;
-    align-items: flex-start;
-    transition: var(--transition-fast);
-}
-
-.record-card:hover {
-    box-shadow: var(--shadow);
-    border-color: var(--primary);
-    background: white;
-}
-
-.record-icon {
-    font-size: 3rem;
-    color: var(--primary);
-    min-width: 70px;
-    text-align: center;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.record-icon .fa-file-pdf {
-    color: var(--danger);
-}
-
-.record-icon .fa-file-image {
-    color: var(--success);
-}
-
-.record-info {
-    flex: 1;
-}
-
-.record-info h4 {
-    margin: 0 0 0.5rem 0;
-    color: var(--dark);
-    font-size: 1rem;
-    font-weight: 600;
-    word-break: break-word;
-}
-
-.record-description {
-    margin: 0 0 1rem 0;
-    color: var(--gray);
-    font-size: 0.875rem;
-}
-
-.record-meta {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 1.5rem;
-}
-
-.record-meta small {
-    color: var(--gray);
-    font-size: 0.75rem;
-    display: flex;
-    align-items: center;
-    gap: 0.4rem;
-}
-
-.record-meta i {
-    color: var(--primary);
-}
-
-.record-actions {
-    display: flex;
-    align-items: center;
-}
-
-.appointments-table {
-    overflow-x: auto;
-}
-
-.appointments-table table {
-    width: 100%;
-    border-collapse: collapse;
-    background: white;
-}
-
-.appointments-table th {
-    background: var(--gray-lighter);
-    padding: 1rem;
-    text-align: left;
-    font-weight: 600;
-    color: var(--dark);
-    border-bottom: 2px solid var(--gray-light);
-    font-size: 0.875rem;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-.appointments-table td {
-    padding: 1rem;
-    border-bottom: 1px solid var(--gray-light);
-    color: var(--dark);
-}
-
-.appointments-table tbody tr {
-    transition: var(--transition-fast);
-}
-
-.appointments-table tbody tr:hover {
-    background: var(--primary-light);
-}
-
-.datetime-cell {
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
-}
-
-.datetime-cell .date {
-    font-weight: 600;
-    color: var(--dark);
-}
-
-.datetime-cell .time {
-    font-size: 0.875rem;
-    color: var(--gray);
-}
-
-.symptoms-text {
-    display: block;
-    color: var(--dark);
-    font-size: 0.875rem;
-    max-width: 300px;
-}
-
-.notes-preview {
-    color: var(--dark);
-    font-size: 0.875rem;
-    font-style: italic;
-    max-width: 300px;
-}
-
-.text-muted {
-    color: var(--gray);
-    font-size: 0.875rem;
-}
-
-.status-badge {
-    display: inline-block;
-    padding: 6px 14px;
-    border-radius: 20px;
-    font-size: 0.75rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-.status-badge.pending {
-    background: var(--warning);
-    color: white;
-}
-
-.status-badge.confirmed {
-    background: var(--info);
-    color: white;
-}
-
-.status-badge.completed {
-    background: var(--success);
-    color: white;
-}
-
-.status-badge.cancelled {
-    background: var(--danger);
-    color: white;
-}
-
-.no-data {
-    text-align: center;
-    padding: 4rem 2rem;
-    color: var(--gray);
-}
-
-.no-data i {
-    font-size: 4rem;
-    color: var(--gray-light);
-    margin-bottom: 1rem;
-}
-
-.no-data p {
-    font-size: 1.125rem;
-    margin: 0.5rem 0;
-    color: var(--dark);
-}
-
-.no-data small {
-    color: var(--gray);
-}
-
-/* Responsive Design */
-@media (max-width: 768px) {
-    .dashboard-header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 1rem;
-    }
-    
-    .info-header {
-        flex-direction: column;
-        gap: 1rem;
-        margin-bottom: 1.5rem;
-    }
-    
-    .patient-avatar {
-        min-width: 60px;
-        font-size: 3rem;
-    }
-    
-    .record-card {
-        flex-direction: column;
-        gap: 1rem;
-    }
-    
-    .record-icon {
-        min-width: auto;
-    }
-    
-    .appointments-table {
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
-    }
-    
-    .appointments-table th,
-    .appointments-table td {
-        padding: 0.75rem;
-        font-size: 0.75rem;
-    }
-}
-</style>
-{% endblock %}

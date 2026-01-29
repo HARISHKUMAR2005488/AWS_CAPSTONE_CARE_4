@@ -6,7 +6,7 @@
 <div class="admin-container">
     <!-- Dashboard Header -->
     <div class="dashboard-header">
-        <h1>Admin Dashboard</h1>
+        <h1><i class="fas fa-chart-line"></i> Admin Dashboard</h1>
         <p class="welcome-message">Welcome back, {{ current_user.username }}!</p>
     </div>
     
@@ -77,7 +77,7 @@
     
     <!-- Quick Actions -->
     <div class="quick-actions">
-        <h2>Quick Actions</h2>
+        <h2><i class="fas fa-bolt"></i> Quick Actions</h2>
         <div class="action-buttons">
             <button class="action-btn" data-action="add-doctor">
                 <i class="fas fa-user-plus"></i>
@@ -97,7 +97,7 @@
     <!-- Doctors List -->
     <div class="recent-section">
         <div class="section-header">
-            <h2>Doctors</h2>
+            <h2><i class="fas fa-user-md"></i> Doctors</h2>
         </div>
         
         {% if doctors %}
@@ -171,7 +171,7 @@
     <!-- Recent Appointments -->
     <div class="recent-section">
         <div class="section-header">
-            <h2>Recent Appointments</h2>
+            <h2><i class="fas fa-calendar-check"></i> Recent Appointments</h2>
         </div>
         
         {% if recent_appointments %}
@@ -200,7 +200,7 @@
                                 </td>
                                 <td>
                                     <span class="status-badge {{ appointment.status }}">
-                                        {{ appointment.status|title }}
+                                        {{ 'Approved' if appointment.status == 'confirmed' else appointment.status|title }}
                                     </span>
                                 </td>
                                 <td>

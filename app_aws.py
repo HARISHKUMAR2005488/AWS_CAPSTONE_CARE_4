@@ -3,6 +3,7 @@ import uuid
 import logging
 from datetime import datetime
 from functools import lru_cache
+from decimal import Decimal, InvalidOperation
 
 import boto3
 from botocore.exceptions import ClientError
@@ -32,6 +33,16 @@ class CurrentUser:
 @app.context_processor
 def inject_current_user():
     return dict(current_user=CurrentUser())
+
+
+def to_decimal(value, default="0"):
+    """Convert values to Decimal for DynamoDB numeric compatibility."""
+    if value is None or value == "":
+        value = default
+    try:
+        return Decimal(str(value))
+    except (InvalidOperation, ValueError, TypeError):
+        return Decimal(str(default))
 
 
 # AWS configuration (uses instance/role credentials; no hardcoded keys)
@@ -286,7 +297,7 @@ def signup():
                     "phone": request.form.get("phone", ""),
                     "qualifications": qualifications,
                     "experience": int(experience) if experience.isdigit() else 0,
-                    "consultation_fee": float(consultation_fee) if consultation_fee.replace('.','',1).isdigit() else 0.0,
+                    "consultation_fee": to_decimal(consultation_fee, "0"),
                     "available_days": available_days,
                     "available_time": available_time,
                     "is_available": True,
@@ -409,7 +420,7 @@ def dashboard():
         
         # Ensure doctor profile has all required fields with defaults
         if doctor_profile:
-            doctor_profile.setdefault("consultation_fee", 0.0)
+            doctor_profile.setdefault("consultation_fee", Decimal("0"))
             doctor_profile.setdefault("qualifications", "")
             doctor_profile.setdefault("experience", 0)
             doctor_profile.setdefault("available_days", "")
@@ -488,7 +499,7 @@ def add_doctor():
                 "phone": data.get("phone", ""),
                 "qualifications": data.get("qualifications", ""),
                 "experience": int(data.get("experience", 0) or 0),
-                "consultation_fee": float(data.get("consultation_fee", 0.0) or 0.0),
+                "consultation_fee": to_decimal(data.get("consultation_fee", "0"), "0"),
                 "available_days": data.get("available_days", ""),
                 "available_time": data.get("available_time", ""),
             }

@@ -413,7 +413,12 @@ def doctors():
 
     doctors_resp = doctors_table.scan()
     doctors_list = doctors_resp.get("Items", [])
-    return render_template("doctors.html", doctors=doctors_list)
+    
+    # Extract unique specializations
+    specializations = list(set([d.get("specialization", "General") for d in doctors_list if d.get("specialization")]))
+    specializations.sort()
+    
+    return render_template("doctors.html", doctors=doctors_list, specializations=specializations)
 
 @app.route("/book/<doctor_id>", methods=["GET", "POST"])
 def book(doctor_id: str):

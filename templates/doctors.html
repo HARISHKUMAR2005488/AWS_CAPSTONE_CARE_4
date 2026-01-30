@@ -123,7 +123,7 @@
                                 <div class="fee">
                                     <strong>Fee: ${{ doctor.consultation_fee }}</strong>
                                 </div>
-                                {% if current_user.is_authenticated and current_user.user_type == 'patient' %}
+                                {% if current_user.is_authenticated and current_user.user_type in ['patient', 'user'] %}
                                     <a href="{{ url_for('book_appointment', doctor_id=doctor.id) }}" 
                                        class="btn btn-primary">
                                         Book Appointment

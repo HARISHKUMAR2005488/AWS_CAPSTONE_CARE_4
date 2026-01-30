@@ -4019,9 +4019,11 @@ a {
 
 .achievements-timeline {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 2rem;
-    margin-top: 3rem;
+    grid-template-columns: repeat(3, minmax(220px, 1fr));
+    gap: 1.75rem;
+    margin: 3rem auto 0;
+    max-width: 1100px;
+    align-items: stretch;
 }
 
 .timeline-item {
@@ -4032,6 +4034,10 @@ a {
     text-align: center;
     border: 2px solid rgba(255, 255, 255, 0.2);
     transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-height: 170px;
 }
 
 .timeline-item:hover {
@@ -6653,5 +6659,11 @@ fieldset.form-section legend.form-section-title {
     .booking-summary h3 {
         font-size: 0.95rem;
         gap: 6px;
+    }
+}
+
+@media (max-width: 992px) {
+    .achievements-timeline {
+        grid-template-columns: repeat(2, minmax(220px, 1fr));
     }
 }

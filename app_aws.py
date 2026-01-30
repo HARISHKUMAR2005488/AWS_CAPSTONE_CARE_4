@@ -427,6 +427,16 @@ app.add_url_rule("/user-dashboard", "user_dashboard", dashboard)
 app.add_url_rule("/admin-dashboard", "admin_dashboard", dashboard)
 app.add_url_rule("/doctor-dashboard", "doctor_dashboard", dashboard)
 
+@app.route("/doctor-patients")
+def doctor_patients():
+    """View patients for a doctor"""
+    if "username" not in session or session.get("role") != "doctor":
+        flash("Access denied", "danger")
+        return redirect(url_for("login"))
+    
+    # Placeholder: redirect to doctor dashboard for now
+    return redirect(url_for("dashboard"))
+
 @app.route("/doctors")
 def doctors():
     if "username" not in session:

@@ -295,6 +295,14 @@ def signup():
             logger.info(f"Doctor profile created: {doctor_id} for user {username}")
 
         users_table.put_item(Item=item)
+        
+        # Send notification for new signup
+        role_display = "Doctor" if role == "doctor" else "Admin" if role == "admin" else "Patient"
+        send_notification(
+            subject=f"New {role_display} Registration",
+            message=f"New {role_display} registered:\nUsername: {username}\nEmail: {item.get('email')}\nRole: {role}"
+        )
+        
         flash("Account created. Please log in.", "success")
         return redirect(url_for("login"))
 
@@ -319,6 +327,14 @@ def login():
             ):
                 session["username"] = username
                 session["role"] = item.get("role", "user")
+                
+                # Send notification for successful login
+                role_display = item.get("role", "user").capitalize()
+                send_notification(
+                    subject=f"User Login - {username}",
+                    message=f"User logged in:\nUsername: {username}\nRole: {role_display}\nTime: {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')} UTC"
+                )
+                
                 flash("Logged in successfully", "success")
                 return redirect(url_for("dashboard"))
 
@@ -481,6 +497,22 @@ def add_doctor():
         return {"success": True, "message": "Doctor added successfully", "doctor_id": doctor_id}
     except Exception as e:
         logger.error(f"Error adding doctor: {e}")
+        return {"success": False, "message": str(e)}, 500
+
+@app.route("/admin/delete-doctor/<doctor_id>", methods=["POST"])
+def delete_doctor(doctor_id: str):
+    """Delete a doctor (admin only)"""
+    if "username" not in session or session.get("role") != "admin":
+        return {"success": False, "message": "Access denied"}, 403
+    
+    try:
+        # Delete from doctors table
+        doctors_table.delete_item(Key={"id": doctor_id})
+        logger.info(f"Doctor {doctor_id} deleted by admin {session['username']}")
+        
+        return {"success": True, "message": "Doctor removed successfully"}
+    except ClientError as e:
+        logger.error(f"Error deleting doctor {doctor_id}: {e}")
         return {"success": False, "message": str(e)}, 500
 
 @app.route("/doctors")

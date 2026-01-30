@@ -385,12 +385,25 @@ def dashboard():
 
         appts_resp = appointments_table.scan()
         doctor_appts = [a for a in appts_resp.get("Items", []) if a.get("doctor_id") == doctor_id]
+        
+        # Calculate appointment statistics
+        from datetime import date
+        today = date.today()
+        total_appointments = len(doctor_appts)
+        pending_count = len([a for a in doctor_appts if a.get("status") == "pending"])
+        confirmed_count = len([a for a in doctor_appts if a.get("status") == "confirmed"])
+        completed_count = len([a for a in doctor_appts if a.get("status") == "completed"])
 
         return render_template(
             "doctor.html",
             username=username,
             doctor=doctor_profile,
             appointments=doctor_appts,
+            today=today,
+            total_appointments=total_appointments,
+            pending_count=pending_count,
+            confirmed_count=confirmed_count,
+            completed_count=completed_count,
         )
 
     # Default: user/patient view

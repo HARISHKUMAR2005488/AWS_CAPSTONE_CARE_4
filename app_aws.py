@@ -377,13 +377,13 @@ def dashboard():
     return render_template("user.html", username=username, appointments=appointments)
 
 @app.route("/doctors")
-def doctors_list():
+def doctors():
     if "username" not in session:
         return redirect(url_for("login"))
 
     doctors_resp = doctors_table.scan()
-    doctors = doctors_resp.get("Items", [])
-    return render_template("doctors.html", doctors=doctors)
+    doctors_list = doctors_resp.get("Items", [])
+    return render_template("doctors.html", doctors=doctors_list)
 
 @app.route("/book/<doctor_id>", methods=["GET", "POST"])
 def book(doctor_id: str):
@@ -393,7 +393,7 @@ def book(doctor_id: str):
     doctor = doctors_table.get_item(Key={"id": doctor_id}).get("Item")
     if not doctor:
         flash("Doctor not found", "danger")
-        return redirect(url_for("doctors_list"))
+        return redirect(url_for("doctors"))
 
     if request.method == "POST":
         username = session["username"]

@@ -198,6 +198,7 @@ def medical_records():
     return render_template("patient_records.html", records=records, username=username)
 
 
+@app.route("/")
 def index():
     if "username" in session:
         return redirect(url_for("dashboard"))

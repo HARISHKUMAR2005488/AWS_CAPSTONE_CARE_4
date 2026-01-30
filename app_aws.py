@@ -476,7 +476,7 @@ def add_doctor():
         return {"success": False, "message": "Access denied"}, 403
     
     try:
-        data = request.get_json()
+        data = request.get_json(silent=True) or request.form
         doctor_id = str(uuid.uuid4())
         
         doctors_table.put_item(
@@ -487,8 +487,8 @@ def add_doctor():
                 "email": data.get("email", ""),
                 "phone": data.get("phone", ""),
                 "qualifications": data.get("qualifications", ""),
-                "experience": int(data.get("experience", 0)),
-                "consultation_fee": float(data.get("consultation_fee", 0.0)),
+                "experience": int(data.get("experience", 0) or 0),
+                "consultation_fee": float(data.get("consultation_fee", 0.0) or 0.0),
                 "available_days": data.get("available_days", ""),
                 "available_time": data.get("available_time", ""),
             }

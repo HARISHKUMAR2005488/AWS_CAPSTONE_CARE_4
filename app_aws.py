@@ -374,6 +374,14 @@ def dashboard():
             scan_resp = doctors_table.scan()
             doctor_profile = next((d for d in scan_resp.get("Items", []) if d.get("name") == username), None)
             doctor_id = doctor_profile.get("id") if doctor_profile else None
+        
+        # Ensure doctor profile has all required fields with defaults
+        if doctor_profile:
+            doctor_profile.setdefault("consultation_fee", 0.0)
+            doctor_profile.setdefault("qualifications", "")
+            doctor_profile.setdefault("experience", 0)
+            doctor_profile.setdefault("available_days", "")
+            doctor_profile.setdefault("available_time", "")
 
         appts_resp = appointments_table.scan()
         doctor_appts = [a for a in appts_resp.get("Items", []) if a.get("doctor_id") == doctor_id]

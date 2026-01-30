@@ -11,9 +11,28 @@ from werkzeug.security import check_password_hash, generate_password_hash
 
 app = Flask(__name__)
 app.secret_key = os.getenv("FLASK_SECRET_KEY", "change_me")
+
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+
+# Context processor to make current_user available in templates
+class CurrentUser:
+    def __init__(self):
+        self.is_authenticated = "username" in session
+        self.username = session.get("username")
+        self.user_type = session.get("role", "user")
+    
+    @property
+    def is_anonymous(self):
+        return not self.is_authenticated
+
+
+@app.context_processor
+def inject_current_user():
+    return dict(current_user=CurrentUser())
+
 
 # AWS configuration (uses instance/role credentials; no hardcoded keys)
 REGION = os.getenv("AWS_REGION", "us-east-1")

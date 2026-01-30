@@ -18,7 +18,8 @@
     <nav class="navbar">
         <div class="container">
             <a href="{{ url_for('index') }}" class="logo">
-                <i class="fas fa-heartbeat"></i> Care_4_U Hospitals
+                <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Care_4_U Hospitals Logo" class="logo-img">
+                <span>Care_4_U Hospitals</span>
             </a>
             <ul class="nav-menu">
                 <li><a href="{{ url_for('index') }}">Home</a></li>

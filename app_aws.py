@@ -1,5 +1,6 @@
 import os
 import uuid
+import logging
 from datetime import datetime
 from functools import lru_cache
 
@@ -11,22 +12,34 @@ from werkzeug.security import check_password_hash, generate_password_hash
 app = Flask(__name__)
 app.secret_key = os.getenv("FLASK_SECRET_KEY", "change_me")
 
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
 # AWS configuration (uses instance/role credentials; no hardcoded keys)
 REGION = os.getenv("AWS_REGION", "us-east-1")
 dynamodb = boto3.resource('dynamodb', region_name=REGION)
 sns = boto3.client("sns", region_name=REGION)
+iam = boto3.client("iam", region_name=REGION)
+ec2 = boto3.client("ec2", region_name=REGION)
 
 # DynamoDB table names (override via environment variables if needed)
 USERS_TABLE = os.getenv("USERS_TABLE", "Users")
 DOCTORS_TABLE = os.getenv("DOCTORS_TABLE", "Doctors")
 APPOINTMENTS_TABLE = os.getenv("APPOINTMENTS_TABLE", "Appointments")
+MEDICAL_RECORDS_TABLE = os.getenv("MEDICAL_RECORDS_TABLE", "MedicalRecords")
 
 users_table = dynamodb.Table(USERS_TABLE)
 doctors_table = dynamodb.Table(DOCTORS_TABLE)
 appointments_table = dynamodb.Table(APPOINTMENTS_TABLE)
+medical_records_table = dynamodb.Table(MEDICAL_RECORDS_TABLE)
 
 # SNS topic for booking notifications (subscribe email endpoints to this topic)
 SNS_TOPIC_ARN = os.getenv("SNS_TOPIC_ARN")
+
+# EC2 instance tags for application tracking
+EC2_APP_TAG_KEY = os.getenv("EC2_APP_TAG_KEY", "Application")
+EC2_APP_TAG_VALUE = os.getenv("EC2_APP_TAG_VALUE", "HealthCare")
 
 
 def get_user(username: str):
@@ -35,13 +48,91 @@ def get_user(username: str):
 
 
 def send_notification(subject: str, message: str) -> None:
+    """Send notification via SNS topic"""
     if not SNS_TOPIC_ARN:
-        app.logger.warning("SNS_TOPIC_ARN not set; skipping notification")
+        logger.warning("SNS_TOPIC_ARN not set; skipping notification")
         return
     try:
         sns.publish(TopicArn=SNS_TOPIC_ARN, Subject=subject, Message=message)
+        logger.info(f"Notification sent: {subject}")
     except ClientError as exc:
-        app.logger.error("Error sending notification: %s", exc)
+        logger.error("Error sending notification: %s", exc)
+
+
+def get_iam_user_role(username: str) -> str:
+    """Get IAM role details for a user"""
+    try:
+        response = iam.get_user(UserName=username)
+        return response.get('User', {})
+    except ClientError as exc:
+        if exc.response['Error']['Code'] == 'NoSuchEntity':
+            logger.info(f"IAM user {username} does not exist")
+            return None
+        logger.error(f"Error fetching IAM user {username}: {exc}")
+        return None
+
+
+def get_ec2_instances() -> list:
+    """Get EC2 instances running for the application"""
+    try:
+        response = ec2.describe_instances(
+            Filters=[
+                {
+                    'Name': f'tag:{EC2_APP_TAG_KEY}',
+                    'Values': [EC2_APP_TAG_VALUE]
+                },
+                {
+                    'Name': 'instance-state-name',
+                    'Values': ['running']
+                }
+            ]
+        )
+        instances = []
+        for reservation in response.get('Reservations', []):
+            for instance in reservation.get('Instances', []):
+                instances.append({
+                    'instance_id': instance['InstanceId'],
+                    'instance_type': instance['InstanceType'],
+                    'state': instance['State']['Name'],
+                    'launch_time': instance['LaunchTime'].isoformat(),
+                    'public_ip': instance.get('PublicIpAddress', 'N/A')
+                })
+        logger.info(f"Found {len(instances)} running EC2 instances")
+        return instances
+    except ClientError as exc:
+        logger.error(f"Error fetching EC2 instances: {exc}")
+        return []
+
+
+def save_medical_record(username: str, doctor_id: str, record_data: dict) -> bool:
+    """Save medical record to DynamoDB"""
+    try:
+        record_id = str(uuid.uuid4())
+        item = {
+            "record_id": record_id,
+            "username": username,
+            "doctor_id": doctor_id,
+            "record_data": record_data,
+            "created_at": datetime.utcnow().isoformat(),
+        }
+        medical_records_table.put_item(Item=item)
+        logger.info(f"Medical record {record_id} saved for user {username}")
+        return True
+    except ClientError as exc:
+        logger.error(f"Error saving medical record: {exc}")
+        return False
+
+
+def get_medical_records(username: str) -> list:
+    """Retrieve medical records for a user"""
+    try:
+        response = medical_records_table.scan(
+            FilterExpression=boto3.dynamodb.conditions.Attr('username').eq(username)
+        )
+        return response.get('Items', [])
+    except ClientError as exc:
+        logger.error(f"Error fetching medical records for {username}: {exc}")
+        return []
 
 
 @lru_cache(maxsize=1)
@@ -51,10 +142,62 @@ def has_username_index() -> bool:
         gsis = desc.get("Table", {}).get("GlobalSecondaryIndexes", [])
         return any(gsi.get("IndexName") == "username-index" for gsi in gsis)
     except ClientError as exc:
-        app.logger.error("Failed to describe table for GSI check: %s", exc)
+        logger.error("Failed to describe table for GSI check: %s", exc)
         return False
 
-@app.route("/")
+
+@app.route("/aws-health")
+def aws_health():
+    """Display AWS infrastructure health status"""
+    if "username" not in session or session.get("role") != "admin":
+        flash("Admin access required", "danger")
+        return redirect(url_for("login"))
+    
+    try:
+        ec2_instances = get_ec2_instances()
+        
+        # Get DynamoDB table stats
+        table_stats = {}
+        for table_name, table_obj in [
+            ("Users", users_table),
+            ("Doctors", doctors_table),
+            ("Appointments", appointments_table),
+            ("MedicalRecords", medical_records_table)
+        ]:
+            try:
+                desc = dynamodb.meta.client.describe_table(TableName=table_obj.name)
+                table_stats[table_name] = {
+                    "item_count": desc["Table"]["ItemCount"],
+                    "size_bytes": desc["Table"]["TableSizeBytes"],
+                    "status": desc["Table"]["TableStatus"]
+                }
+            except ClientError:
+                table_stats[table_name] = {"status": "Error fetching stats"}
+        
+        return render_template(
+            "aws_health.html",
+            ec2_instances=ec2_instances,
+            table_stats=table_stats,
+            region=REGION
+        )
+    except Exception as e:
+        logger.error(f"Error in aws_health route: {e}")
+        flash("Error fetching AWS health status", "danger")
+        return redirect(url_for("dashboard"))
+
+
+@app.route("/medical-records")
+def medical_records():
+    """View medical records for a user"""
+    if "username" not in session:
+        return redirect(url_for("login"))
+    
+    username = session["username"]
+    records = get_medical_records(username)
+    
+    return render_template("patient_records.html", records=records, username=username)
+
+
 def index():
     if "username" in session:
         return redirect(url_for("dashboard"))
@@ -257,6 +400,7 @@ def book(doctor_id: str):
         date = request.form.get("date")
         time = request.form.get("time")
         reason = request.form.get("reason", "").strip()
+        medical_notes = request.form.get("medical_notes", "").strip()
 
         appointments_table.put_item(
             Item={
@@ -267,19 +411,34 @@ def book(doctor_id: str):
                 "date": date,
                 "time": time,
                 "reason": reason,
+                "medical_notes": medical_notes,
                 "created_at": datetime.utcnow().isoformat(),
             }
         )
 
+        # Save medical record if notes provided
+        if medical_notes:
+            save_medical_record(
+                username=username,
+                doctor_id=doctor_id,
+                record_data={
+                    "appointment_id": appointment_id,
+                    "notes": medical_notes,
+                    "date": date
+                }
+            )
+
         send_notification(
             subject="Appointment Booked",
-            message=f"User {username} booked {doctor.get('name')} on {date} at {time}.",
+            message=f"User {username} booked {doctor.get('name')} on {date} at {time}. Reason: {reason}",
         )
 
+        logger.info(f"Appointment {appointment_id} created for user {username}")
         flash("Appointment booked successfully", "success")
         return redirect(url_for("home"))
 
     return render_template("bookings.html", doctor=doctor)
+
 
 @app.route("/appointments")
 def my_appointments():

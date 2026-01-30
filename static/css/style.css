@@ -998,14 +998,6 @@ a {
     color: #1e7ce8;
     flex-shrink: 0;
 }
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.8rem;
-    color: white;
-    flex-shrink: 0;
-    transition: var(--transition-smooth);
-}
 
 .stat-card:hover .stat-icon {
     transform: scale(1.1) rotate(5deg);
@@ -2496,14 +2488,13 @@ a {
     padding: 1rem;
     text-align: left;
     border-bottom: 1px solid var(--gray-light);
+    vertical-align: top;
 }
 
 .appointments-table th {
     background-color: var(--light);
     font-weight: 600;
 }
-
-    vertical-align: top;
 .status-badge {
     display: inline-block;
     padding: 6px 14px;
@@ -5449,6 +5440,35 @@ main {
     border-bottom: 1px solid rgba(255, 255, 255, 0.15);
 }
 
+.navbar .logo {
+    color: #ffffff;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+    background: none;
+    -webkit-text-fill-color: currentColor;
+}
+
+.navbar .logo .logo-img {
+    height: 45px;
+    width: auto;
+    object-fit: contain;
+    filter: brightness(1.1);
+}
+
+.navbar .logo span {
+    color: #ffffff;
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+.navbar .logo i {
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.18);
+    border-radius: 12px;
+    padding: 0.35rem 0.45rem;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.2);
+}
+
 .navbar .container {
     padding: 1rem 24px;
 }
@@ -5515,7 +5535,6 @@ main {
 
 /* Cards & Sections */
 .features,
-.stats-section,
 .specialties-section,
 .about-section,
 .values-section,

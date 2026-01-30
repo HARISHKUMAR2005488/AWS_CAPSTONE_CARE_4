@@ -268,15 +268,31 @@ def signup():
         if role == "doctor":
             doctor_id = str(uuid.uuid4())
             item["doctor_id"] = doctor_id
+            
+            # Get doctor-specific fields from form
+            specialization = request.form.get("specialization", "General")
+            qualifications = request.form.get("qualifications", "")
+            experience = request.form.get("experience", "0")
+            consultation_fee = request.form.get("consultation_fee", "0")
+            available_days = request.form.get("available_days", "")
+            available_time = request.form.get("available_time", "")
+            
             doctors_table.put_item(
                 Item={
                     "id": doctor_id,
                     "name": username,
-                    "specialization": request.form.get("specialization", "General"),
+                    "specialization": specialization,
                     "email": request.form.get("email", ""),
                     "phone": request.form.get("phone", ""),
+                    "qualifications": qualifications,
+                    "experience": int(experience) if experience.isdigit() else 0,
+                    "consultation_fee": float(consultation_fee) if consultation_fee.replace('.','',1).isdigit() else 0.0,
+                    "available_days": available_days,
+                    "available_time": available_time,
+                    "is_available": True,
                 }
             )
+            logger.info(f"Doctor profile created: {doctor_id} for user {username}")
 
         users_table.put_item(Item=item)
         flash("Account created. Please log in.", "success")

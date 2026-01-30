@@ -437,6 +437,36 @@ def doctor_patients():
     # Placeholder: redirect to doctor dashboard for now
     return redirect(url_for("dashboard"))
 
+@app.route("/add-doctor", methods=["POST"])
+def add_doctor():
+    """Add a new doctor (admin only)"""
+    if "username" not in session or session.get("role") != "admin":
+        return {"success": False, "message": "Access denied"}, 403
+    
+    try:
+        data = request.get_json()
+        doctor_id = str(uuid.uuid4())
+        
+        doctors_table.put_item(
+            Item={
+                "id": doctor_id,
+                "name": data.get("name"),
+                "specialization": data.get("specialization", "General"),
+                "email": data.get("email", ""),
+                "phone": data.get("phone", ""),
+                "qualifications": data.get("qualifications", ""),
+                "experience": int(data.get("experience", 0)),
+                "consultation_fee": float(data.get("consultation_fee", 0.0)),
+                "available_days": data.get("available_days", ""),
+                "available_time": data.get("available_time", ""),
+            }
+        )
+        
+        return {"success": True, "message": "Doctor added successfully", "doctor_id": doctor_id}
+    except Exception as e:
+        logger.error(f"Error adding doctor: {e}")
+        return {"success": False, "message": str(e)}, 500
+
 @app.route("/doctors")
 def doctors():
     if "username" not in session:

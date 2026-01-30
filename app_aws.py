@@ -552,9 +552,32 @@ def doctors():
     specializations = list(set([d.get("specialization", "General") for d in doctors_list if d.get("specialization")]))
     specializations.sort()
     
-    return render_template("doctors.html", doctors=doctors_list, specializations=specializations)
+    # Ensure defaults for template fields and build ratings wrapper
+    doctors_with_ratings = []
+    for d in doctors_list:
+        d.setdefault("qualifications", "")
+        d.setdefault("experience", 0)
+        d.setdefault("available_days", "")
+        d.setdefault("available_time", "")
+        d.setdefault("phone", "")
+        d.setdefault("consultation_fee", Decimal("0"))
+        d.setdefault("is_available", True)
+        doctors_with_ratings.append(
+            {
+                "doctor": d,
+                "average_rating": 0,
+                "total_reviews": 0,
+            }
+        )
+    
+    return render_template(
+        "doctors.html",
+        doctors=doctors_list,
+        doctors_with_ratings=doctors_with_ratings,
+        specializations=specializations,
+    )
 
-@app.route("/book/<doctor_id>", methods=["GET", "POST"])
+@app.route("/book/<doctor_id>", methods=["GET", "POST"], endpoint="book_appointment")
 def book(doctor_id: str):
     if "username" not in session:
         return redirect(url_for("login"))

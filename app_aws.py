@@ -343,6 +343,9 @@ def home():
 
 
 @app.route("/dashboard")
+@app.route("/user-dashboard")
+@app.route("/admin-dashboard")
+@app.route("/doctor-dashboard")
 def dashboard():
     if "username" not in session:
         return redirect(url_for("login"))
@@ -396,6 +399,12 @@ def dashboard():
         appointments = [a for a in appointments if a.get("username") == username]
 
     return render_template("user.html", username=username, appointments=appointments)
+
+
+# Add route aliases for template compatibility
+app.add_url_rule("/user-dashboard", "user_dashboard", dashboard)
+app.add_url_rule("/admin-dashboard", "admin_dashboard", dashboard)
+app.add_url_rule("/doctor-dashboard", "doctor_dashboard", dashboard)
 
 @app.route("/doctors")
 def doctors():

@@ -11,7 +11,6 @@ from werkzeug.security import check_password_hash, generate_password_hash
 
 app = Flask(__name__)
 app.secret_key = os.getenv("FLASK_SECRET_KEY", "change_me")
-
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -35,7 +34,8 @@ appointments_table = dynamodb.Table(APPOINTMENTS_TABLE)
 medical_records_table = dynamodb.Table(MEDICAL_RECORDS_TABLE)
 
 # SNS topic for booking notifications (subscribe email endpoints to this topic)
-SNS_TOPIC_ARN = os.getenv("SNS_TOPIC_ARN")
+# TODO: Replace with your actual SNS Topic ARN after creating SNS topic in AWS Console
+SNS_TOPIC_ARN = os.getenv("SNS_TOPIC_ARN", "arn:aws:sns:us-east-1:455322615378:healthcarenotifications")
 
 # EC2 instance tags for application tracking
 EC2_APP_TAG_KEY = os.getenv("EC2_APP_TAG_KEY", "Application")

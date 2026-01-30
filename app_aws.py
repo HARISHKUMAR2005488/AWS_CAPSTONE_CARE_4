@@ -287,8 +287,10 @@ def signup():
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
-        username = request.form["username"].strip()
-        password = request.form["password"].strip()
+        # Accept both email and username for login
+        email = request.form.get("email", "").strip()
+        username = request.form.get("username", email).strip()
+        password = request.form.get("password", "").strip()
 
         response = users_table.get_item(Key={"username": username})
         item = response.get("Item")

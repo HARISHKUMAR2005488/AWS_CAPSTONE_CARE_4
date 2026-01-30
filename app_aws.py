@@ -6,7 +6,7 @@ from functools import lru_cache
 
 import boto3
 from botocore.exceptions import ClientError
-from flask import Flask, render_template, request, redirect, url_for, session, flash
+from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
 from werkzeug.security import check_password_hash, generate_password_hash
 
 app = Flask(__name__)
@@ -503,17 +503,31 @@ def add_doctor():
 def delete_doctor(doctor_id: str):
     """Delete a doctor (admin only)"""
     if "username" not in session or session.get("role") != "admin":
-        return {"success": False, "message": "Access denied"}, 403
+        return jsonify({"success": False, "message": "Access denied"}), 403
     
     try:
+        # Check if doctor exists first
+        doctor = doctors_table.get_item(Key={"id": doctor_id}).get("Item")
+        if not doctor:
+            return jsonify({"success": False, "message": "Doctor not found"}), 404
+        
         # Delete from doctors table
         doctors_table.delete_item(Key={"id": doctor_id})
-        logger.info(f"Doctor {doctor_id} deleted by admin {session['username']}")
+        logger.info(f"Doctor {doctor_id} ({doctor.get('name')}) deleted by admin {session['username']}")
         
-        return {"success": True, "message": "Doctor removed successfully"}
+        # Send notification
+        send_notification(
+            subject="Doctor Profile Removed",
+            message=f"Doctor removed from system:\nName: {doctor.get('name')}\nID: {doctor_id}\nRemoved by: {session['username']}"
+        )
+        
+        return jsonify({"success": True, "message": "Doctor removed successfully"})
     except ClientError as e:
         logger.error(f"Error deleting doctor {doctor_id}: {e}")
-        return {"success": False, "message": str(e)}, 500
+        return jsonify({"success": False, "message": str(e)}), 500
+    except Exception as e:
+        logger.error(f"Unexpected error deleting doctor {doctor_id}: {e}")
+        return jsonify({"success": False, "message": "An unexpected error occurred"}), 500
 
 @app.route("/doctors")
 def doctors():

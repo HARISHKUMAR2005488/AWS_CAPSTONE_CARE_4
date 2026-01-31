@@ -7,8 +7,9 @@ from decimal import Decimal, InvalidOperation
 
 import boto3
 from botocore.exceptions import ClientError
-from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
+from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify, send_from_directory
 from werkzeug.security import check_password_hash, generate_password_hash
+from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
 app.secret_key = os.getenv("FLASK_SECRET_KEY", "change_me")
@@ -165,6 +166,174 @@ def get_medical_records(username: str) -> list:
         return []
 
 
+def analyze_symptoms(symptoms_text: str) -> dict:
+    """
+    Symptom analysis engine
+    Detects emergency conditions, suggests specializations, and calculates severity
+    """
+    symptoms_text_lower = symptoms_text.lower()
+
+    emergency_indicators = {
+        "chest pain": 3,
+        "heart attack": 5,
+        "stroke": 5,
+        "seizure": 4,
+        "difficulty breathing": 4,
+        "shortness of breath": 4,
+        "severe bleeding": 5,
+        "unconscious": 5,
+        "severe allergic": 4,
+        "anaphylaxis": 5,
+        "poisoning": 5,
+        "overdose": 5,
+        "severe trauma": 5,
+        "severe burns": 5,
+        "loss of consciousness": 5,
+        "severe head injury": 4,
+        "drowning": 5,
+        "choking": 4,
+        "unable to breathe": 5,
+        "severe abdominal pain": 3,
+        "rupture": 4,
+        "serious injury": 3,
+        "bleeding heavily": 4,
+        "gunshot": 5,
+        "stab wound": 4,
+    }
+
+    specialization_map = {
+        "Cardiology": {
+            "keywords": ["chest pain", "heart", "palpitation", "arrhythmia", "hypertension", "blood pressure", "cardiac", "angina", "irregular heartbeat", "shortness of breath"],
+        },
+        "Neurology": {
+            "keywords": ["headache", "migraine", "dizziness", "stroke", "seizure", "tremor", "nerve", "neuropathy", "numbness", "paralysis", "vertigo", "brain"],
+        },
+        "Orthopedics": {
+            "keywords": ["fracture", "bone", "joint", "arthritis", "back pain", "knee pain", "shoulder pain", "ankle", "sprain", "ligament"],
+        },
+        "Gastroenterology": {
+            "keywords": ["stomach", "abdominal", "nausea", "vomiting", "diarrhea", "constipation", "acid reflux", "heartburn", "liver", "digestive", "intestinal"],
+        },
+        "Pulmonology": {
+            "keywords": ["cough", "asthma", "lung", "bronchitis", "pneumonia", "respiratory", "breathing", "wheezing", "shortness of breath", "tuberculosis"],
+        },
+        "Dermatology": {
+            "keywords": ["rash", "skin", "acne", "eczema", "psoriasis", "mole", "wart", "itching", "fungal", "allergy"],
+        },
+        "Ophthalmology": {
+            "keywords": ["eye", "vision", "blind", "blurred", "eye pain", "glaucoma", "cataract", "contact lens", "glasses"],
+        },
+        "ENT (Otolaryngology)": {
+            "keywords": ["ear", "nose", "throat", "hearing", "tinnitus", "sinus", "sinusitis", "sore throat", "hoarse", "vertigo"],
+        },
+        "Pediatrics": {
+            "keywords": ["baby", "child", "infant", "kid", "vaccination", "fever", "crying", "development", "growth"],
+        },
+        "Psychiatry": {
+            "keywords": ["depression", "anxiety", "stress", "panic", "mental", "psychological", "emotional", "insomnia", "sleep", "mood"],
+        },
+    }
+
+    emergency_score = 0
+    for emergency_keyword, weight in emergency_indicators.items():
+        if emergency_keyword in symptoms_text_lower:
+            emergency_score += weight
+
+    is_emergency = emergency_score >= 4
+    critical_phrases = ["severe", "sudden", "critical", "emergency", "urgent", "immediate"]
+    has_critical_modifier = any(phrase in symptoms_text_lower for phrase in critical_phrases)
+    if has_critical_modifier and emergency_score >= 2:
+        is_emergency = True
+
+    severity_score = min(emergency_score * 15, 100)
+    if symptoms_text_lower.count(" ") > 10:
+        severity_score = min(severity_score + 10, 100)
+
+    matching_specializations = []
+    for specialty, info in specialization_map.items():
+        keyword_matches = sum(1 for keyword in info["keywords"] if keyword in symptoms_text_lower)
+        if keyword_matches > 0:
+            matching_specializations.append({
+                "name": specialty,
+                "score": keyword_matches,
+                "keywords_matched": keyword_matches,
+            })
+
+    matching_specializations.sort(key=lambda x: x["score"], reverse=True)
+    top_specializations = matching_specializations[:3] or [{"name": "General Practice", "score": 1, "keywords_matched": 0}]
+
+    formatted_specializations = []
+    for spec in top_specializations:
+        if spec["name"] != "General Practice":
+            keywords_found = [k for k in specialization_map[spec["name"]]["keywords"] if k in symptoms_text_lower]
+            if keywords_found:
+                reason = f"Based on your mention of {', '.join(keywords_found[:2])}"
+                if len(keywords_found) > 2:
+                    reason += f" and other {spec['name'].lower()} symptoms"
+            else:
+                reason = "Recommended for overall assessment"
+        else:
+            reason = "For general health evaluation and preliminary diagnosis"
+
+        formatted_specializations.append({
+            "name": spec["name"],
+            "reason": reason,
+        })
+
+    response_message = generate_assistant_response(
+        symptoms_text,
+        is_emergency,
+        formatted_specializations,
+        severity_score,
+    )
+
+    return {
+        "response": response_message,
+        "is_emergency": is_emergency,
+        "specializations": formatted_specializations,
+        "severity_score": severity_score,
+    }
+
+
+def generate_assistant_response(symptoms: str, is_emergency: bool, specializations: list, severity: int) -> str:
+    """Generate a helpful assistant response message"""
+    if is_emergency:
+        return (
+            "🚨 <strong>URGENT: Please Seek Immediate Medical Attention</strong><br><br>"
+            "Based on your description, this appears to be a medical emergency. "
+            "Please call emergency services (911 in the US) or visit the nearest emergency room immediately. "
+            "Do not wait for an appointment.<br><br>"
+            f"Your symptoms indicate potential {specializations[0]['name'] if specializations else 'medical'} concerns."
+        )
+
+    response = "<strong>Thank you for sharing your symptoms.</strong><br><br>"
+    if severity >= 70:
+        response += (
+            "Your symptoms appear to be significant and require prompt medical attention. "
+            "We recommend scheduling an appointment with a specialist as soon as possible.<br><br>"
+        )
+    elif severity >= 40:
+        response += (
+            "Your symptoms suggest you would benefit from a medical evaluation. "
+            "Please consider scheduling an appointment within the next few days.<br><br>"
+        )
+    else:
+        response += (
+            "Based on your description, it's good to get these symptoms evaluated by a medical professional. "
+            "You can schedule a consultation when convenient.<br><br>"
+        )
+
+    if specializations:
+        spec_names = [s["name"] for s in specializations[:2]]
+        response += f"<strong>Recommended specialists:</strong> {', '.join(spec_names)}.<br><br>"
+
+    response += (
+        "<em>Note: This is an AI-powered preliminary assessment only and does not replace "
+        "professional medical advice. Always consult with a qualified healthcare provider.</em>"
+    )
+    return response
+
+
 @lru_cache(maxsize=1)
 def has_username_index() -> bool:
     try:
@@ -226,6 +395,95 @@ def medical_records():
     records = get_medical_records(username)
     
     return render_template("patient_records.html", records=records, username=username)
+
+
+@app.route("/upload-profile-picture", methods=["POST"])
+def upload_profile_picture():
+    """Upload profile picture for user (patient/doctor/admin)"""
+    if "username" not in session:
+        return jsonify({"success": False, "message": "Please log in"}), 401
+
+    if "profile_picture" not in request.files:
+        return jsonify({"success": False, "message": "No file provided"}), 400
+
+    file = request.files["profile_picture"]
+    if file.filename == "":
+        return jsonify({"success": False, "message": "No file selected"}), 400
+
+    allowed_extensions = {"png", "jpg", "jpeg", "gif", "webp"}
+    if "." not in file.filename or file.filename.rsplit(".", 1)[1].lower() not in allowed_extensions:
+        return jsonify({"success": False, "message": "Only image files are allowed (png, jpg, jpeg, gif, webp)"}), 400
+
+    try:
+        filename = secure_filename(file.filename)
+        safe_name = f"{datetime.utcnow().strftime('%Y%m%d%H%M%S')}_profile_{filename}"
+        profile_pic_dir = os.path.join(app.instance_path, "uploads", "profile_pictures")
+        os.makedirs(profile_pic_dir, exist_ok=True)
+        file_path = os.path.join(profile_pic_dir, safe_name)
+        file.save(file_path)
+
+        relative_path = f"profile_pictures/{safe_name}"
+        username = session["username"]
+        role = session.get("role", "user")
+
+        if role == "doctor":
+            user = get_user(username)
+            doctor_id = user.get("doctor_id") if user else None
+            if not doctor_id:
+                return jsonify({"success": False, "message": "Doctor profile not found"}), 404
+
+            doctors_table.update_item(
+                Key={"id": doctor_id},
+                UpdateExpression="SET profile_image = :img",
+                ExpressionAttributeValues={":img": relative_path},
+            )
+        else:
+            users_table.update_item(
+                Key={"username": username},
+                UpdateExpression="SET profile_picture = :img",
+                ExpressionAttributeValues={":img": relative_path},
+            )
+
+        return jsonify({"success": True, "message": "Profile picture updated successfully"})
+    except Exception as exc:
+        logger.error("Error uploading profile picture: %s", exc)
+        return jsonify({"success": False, "message": "Error uploading file"}), 500
+
+
+@app.route("/uploads/profile_pictures/<path:filename>")
+def serve_profile_picture(filename: str):
+    """Serve profile pictures from the instance uploads folder"""
+    uploads_dir = os.path.join(app.instance_path, "uploads")
+    try:
+        return send_from_directory(uploads_dir, f"profile_pictures/{filename}")
+    except FileNotFoundError:
+        return ("", 404)
+
+
+@app.route("/user/chat-assistant", methods=["POST"])
+def chat_assistant():
+    """AI-powered health symptom analyzer and doctor recommendation engine"""
+    if "username" not in session:
+        return jsonify({"success": False, "message": "Please log in"}), 401
+
+    role = session.get("role", "user")
+    if role not in {"user", "patient"}:
+        return jsonify({"success": False, "message": "This feature is for patients only"}), 403
+
+    data = request.get_json(silent=True) or {}
+    symptoms = str(data.get("symptoms", "")).lower().strip()
+    if not symptoms:
+        return jsonify({"success": False, "message": "Please describe your symptoms"}), 400
+
+    analysis = analyze_symptoms(symptoms)
+
+    return jsonify({
+        "success": True,
+        "response": analysis["response"],
+        "is_emergency": analysis["is_emergency"],
+        "specializations": analysis["specializations"],
+        "severity_score": analysis["severity_score"],
+    })
 
 
 @app.route("/")

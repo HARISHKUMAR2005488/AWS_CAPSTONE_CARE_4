@@ -1124,11 +1124,26 @@ def doctor_download_record(record_id: str):
         if not file_path:
             logger.error(f"File not found in any location. Tried: {possible_paths}")
             logger.error(f"Record data: filename={filename}, patient_id={patient_id}")
+            logger.error(f"Instance path: {app.instance_path}")
             # List what files actually exist
             upload_dir = os.path.join(app.instance_path, "uploads", patient_id)
+            logger.error(f"Checking directory: {upload_dir}")
             if os.path.exists(upload_dir):
-                files = os.listdir(upload_dir)
-                logger.error(f"Files in {upload_dir}: {files}")
+                try:
+                    files = os.listdir(upload_dir)
+                    logger.error(f"Files in {upload_dir}: {files}")
+                except Exception as e:
+                    logger.error(f"Error listing directory: {e}")
+            else:
+                logger.error(f"Upload directory does not exist: {upload_dir}")
+                # Check parent directory
+                parent_dir = os.path.join(app.instance_path, "uploads")
+                if os.path.exists(parent_dir):
+                    try:
+                        subdirs = os.listdir(parent_dir)
+                        logger.error(f"Subdirectories in uploads: {subdirs}")
+                    except Exception as e:
+                        logger.error(f"Error listing parent directory: {e}")
             return f"File not found. Expected: {filename}", 404
         
         logger.info(f"Doctor {doctor_username} downloading record {record_id} for patient {patient_id} from {file_path}")

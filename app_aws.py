@@ -1484,6 +1484,11 @@ def update_appointment_status(appointment_id: str):
         if status not in ["confirmed", "cancelled", "completed"]:
             logger.error(f"Invalid status: {status}")
             return jsonify({"success": False, "message": "Invalid status"}), 400
+        
+        # Validate that notes/prescription is provided when completing appointment
+        if status == "completed" and not notes:
+            logger.error(f"Attempted to complete appointment {appointment_id} without prescription")
+            return jsonify({"success": False, "message": "Prescription is required to complete appointment"}), 400
 
         # Prepare update expression for appointment
         update_expr = "SET #status = :status"

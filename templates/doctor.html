@@ -157,12 +157,12 @@
                                 </button>
                             {% elif appointment.status == 'confirmed' %}
                                 <button class="btn-sm btn-primary" 
-                                        onclick="completeAppointment('{{ appointment.id }}')">
-                                    <i class="fas fa-check-double"></i> Mark Complete
+                                        onclick="addPrescriptionToComplete('{{ appointment.id }}')">
+                                    <i class="fas fa-prescription"></i> Add Prescription & Complete
                                 </button>
-                                <button class="btn-sm btn-warning"
-                                        onclick="addPrescription('{{ appointment.id }}', '{{ appointment.status }}')">
-                                    <i class="fas fa-prescription"></i> Add Prescription
+                                <button class="btn-sm btn-danger"
+                                        onclick="updateAppointmentStatus('{{ appointment.id }}', 'cancelled')">
+                                    <i class="fas fa-times"></i> Cancel
                                 </button>
                             {% elif appointment.status == 'completed' %}
                                 <button class="btn-sm btn-warning"
@@ -238,8 +238,8 @@
                                             </button>
                                         {% elif appointment.status == 'confirmed' %}
                                             <button class="btn-sm btn-primary" 
-                                                    onclick="completeAppointment('{{ appointment.id }}')">
-                                                Complete
+                                                    onclick="addPrescriptionToComplete('{{ appointment.id }}')">
+                                                Add Prescription & Complete
                                             </button>
                                         {% endif %}
                                     </div>
@@ -393,30 +393,16 @@ function updateAppointmentStatus(appointmentId, status) {
 
 // Complete appointment with notes
 function completeAppointment(appointmentId) {
-    if (!confirm('Mark this appointment as completed?')) {
-        return;
-    }
-    
-    const formData = new FormData();
-    formData.append('status', 'completed');
-    
-    fetch(`/doctor/update-appointment/${appointmentId}`, {
-        method: 'POST',
-        body: formData
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            alert(data.message);
-            location.reload();
-        } else {
-            alert('Error: ' + data.message);
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('An error occurred. Please try again.');
-    });
+    alert('Please add prescription before completing the appointment.');
+}
+
+// Add prescription to complete appointment (mandatory)
+function addPrescriptionToComplete(appointmentId) {
+    document.getElementById('appointment_id').value = appointmentId;
+    document.getElementById('appointment_status').value = 'completed';
+    document.getElementById('notes').value = '';
+    document.getElementById('notes').required = true;
+    document.getElementById('notesModal').style.display = 'block';
 }
 
 // Add prescription / notes
@@ -424,6 +410,7 @@ function addPrescription(appointmentId, status) {
     document.getElementById('appointment_id').value = appointmentId;
     document.getElementById('appointment_status').value = status || 'confirmed';
     document.getElementById('notes').value = '';
+    document.getElementById('notes').required = false;
     document.getElementById('notesModal').style.display = 'block';
 }
 </script>

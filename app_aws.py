@@ -809,12 +809,24 @@ def add_doctor():
     
     try:
         data = request.get_json(silent=True) or request.form
+        username = (data.get("username") or "").strip()
+        password = (data.get("password") or "").strip()
+        doctor_name = (data.get("name") or "").strip()
+
+        if not username or not password or not doctor_name:
+            return {"success": False, "message": "Username, password, and name are required"}, 400
+
+        existing_user = users_table.get_item(Key={"username": username}).get("Item")
+        if existing_user:
+            return {"success": False, "message": "Username already exists"}, 400
+
         doctor_id = str(uuid.uuid4())
-        
+
         doctors_table.put_item(
             Item={
                 "id": doctor_id,
-                "name": data.get("name"),
+                "name": doctor_name,
+                "username": username,
                 "specialization": data.get("specialization", "General"),
                 "email": data.get("email", ""),
                 "phone": data.get("phone", ""),
@@ -823,9 +835,21 @@ def add_doctor():
                 "consultation_fee": to_decimal(data.get("consultation_fee", "0"), "0"),
                 "available_days": data.get("available_days", ""),
                 "available_time": data.get("available_time", ""),
+                "is_available": True,
             }
         )
-        
+
+        users_table.put_item(
+            Item={
+                "username": username,
+                "password_hash": generate_password_hash(password),
+                "role": "doctor",
+                "email": data.get("email", ""),
+                "phone": data.get("phone", ""),
+                "doctor_id": doctor_id,
+            }
+        )
+
         return {"success": True, "message": "Doctor added successfully", "doctor_id": doctor_id}
     except Exception as e:
         logger.error(f"Error adding doctor: {e}")

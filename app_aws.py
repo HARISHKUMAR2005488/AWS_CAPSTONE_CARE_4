@@ -975,7 +975,8 @@ def book(doctor_id: str):
         flash("Appointment booked successfully", "success")
         return redirect(url_for("home"))
 
-    return render_template("bookings.html", doctor=doctor)
+    from datetime import date as date_class
+    return render_template("bookings.html", doctor=doctor, date=date_class)
 
 
 @app.route("/appointments")

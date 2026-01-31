@@ -1134,24 +1134,24 @@ def update_appointment_status(appointment_id: str):
         return jsonify({"success": False, "message": "Unauthorized"}), 401
 
     try:
+        doctor_username = session["username"]
+        
         # Get appointment details
         appointment = appointments_table.get_item(Key={"id": appointment_id}).get("Item")
         if not appointment:
+            logger.error(f"Appointment not found: {appointment_id}")
             return jsonify({"success": False, "message": "Appointment not found"}), 404
 
-        # Get doctor details to verify ownership
-        doctor = doctors_table.get_item(Key={"doctor_id": session["username"]}).get("Item")
-        if not doctor:
-            return jsonify({"success": False, "message": "Doctor not found"}), 404
-
         # Verify this appointment is for this doctor
-        if appointment.get("doctor_id") != session["username"]:
+        if appointment.get("doctor_id") != doctor_username:
+            logger.error(f"Doctor {doctor_username} not authorized for appointment {appointment_id}")
             return jsonify({"success": False, "message": "Unauthorized"}), 403
 
         # Get the new status from request
         status = request.form.get("status", "").strip()
         
         if status not in ["confirmed", "cancelled", "completed"]:
+            logger.error(f"Invalid status: {status}")
             return jsonify({"success": False, "message": "Invalid status"}), 400
 
         # Update appointment status
@@ -1161,12 +1161,17 @@ def update_appointment_status(appointment_id: str):
             ExpressionAttributeNames={"#status": "status"},
             ExpressionAttributeValues={":status": status},
         )
+        
+        logger.info(f"Appointment {appointment_id} status updated to {status} by doctor {doctor_username}")
 
+        # Get doctor info for notification
+        doctor = doctors_table.get_item(Key={"id": doctor_username}).get("Item")
+        doctor_name = doctor.get("name", "Doctor") if doctor else "Doctor"
+        
         # Send notification
-        patient_name = appointment.get("patient_name", "Patient")
         message_map = {
-            "confirmed": f"Your appointment has been confirmed by {doctor.get('name', 'Doctor')}",
-            "cancelled": f"Your appointment has been cancelled by {doctor.get('name', 'Doctor')}",
+            "confirmed": f"Your appointment has been confirmed by {doctor_name}",
+            "cancelled": f"Your appointment has been cancelled by {doctor_name}",
             "completed": "Your appointment has been marked as completed"
         }
         
@@ -1181,10 +1186,10 @@ def update_appointment_status(appointment_id: str):
         })
 
     except ClientError as exc:
-        logger.error(f"Error updating appointment {appointment_id}: {exc}")
+        logger.error(f"ClientError updating appointment {appointment_id}: {exc}")
         return jsonify({"success": False, "message": "Database error"}), 500
     except Exception as exc:
-        logger.error(f"Error updating appointment {appointment_id}: {exc}")
+        logger.error(f"Exception updating appointment {appointment_id}: {exc}")
         return jsonify({"success": False, "message": "An error occurred"}), 500
 
 

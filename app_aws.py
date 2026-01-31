@@ -748,7 +748,8 @@ def dashboard():
             doctor_profile.setdefault("available_time", "")
 
         appts_resp = appointments_table.scan()
-        doctor_appts = [a for a in appts_resp.get("Items", []) if a.get("doctor_id") == doctor_id]
+        # Filter appointments for this doctor - check both by doctor ID (UUID) and by doctor username
+        doctor_appts = [a for a in appts_resp.get("Items", []) if a.get("doctor_id") == doctor_id or a.get("doctor_id") == username]
         
         # Normalize doctor appointments for template compatibility
         from datetime import datetime as dt_class, date as date_class

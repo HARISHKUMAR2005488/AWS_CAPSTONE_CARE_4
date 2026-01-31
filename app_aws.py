@@ -1592,5 +1592,68 @@ def update_appointment_status(appointment_id: str):
         return jsonify({"success": False, "message": "An error occurred"}), 500
 
 
+@app.route("/admin/update-appointment/<appointment_id>", methods=["POST"])
+def admin_update_appointment(appointment_id: str):
+    """Admin: Update appointment status (confirm, cancel)"""
+    if "username" not in session or session.get("role") != "admin":
+        return jsonify({"success": False, "message": "Unauthorized"}), 401
+
+    try:
+        admin_username = session["username"]
+        logger.info(f"Admin {admin_username} attempting to update appointment {appointment_id}")
+        
+        # Get appointment details
+        appointment = appointments_table.get_item(Key={"id": appointment_id}).get("Item")
+        if not appointment:
+            logger.error(f"Appointment not found: {appointment_id}")
+            return jsonify({"success": False, "message": "Appointment not found"}), 404
+
+        # Get the new status from request
+        status = request.form.get("status", "").strip()
+        
+        if status not in ["confirmed", "cancelled"]:
+            logger.error(f"Invalid status for admin: {status}")
+            return jsonify({"success": False, "message": "Invalid status"}), 400
+
+        # Update appointment status
+        appointments_table.update_item(
+            Key={"id": appointment_id},
+            UpdateExpression="SET #status = :status",
+            ExpressionAttributeNames={"#status": "status"},
+            ExpressionAttributeValues={":status": status},
+        )
+        
+        logger.info(f"Appointment {appointment_id} status updated to {status} by admin {admin_username}")
+        
+        # Send notification to doctor
+        doctor_id = appointment.get("doctor_id")
+        if doctor_id:
+            try:
+                doctor = doctors_table.get_item(Key={"id": doctor_id}).get("Item") if len(doctor_id) == 36 else None
+                if not doctor:
+                    # Try looking up by username
+                    scan_resp = doctors_table.scan(FilterExpression="username = :username", ExpressionAttributeValues={":username": doctor_id})
+                    doctor = scan_resp.get("Items", [None])[0] if scan_resp.get("Items") else None
+                
+                if doctor and doctor.get("email"):
+                    subject = f"Appointment Status Updated"
+                    message = f"Admin has {status} an appointment (ID: {appointment_id}). Please check your dashboard for details."
+                    sns_client.publish(TopicArn=SNS_TOPIC_ARN, Subject=subject, Message=message)
+            except Exception as e:
+                logger.error(f"Error sending notification to doctor: {e}")
+
+        return jsonify({
+            "success": True,
+            "message": f"Appointment {status} successfully"
+        })
+
+    except ClientError as exc:
+        logger.error(f"ClientError updating appointment {appointment_id}: {exc}")
+        return jsonify({"success": False, "message": "Database error"}), 500
+    except Exception as exc:
+        logger.error(f"Exception updating appointment {appointment_id}: {exc}", exc_info=True)
+        return jsonify({"success": False, "message": "An error occurred"}), 500
+
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)

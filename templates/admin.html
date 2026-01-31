@@ -750,28 +750,36 @@ function viewDetails(appointmentId) {
     rows.forEach(row => {
         if (row.textContent.includes(`#${appointmentId}`)) {
             const cells = row.querySelectorAll('td');
+            // Updated cell indices to match new table structure
+            // ID, Patient, Doctor, DateTime, Symptoms, Status, Actions
+            const patientCell = cells[1].querySelectorAll('*');
+            const patientName = patientCell.length > 0 ? patientCell[0].textContent.trim() : cells[1].textContent.trim();
+            
+            const dateTimeCell = cells[3];
+            const dateElements = dateTimeCell.querySelectorAll('span');
+            const date = dateElements.length > 0 ? dateElements[0].textContent.trim() : cells[3].textContent.split('\n')[0].trim();
+            const time = dateElements.length > 1 ? dateElements[1].textContent.trim() : cells[3].textContent.split('\n')[1]?.trim() || '-';
+            const symptoms = cells[4] ? cells[4].textContent.trim() : '-';
+            
             appointmentData = {
                 id: cells[0].textContent.trim(),
-                patient: cells[1].textContent.trim(),
+                patient: patientName,
                 doctor: cells[2].textContent.trim(),
-                dateTime: cells[3].textContent.trim(),
-                status: cells[4].textContent.trim()
+                date: date,
+                time: time,
+                symptoms: symptoms,
+                status: cells[5].textContent.trim()
             };
         }
     });
     
     if (appointmentData) {
-        // Extract date and time
-        const dateTimeParts = appointmentData.dateTime.split('\n').map(p => p.trim());
-        const date = dateTimeParts[0] || '-';
-        const time = dateTimeParts[1] || '-';
-        
         // Populate modal fields
         document.getElementById('detailId').textContent = appointmentData.id;
         document.getElementById('detailPatient').textContent = appointmentData.patient;
         document.getElementById('detailDoctor').textContent = appointmentData.doctor;
-        document.getElementById('detailDate').textContent = date;
-        document.getElementById('detailTime').textContent = time;
+        document.getElementById('detailDate').textContent = appointmentData.date;
+        document.getElementById('detailTime').textContent = appointmentData.time;
         document.getElementById('detailStatus').textContent = appointmentData.status;
         
         // Open modal

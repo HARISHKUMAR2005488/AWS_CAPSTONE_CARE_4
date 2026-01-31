@@ -10,13 +10,13 @@
         
         <form method="POST" action="{{ url_for('login') }}" class="auth-form" novalidate>
             <div class="form-group">
-                <label for="email">
-                    <i class="fas fa-envelope"></i>
-                    Email Address <span class="form-required">*</span>
+                <label for="username">
+                    <i class="fas fa-user"></i>
+                    Username <span class="form-required">*</span>
                 </label>
-                <input type="email" id="email" name="email" class="form-input" required 
-                       placeholder="your.email@example.com" 
-                       aria-label="Email Address"
+                <input type="text" id="username" name="username" class="form-input" required 
+                       placeholder="Enter your username" 
+                       aria-label="Username"
                        aria-required="true">
                 <span class="form-feedback"></span>
             </div>

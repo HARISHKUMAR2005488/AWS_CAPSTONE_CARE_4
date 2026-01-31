@@ -1101,16 +1101,37 @@ def doctor_download_record(record_id: str):
                        and a.get("username") == patient_id]
         
         if not doctor_appts:
-            return "Access denied", 403
+            return "Access denied - no appointments with this patient", 403
         
-        # Construct file path
-        file_path = os.path.join(app.instance_path, "uploads", patient_id, record.get("filename"))
+        # Get filename from record
+        filename = record.get("filename")
+        if not filename:
+            logger.error(f"No filename in record {record_id}")
+            return "File information missing", 404
         
-        if not os.path.exists(file_path):
-            logger.error(f"File not found: {file_path}")
-            return "File not found", 404
+        # Construct file path - try multiple possible locations
+        possible_paths = [
+            os.path.join(app.instance_path, "uploads", patient_id, filename),
+            os.path.join(app.instance_path, "uploads", str(patient_id), filename),
+        ]
         
-        logger.info(f"Doctor {doctor_username} downloading record {record_id} for patient {patient_id}")
+        file_path = None
+        for path in possible_paths:
+            if os.path.exists(path):
+                file_path = path
+                break
+        
+        if not file_path:
+            logger.error(f"File not found in any location. Tried: {possible_paths}")
+            logger.error(f"Record data: filename={filename}, patient_id={patient_id}")
+            # List what files actually exist
+            upload_dir = os.path.join(app.instance_path, "uploads", patient_id)
+            if os.path.exists(upload_dir):
+                files = os.listdir(upload_dir)
+                logger.error(f"Files in {upload_dir}: {files}")
+            return f"File not found. Expected: {filename}", 404
+        
+        logger.info(f"Doctor {doctor_username} downloading record {record_id} for patient {patient_id} from {file_path}")
         
         return send_file(
             file_path,

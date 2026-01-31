@@ -805,6 +805,16 @@ def dashboard():
         else:
             appt["appointment_date"] = date_class.today()
         
+        # Handle created_at (convert ISO string to datetime)
+        created_at = appt.get("created_at")
+        if isinstance(created_at, str):
+            try:
+                appt["created_at"] = dt_class.fromisoformat(created_at)
+            except (ValueError, TypeError):
+                appt["created_at"] = dt_class.utcnow()
+        elif not isinstance(created_at, dt_class):
+            appt["created_at"] = dt_class.utcnow()
+        
         # Only include appointments with valid dates
         if appt.get("appointment_date"):
             normalized_appointments.append(appt)

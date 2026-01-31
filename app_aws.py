@@ -1132,6 +1132,19 @@ def doctor_download_record(record_id: str):
                 file_path = path
                 break
         
+        # If still not found, scan all subdirectories in uploads folder for the file
+        if not file_path:
+            uploads_dir = os.path.join(app.instance_path, "uploads")
+            if os.path.exists(uploads_dir):
+                for subdir in os.listdir(uploads_dir):
+                    subdir_path = os.path.join(uploads_dir, subdir)
+                    if os.path.isdir(subdir_path):
+                        potential_file = os.path.join(subdir_path, filename)
+                        if os.path.exists(potential_file):
+                            file_path = potential_file
+                            logger.info(f"Found file in subdirectory: {subdir}")
+                            break
+        
         if not file_path:
             logger.error(f"File not found in any location. Tried: {possible_paths}")
             logger.error(f"Record data: filename={filename}, patient_id={patient_id}, patient_numeric_id={patient_numeric_id}")

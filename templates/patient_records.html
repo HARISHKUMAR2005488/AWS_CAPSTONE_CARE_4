@@ -53,69 +53,10 @@
                     <h3>{{ appointments|length }}</h3>
                     <p>Total Appointments</p>
                 </div>
-                <div class="stat-box">
-                    <h3>{{ medical_records|length }}</h3>
-                    <p>Medical Documents</p>
-                </div>
             </div>
         </div>
 
-        <!-- Medical Documents Section -->
-        <div class="appointments-section">
-            <div class="section-header">
-                <h2><i class="fas fa-file-medical"></i> Medical Documents</h2>
-            </div>
-
-            {% if medical_records %}
-                <div class="medical-records-grid">
-                    {% for record in medical_records %}
-                        <div class="record-card">
-                            <div class="record-icon">
-                                {% if record.file_type in ['pdf'] %}
-                                    <i class="fas fa-file-pdf"></i>
-                                {% elif record.file_type in ['jpg', 'jpeg', 'png'] %}
-                                    <i class="fas fa-file-image"></i>
-                                {% else %}
-                                    <i class="fas fa-file"></i>
-                                {% endif %}
-                            </div>
-                            <div class="record-info">
-                                <h4>{{ record.original_filename }}</h4>
-                                {% if record.description %}
-                                    <p class="record-description">{{ record.description }}</p>
-                                {% endif %}
-                                <div class="record-meta">
-                                    <small>
-                                        <i class="fas fa-calendar"></i>
-                                        Uploaded: {{ record.upload_date.strftime('%b %d, %Y at %I:%M %p') }}
-                                    </small>
-                                    <small>
-                                        <i class="fas fa-hdd"></i>
-                                        Size: {{ (record.file_size / 1024)|round(2) }} KB
-                                    </small>
-                                    <small>
-                                        <i class="fas fa-file-alt"></i>
-                                        Type: {{ record.file_type.upper() }}
-                                    </small>
-                                </div>
-                            </div>
-                            <div class="record-actions">
-                                <a href="{{ url_for('doctor_download_record', record_id=record.id) }}" class="btn btn-primary btn-sm">
-                                    <i class="fas fa-download"></i> Download
-                                </a>
-                            </div>
-                        </div>
-                    {% endfor %}
-                </div>
-            {% else %}
-                <div class="no-data">
-                    <i class="fas fa-file-medical-alt"></i>
-                    <p>No medical documents uploaded yet.</p>
-                    <small>The patient hasn't uploaded any medical documents to their profile.</small>
-                </div>
-            {% endif %}
-        </div>
-
+        <!-- Appointment History Section -->
         <!-- Appointment History Section -->
         <div class="appointments-section">
             <div class="section-header">

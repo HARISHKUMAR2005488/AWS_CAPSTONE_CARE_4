@@ -1135,6 +1135,7 @@ def update_appointment_status(appointment_id: str):
 
     try:
         doctor_username = session["username"]
+        logger.info(f"Doctor {doctor_username} attempting to update appointment {appointment_id}")
         
         # Get appointment details
         appointment = appointments_table.get_item(Key={"id": appointment_id}).get("Item")
@@ -1142,10 +1143,12 @@ def update_appointment_status(appointment_id: str):
             logger.error(f"Appointment not found: {appointment_id}")
             return jsonify({"success": False, "message": "Appointment not found"}), 404
 
+        logger.info(f"Appointment found - doctor_id in appointment: {appointment.get('doctor_id')}, session doctor: {doctor_username}")
+        
         # Verify this appointment is for this doctor
         if appointment.get("doctor_id") != doctor_username:
-            logger.error(f"Doctor {doctor_username} not authorized for appointment {appointment_id}")
-            return jsonify({"success": False, "message": "Unauthorized"}), 403
+            logger.error(f"Doctor {doctor_username} not authorized for appointment {appointment_id}. Appointment doctor_id: {appointment.get('doctor_id')}")
+            return jsonify({"success": False, "message": "Unauthorized - this appointment is not for you"}), 403
 
         # Get the new status from request
         status = request.form.get("status", "").strip()
@@ -1189,7 +1192,7 @@ def update_appointment_status(appointment_id: str):
         logger.error(f"ClientError updating appointment {appointment_id}: {exc}")
         return jsonify({"success": False, "message": "Database error"}), 500
     except Exception as exc:
-        logger.error(f"Exception updating appointment {appointment_id}: {exc}")
+        logger.error(f"Exception updating appointment {appointment_id}: {exc}", exc_info=True)
         return jsonify({"success": False, "message": "An error occurred"}), 500
 
 

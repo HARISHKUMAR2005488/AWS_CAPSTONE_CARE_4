@@ -1521,7 +1521,7 @@ def update_appointment_status(appointment_id: str):
                     "appointment_id": appointment_id,
                     "type": "prescription",
                     "prescription": notes,
-                    "date": appointment.get("date", str(date.today())),
+                    "date": appointment.get("date", datetime.utcnow().strftime("%Y-%m-%d")),
                     "created_by": doctor_username,
                     "created_at": datetime.utcnow().isoformat()
                 }

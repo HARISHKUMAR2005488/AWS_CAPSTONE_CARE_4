@@ -750,6 +750,33 @@ def dashboard():
         appts_resp = appointments_table.scan()
         doctor_appts = [a for a in appts_resp.get("Items", []) if a.get("doctor_id") == doctor_id]
         
+        # Normalize doctor appointments for template compatibility
+        from datetime import datetime as dt_class, date as date_class
+        normalized_doctor_appts = []
+        for appt in doctor_appts:
+            appt.setdefault("appointment_time", appt.get("time"))
+            appt.setdefault("status", "pending")
+            appt.setdefault("symptoms", appt.get("reason", ""))
+            appt.setdefault("notes", appt.get("medical_notes", ""))
+            appt.setdefault("patient", {"username": appt.get("username", "Unknown"), "email": ""})
+            
+            # Handle appointment_date
+            date_val = appt.get("date") or appt.get("appointment_date")
+            if isinstance(date_val, str):
+                try:
+                    appt["appointment_date"] = dt_class.strptime(date_val, "%Y-%m-%d").date()
+                except (ValueError, TypeError):
+                    appt["appointment_date"] = date_class.today()
+            elif isinstance(date_val, date_class):
+                appt["appointment_date"] = date_val
+            else:
+                appt["appointment_date"] = date_class.today()
+            
+            if appt.get("appointment_date"):
+                normalized_doctor_appts.append(appt)
+        
+        doctor_appts = normalized_doctor_appts
+        
         # Calculate appointment statistics
         from datetime import date
         today = date.today()
@@ -1039,7 +1066,7 @@ def my_appointments():
     return render_template("appointments.html", appointments=appointments)
 
 
-@app.route("/cancel-appointment/<appointment_id>", methods=["POST"])
+@app.route("/cancel-appointment/<appointment_id>", methods=["GET", "POST"])
 def cancel_appointment(appointment_id: str):
     """Cancel an appointment"""
     if "username" not in session:

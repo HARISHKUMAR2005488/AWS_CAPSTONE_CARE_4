@@ -723,11 +723,46 @@ def dashboard():
     if role == "admin":
         doctors_resp = doctors_table.scan()
         users_resp = users_table.scan()
+        appts_resp = appointments_table.scan()
+        
+        # Get all appointments and normalize them
+        from datetime import datetime as dt_class, date as date_class
+        all_appointments = []
+        for appt in appts_resp.get("Items", []):
+            appt.setdefault("appointment_time", appt.get("time"))
+            appt.setdefault("status", "pending")
+            appt.setdefault("symptoms", appt.get("reason", ""))
+            appt.setdefault("patient", {"username": appt.get("username", "Unknown"), "email": ""})
+            appt.setdefault("doctor", {"name": appt.get("doctor_id", "Unknown")})
+            
+            # Handle appointment_date
+            date_val = appt.get("date") or appt.get("appointment_date")
+            if isinstance(date_val, str):
+                try:
+                    appt["appointment_date"] = dt_class.strptime(date_val, "%Y-%m-%d").date()
+                except (ValueError, TypeError):
+                    appt["appointment_date"] = date_class.today()
+            elif isinstance(date_val, date_class):
+                appt["appointment_date"] = date_val
+            else:
+                appt["appointment_date"] = date_class.today()
+            
+            if appt.get("appointment_date"):
+                all_appointments.append(appt)
+        
+        # Separate upcoming appointments (future dates)
+        from datetime import date
+        today = date.today()
+        upcoming_appointments = [a for a in all_appointments if a.get("appointment_date") and a.get("appointment_date") >= today]
+        upcoming_appointments.sort(key=lambda x: (x.get("appointment_date") or date.today(), x.get("appointment_time") or ""))
+        
         return render_template(
             "admin.html",
             username=username,
             doctors=doctors_resp.get("Items", []),
             users=users_resp.get("Items", []),
+            recent_appointments=upcoming_appointments[:10],
+            upcoming_appointments=upcoming_appointments,
         )
 
     if role == "doctor":

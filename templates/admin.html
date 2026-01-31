@@ -168,10 +168,10 @@
         {% endif %}
     </div>
     
-    <!-- Recent Appointments -->
+    <!-- Recent Appointments (Upcoming) -->
     <div class="recent-section">
         <div class="section-header">
-            <h2><i class="fas fa-calendar-check"></i> Recent Appointments</h2>
+            <h2><i class="fas fa-calendar-alt"></i> Upcoming Appointments</h2>
         </div>
         
         {% if recent_appointments %}
@@ -183,6 +183,7 @@
                             <th>Patient</th>
                             <th>Doctor</th>
                             <th>Date & Time</th>
+                            <th>Symptoms</th>
                             <th>Status</th>
                             <th>Actions</th>
                         </tr>
@@ -191,12 +192,21 @@
                         {% for appointment in recent_appointments %}
                             <tr>
                                 <td>#{{ appointment.id }}</td>
-                                <td>{{ appointment.patient.username }}</td>
+                                <td>
+                                    <div class="patient-cell">
+                                        <strong>{{ appointment.patient.username }}</strong>
+                                        <small>{{ appointment.patient.email or 'N/A' }}</small>
+                                    </div>
+                                </td>
                                 <td>{{ appointment.doctor.name }}</td>
                                 <td>
-                                    {{ appointment.appointment_date.strftime('%b %d, %Y') }}
-                                    <br>
-                                    <small>{{ appointment.appointment_time }}</small>
+                                    <div class="datetime-cell">
+                                        <span class="date">{{ appointment.appointment_date.strftime('%b %d, %Y') }}</span>
+                                        <span class="time">{{ appointment.appointment_time }}</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="symptoms-text">{{ appointment.symptoms[:50] }}{% if appointment.symptoms|length > 50 %}...{% endif %}</span>
                                 </td>
                                 <td>
                                     <span class="status-badge {{ appointment.status }}">
@@ -228,7 +238,7 @@
         {% else %}
             <div class="no-data">
                 <i class="fas fa-calendar-times"></i>
-                <p>No appointments found</p>
+                <p>No upcoming appointments</p>
             </div>
         {% endif %}
     </div>

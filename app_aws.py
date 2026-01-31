@@ -1041,7 +1041,21 @@ def book(doctor_id: str):
         return redirect(url_for("dashboard"))
 
     from datetime import date as date_class
-    return render_template("appointments.html", doctor=doctor, date=date_class)
+    
+    # Generate available time slots (standard 30-minute intervals during typical working hours)
+    available_slots = [
+        "9:00 AM", "9:30 AM", "10:00 AM", "10:30 AM",
+        "11:00 AM", "11:30 AM", "2:00 PM", "2:30 PM",
+        "3:00 PM", "3:30 PM", "4:00 PM", "4:30 PM"
+    ]
+    
+    return render_template(
+        "appointments.html", 
+        doctor=doctor, 
+        date=date_class,
+        available_slots=available_slots,
+        min_date=date_class.today()
+    )
 
 
 @app.route("/appointments")

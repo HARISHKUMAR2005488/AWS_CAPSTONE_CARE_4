@@ -986,18 +986,39 @@ def doctor_view_patient_records(patient_id: str):
         medical_records = [r for r in records_resp.get("Items", []) 
                           if r.get("patient_username") == patient_id or r.get("username") == patient_id]
         
-        # Sort records by date (newest first)
-        from datetime import datetime as dt_class
-        def get_record_date(record):
-            date_str = record.get("created_at") or record.get("date")
+        # Normalize medical records for template compatibility
+        from datetime import datetime as dt_class, date as date_class
+        normalized_records = []
+        for record in medical_records:
+            # Ensure all required fields exist with defaults
+            record.setdefault("original_filename", record.get("filename", "Document"))
+            record.setdefault("description", "")
+            record.setdefault("file_type", record.get("file_type", "unknown"))
+            record.setdefault("file_size", 0)
+            
+            # Handle date/upload_date field
+            date_str = record.get("upload_date") or record.get("created_at") or record.get("date")
             if date_str:
                 try:
                     if isinstance(date_str, str):
-                        return dt_class.fromisoformat(date_str.replace("Z", "+00:00"))
-                    return date_str
+                        record["upload_date"] = dt_class.fromisoformat(date_str.replace("Z", "+00:00"))
+                    else:
+                        record["upload_date"] = date_str
                 except (ValueError, TypeError, AttributeError):
-                    return dt_class.min
-            return dt_class.min
+                    record["upload_date"] = dt_class.utcnow()
+            else:
+                record["upload_date"] = dt_class.utcnow()
+            
+            normalized_records.append(record)
+        
+        medical_records = normalized_records
+        
+        # Sort records by date (newest first)
+        def get_record_date(record):
+            try:
+                return record.get("upload_date", dt_class.min)
+            except:
+                return dt_class.min
         
         medical_records.sort(key=get_record_date, reverse=True)
         

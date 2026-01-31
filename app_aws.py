@@ -777,19 +777,29 @@ def dashboard():
         
         doctor_appts = normalized_doctor_appts
         
-        # Calculate appointment statistics
+        # Calculate appointment statistics and separate into today/upcoming
         from datetime import date
         today = date.today()
         total_appointments = len(doctor_appts)
         pending_count = len([a for a in doctor_appts if a.get("status") == "pending"])
         confirmed_count = len([a for a in doctor_appts if a.get("status") == "confirmed"])
         completed_count = len([a for a in doctor_appts if a.get("status") == "completed"])
+        
+        # Separate today's appointments and upcoming appointments
+        today_appointments = [a for a in doctor_appts if a.get("appointment_date") == today]
+        upcoming_appointments = [a for a in doctor_appts if a.get("appointment_date") and a.get("appointment_date") > today]
+        
+        # Sort appointments by time
+        today_appointments.sort(key=lambda x: x.get("appointment_time", ""))
+        upcoming_appointments.sort(key=lambda x: (x.get("appointment_date"), x.get("appointment_time", "")))
 
         return render_template(
             "doctor.html",
             username=username,
             doctor=doctor_profile,
             appointments=doctor_appts,
+            today_appointments=today_appointments,
+            upcoming_appointments=upcoming_appointments,
             today=today,
             total_appointments=total_appointments,
             pending_count=pending_count,
@@ -1000,10 +1010,10 @@ def book(doctor_id: str):
     if request.method == "POST":
         username = session["username"]
         appointment_id = str(uuid.uuid4())
-        date = request.form.get("date")
-        time = request.form.get("time")
-        reason = request.form.get("reason", "").strip()
-        medical_notes = request.form.get("medical_notes", "").strip()
+        date = request.form.get("appointment_date")
+        time = request.form.get("appointment_time")
+        reason = request.form.get("symptoms", "").strip()
+        medical_notes = request.form.get("symptoms", "").strip()
 
         appointments_table.put_item(
             Item={

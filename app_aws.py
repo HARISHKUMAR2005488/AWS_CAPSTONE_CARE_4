@@ -1024,11 +1024,34 @@ def doctor_view_patient_records(patient_id: str):
         
         logger.info(f"Found {len(medical_records)} medical records for patient {patient_id}")
         
+        # Normalize appointments for template compatibility
+        normalized_appts = []
+        for appt in doctor_appts:
+            # Normalize field names
+            appt.setdefault("appointment_time", appt.get("time"))
+            appt.setdefault("status", "pending")
+            appt.setdefault("symptoms", appt.get("reason", ""))
+            appt.setdefault("notes", appt.get("medical_notes", ""))
+            
+            # Handle appointment_date
+            date_val = appt.get("date") or appt.get("appointment_date")
+            if isinstance(date_val, str):
+                try:
+                    appt["appointment_date"] = dt_class.strptime(date_val, "%Y-%m-%d").date()
+                except (ValueError, TypeError):
+                    appt["appointment_date"] = date_class.today()
+            elif isinstance(date_val, date_class):
+                appt["appointment_date"] = date_val
+            else:
+                appt["appointment_date"] = date_class.today()
+            
+            normalized_appts.append(appt)
+        
         return render_template(
             "patient_records.html",
             patient=patient_user,
             medical_records=medical_records,
-            appointments=doctor_appts,
+            appointments=normalized_appts,
             username=doctor_username
         )
         

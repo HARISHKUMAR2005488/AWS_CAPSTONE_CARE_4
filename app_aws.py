@@ -1039,5 +1039,42 @@ def my_appointments():
     return render_template("appointments.html", appointments=appointments)
 
 
+@app.route("/cancel-appointment/<appointment_id>", methods=["POST"])
+def cancel_appointment(appointment_id: str):
+    """Cancel an appointment"""
+    if "username" not in session:
+        return redirect(url_for("login"))
+
+    try:
+        appointment = appointments_table.get_item(Key={"id": appointment_id}).get("Item")
+        if not appointment:
+            flash("Appointment not found", "danger")
+            return redirect(url_for("dashboard"))
+
+        username = session["username"]
+        if appointment.get("username") != username:
+            flash("You can only cancel your own appointments", "danger")
+            return redirect(url_for("dashboard"))
+
+        appointments_table.update_item(
+            Key={"id": appointment_id},
+            UpdateExpression="SET #status = :status",
+            ExpressionAttributeNames={"#status": "status"},
+            ExpressionAttributeValues={":status": "cancelled"},
+        )
+
+        send_notification(
+            subject="Appointment Cancelled",
+            message=f"Appointment {appointment_id} has been cancelled by user {username}",
+        )
+
+        flash("Appointment cancelled successfully", "success")
+    except ClientError as exc:
+        logger.error(f"Error cancelling appointment {appointment_id}: {exc}")
+        flash("Error cancelling appointment", "danger")
+
+    return redirect(url_for("dashboard"))
+
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)

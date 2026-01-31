@@ -783,6 +783,21 @@ def dashboard():
     if not has_username_index():
         appointments = [a for a in appointments if a.get("username") == username]
 
+    # Normalize appointment fields for template compatibility
+    from datetime import datetime as dt_class
+    for appt in appointments:
+        appt.setdefault("appointment_date", appt.get("date"))
+        appt.setdefault("appointment_time", appt.get("time"))
+        appt.setdefault("status", "pending")
+        appt.setdefault("symptoms", appt.get("reason", ""))
+        appt.setdefault("notes", appt.get("medical_notes", ""))
+        appt.setdefault("doctor", {"name": appt.get("doctor_name", "Unknown"), "specialization": "General"})
+        if isinstance(appt.get("appointment_date"), str):
+            try:
+                appt["appointment_date"] = dt_class.strptime(appt["appointment_date"], "%Y-%m-%d").date()
+            except (ValueError, TypeError):
+                pass
+
     return render_template("user.html", username=username, appointments=appointments)
 
 

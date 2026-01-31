@@ -160,7 +160,17 @@ def get_medical_records(username: str) -> list:
         response = medical_records_table.scan(
             FilterExpression=boto3.dynamodb.conditions.Attr('username').eq(username)
         )
-        return response.get('Items', [])
+        records = response.get('Items', [])
+        for record in records:
+            upload_date = record.get("upload_date")
+            if isinstance(upload_date, str):
+                try:
+                    record["upload_date"] = datetime.fromisoformat(upload_date)
+                except ValueError:
+                    record["upload_date"] = datetime.utcnow()
+            elif upload_date is None:
+                record["upload_date"] = datetime.utcnow()
+        return records
     except ClientError as exc:
         logger.error(f"Error fetching medical records for {username}: {exc}")
         return []
@@ -395,6 +405,59 @@ def medical_records():
     records = get_medical_records(username)
     
     return render_template("patient_records.html", records=records, username=username)
+
+
+@app.route("/user/upload-document", methods=["POST"])
+def upload_document():
+    """Upload a medical document for a user"""
+    if "username" not in session:
+        return jsonify({"success": False, "message": "Please log in"}), 401
+
+    if "document" not in request.files:
+        return jsonify({"success": False, "message": "No file provided"}), 400
+
+    file = request.files["document"]
+    if file.filename == "":
+        return jsonify({"success": False, "message": "No file selected"}), 400
+
+    allowed_extensions = {"pdf", "jpg", "jpeg", "png"}
+    if "." not in file.filename or file.filename.rsplit(".", 1)[1].lower() not in allowed_extensions:
+        return jsonify({"success": False, "message": "Only PDF, JPG, JPEG, and PNG files are allowed"}), 400
+
+    try:
+        username = session["username"]
+        description = (request.form.get("description") or "").strip()
+        filename = secure_filename(file.filename)
+        safe_name = f"{datetime.utcnow().strftime('%Y%m%d%H%M%S')}_{filename}"
+
+        upload_dir = os.path.join(app.instance_path, "uploads", username)
+        os.makedirs(upload_dir, exist_ok=True)
+
+        file_path = os.path.join(upload_dir, safe_name)
+        file.save(file_path)
+
+        file_size = os.path.getsize(file_path)
+        file_type = filename.rsplit(".", 1)[1].lower() if "." in filename else "unknown"
+
+        record_id = str(uuid.uuid4())
+        medical_records_table.put_item(
+            Item={
+                "id": record_id,
+                "record_id": record_id,
+                "username": username,
+                "filename": safe_name,
+                "original_filename": filename,
+                "description": description,
+                "file_type": file_type,
+                "file_size": file_size,
+                "upload_date": datetime.utcnow().isoformat(),
+            }
+        )
+
+        return jsonify({"success": True, "message": "Document uploaded", "description": description})
+    except Exception as exc:
+        logger.error("Error uploading document: %s", exc)
+        return jsonify({"success": False, "message": "Upload failed"}), 500
 
 
 @app.route("/upload-profile-picture", methods=["POST"])

@@ -444,13 +444,16 @@ def upload_document():
             Item={
                 "id": record_id,
                 "record_id": record_id,
-                "username": username,
+                "patient_username": username,  # Use patient_username for consistency
+                "username": username,  # Keep for backwards compatibility
                 "filename": safe_name,
                 "original_filename": filename,
                 "description": description,
                 "file_type": file_type,
                 "file_size": file_size,
+                "type": "document",  # Mark as document type
                 "upload_date": datetime.utcnow().isoformat(),
+                "created_at": datetime.utcnow().isoformat(),  # Add created_at for sorting
             }
         )
 
@@ -978,12 +981,10 @@ def doctor_view_patient_records(patient_id: str):
             flash("You don't have access to this patient's records", "danger")
             return redirect(url_for("doctor_patients"))
         
-        # Get patient's medical records
-        records_resp = medical_records_table.scan(
-            FilterExpression="patient_username = :username",
-            ExpressionAttributeValues={":username": patient_id}
-        )
-        medical_records = records_resp.get("Items", [])
+        # Get patient's medical records - query by patient_username or username for backwards compatibility
+        records_resp = medical_records_table.scan()
+        medical_records = [r for r in records_resp.get("Items", []) 
+                          if r.get("patient_username") == patient_id or r.get("username") == patient_id]
         
         # Sort records by date (newest first)
         from datetime import datetime as dt_class
@@ -1006,6 +1007,7 @@ def doctor_view_patient_records(patient_id: str):
             "patient_records.html",
             patient=patient_user,
             medical_records=medical_records,
+            appointments=doctor_appts,
             username=doctor_username
         )
         
@@ -1013,6 +1015,50 @@ def doctor_view_patient_records(patient_id: str):
         logger.error(f"Error loading patient records for {patient_id}: {exc}", exc_info=True)
         flash("Error loading patient records", "danger")
         return redirect(url_for("doctor_patients"))
+
+@app.route("/doctor/download-record/<record_id>", endpoint="doctor_download_record")
+def doctor_download_record(record_id: str):
+    """Download a medical record"""
+    if "username" not in session or session.get("role") != "doctor":
+        return "Access denied", 403
+    
+    try:
+        doctor_username = session["username"]
+        
+        # Get the record
+        record = medical_records_table.get_item(Key={"id": record_id}).get("Item")
+        if not record:
+            return "Record not found", 404
+        
+        patient_id = record.get("patient_username") or record.get("username")
+        
+        # Verify doctor has appointments with this patient
+        appts_resp = appointments_table.scan()
+        doctor_appts = [a for a in appts_resp.get("Items", []) 
+                       if (a.get("doctor_id") == doctor_username or a.get("doctor_id") == session.get("doctor_id"))
+                       and a.get("username") == patient_id]
+        
+        if not doctor_appts:
+            return "Access denied", 403
+        
+        # Construct file path
+        file_path = os.path.join(app.instance_path, "uploads", patient_id, record.get("filename"))
+        
+        if not os.path.exists(file_path):
+            logger.error(f"File not found: {file_path}")
+            return "File not found", 404
+        
+        logger.info(f"Doctor {doctor_username} downloading record {record_id} for patient {patient_id}")
+        
+        return send_file(
+            file_path,
+            as_attachment=True,
+            download_name=record.get("original_filename", "document")
+        )
+        
+    except Exception as exc:
+        logger.error(f"Error downloading record {record_id}: {exc}", exc_info=True)
+        return "Error downloading file", 500
 
 @app.route("/add-doctor", methods=["POST"])
 def add_doctor():

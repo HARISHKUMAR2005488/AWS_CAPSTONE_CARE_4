@@ -1014,11 +1014,14 @@ def book(doctor_id: str):
         time = request.form.get("appointment_time")
         reason = request.form.get("symptoms", "").strip()
         medical_notes = request.form.get("symptoms", "").strip()
+        
+        # Get doctor's username from the doctor object (the parameter doctor_id is actually the doctor's ID)
+        doctor_username = doctor.get("username")
 
         appointments_table.put_item(
             Item={
                 "id": appointment_id,
-                "doctor_id": doctor_id,
+                "doctor_id": doctor_username,  # Store doctor's username, not their ID
                 "doctor_name": doctor.get("name"),
                 "username": username,
                 "date": date,
@@ -1033,7 +1036,7 @@ def book(doctor_id: str):
         if medical_notes:
             save_medical_record(
                 username=username,
-                doctor_id=doctor_id,
+                doctor_id=doctor_username,  # Use doctor's username
                 record_data={
                     "appointment_id": appointment_id,
                     "notes": medical_notes,

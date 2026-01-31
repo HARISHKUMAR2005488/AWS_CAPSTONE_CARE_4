@@ -1109,11 +1109,22 @@ def doctor_download_record(record_id: str):
             logger.error(f"No filename in record {record_id}")
             return "File information missing", 404
         
-        # Construct file path - try multiple possible locations
+        # Get user details to check for numeric ID
+        patient_user = get_user(patient_id)
+        patient_numeric_id = patient_user.get("id") if patient_user else None
+        
+        # Construct file path - try multiple possible locations (username, numeric ID, etc.)
         possible_paths = [
             os.path.join(app.instance_path, "uploads", patient_id, filename),
             os.path.join(app.instance_path, "uploads", str(patient_id), filename),
         ]
+        
+        # Also try numeric user ID if available
+        if patient_numeric_id:
+            possible_paths.extend([
+                os.path.join(app.instance_path, "uploads", str(patient_numeric_id), filename),
+                os.path.join(app.instance_path, "uploads", patient_numeric_id, filename),
+            ])
         
         file_path = None
         for path in possible_paths:
@@ -1123,7 +1134,7 @@ def doctor_download_record(record_id: str):
         
         if not file_path:
             logger.error(f"File not found in any location. Tried: {possible_paths}")
-            logger.error(f"Record data: filename={filename}, patient_id={patient_id}")
+            logger.error(f"Record data: filename={filename}, patient_id={patient_id}, patient_numeric_id={patient_numeric_id}")
             logger.error(f"Instance path: {app.instance_path}")
             # List what files actually exist
             upload_dir = os.path.join(app.instance_path, "uploads", patient_id)

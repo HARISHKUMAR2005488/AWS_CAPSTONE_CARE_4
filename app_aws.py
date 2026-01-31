@@ -1127,5 +1127,66 @@ def cancel_appointment(appointment_id: str):
     return redirect(url_for("dashboard"))
 
 
+@app.route("/doctor/update-appointment/<appointment_id>", methods=["POST"])
+def update_appointment_status(appointment_id: str):
+    """Update appointment status (confirm, cancel, complete)"""
+    if "username" not in session:
+        return jsonify({"success": False, "message": "Unauthorized"}), 401
+
+    try:
+        # Get appointment details
+        appointment = appointments_table.get_item(Key={"id": appointment_id}).get("Item")
+        if not appointment:
+            return jsonify({"success": False, "message": "Appointment not found"}), 404
+
+        # Get doctor details to verify ownership
+        doctor = doctors_table.get_item(Key={"doctor_id": session["username"]}).get("Item")
+        if not doctor:
+            return jsonify({"success": False, "message": "Doctor not found"}), 404
+
+        # Verify this appointment is for this doctor
+        if appointment.get("doctor_id") != session["username"]:
+            return jsonify({"success": False, "message": "Unauthorized"}), 403
+
+        # Get the new status from request
+        status = request.form.get("status", "").strip()
+        
+        if status not in ["confirmed", "cancelled", "completed"]:
+            return jsonify({"success": False, "message": "Invalid status"}), 400
+
+        # Update appointment status
+        appointments_table.update_item(
+            Key={"id": appointment_id},
+            UpdateExpression="SET #status = :status",
+            ExpressionAttributeNames={"#status": "status"},
+            ExpressionAttributeValues={":status": status},
+        )
+
+        # Send notification
+        patient_name = appointment.get("patient_name", "Patient")
+        message_map = {
+            "confirmed": f"Your appointment has been confirmed by {doctor.get('name', 'Doctor')}",
+            "cancelled": f"Your appointment has been cancelled by {doctor.get('name', 'Doctor')}",
+            "completed": "Your appointment has been marked as completed"
+        }
+        
+        send_notification(
+            subject=f"Appointment {status.title()}",
+            message=message_map.get(status, f"Appointment status updated to {status}"),
+        )
+
+        return jsonify({
+            "success": True,
+            "message": f"Appointment {status} successfully"
+        })
+
+    except ClientError as exc:
+        logger.error(f"Error updating appointment {appointment_id}: {exc}")
+        return jsonify({"success": False, "message": "Database error"}), 500
+    except Exception as exc:
+        logger.error(f"Error updating appointment {appointment_id}: {exc}")
+        return jsonify({"success": False, "message": "An error occurred"}), 500
+
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)

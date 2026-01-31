@@ -973,10 +973,10 @@ def book(doctor_id: str):
 
         logger.info(f"Appointment {appointment_id} created for user {username}")
         flash("Appointment booked successfully", "success")
-        return redirect(url_for("home"))
+        return redirect(url_for("dashboard"))
 
     from datetime import date as date_class
-    return render_template("bookings.html", doctor=doctor, date=date_class)
+    return render_template("appointments.html", doctor=doctor, date=date_class)
 
 
 @app.route("/appointments")

@@ -217,15 +217,15 @@
                                     <div class="action-buttons">
                                         {% if appointment.status == 'pending' %}
                                             <button class="btn-sm btn-success" 
-                                                    onclick="updateAppointment({{ appointment.id }}, 'confirmed')">
+                                                    onclick="updateAppointment('{{ appointment.id }}', 'confirmed')">
                                                 Confirm
                                             </button>
                                             <button class="btn-sm btn-danger"
-                                                    onclick="updateAppointment({{ appointment.id }}, 'cancelled')">
+                                                    onclick="updateAppointment('{{ appointment.id }}', 'cancelled')">
                                                 Cancel
                                             </button>
                                         {% endif %}
-                                        <button class="btn-sm btn-info" onclick="viewDetails({{ appointment.id }})">
+                                        <button class="btn-sm btn-info" onclick="viewDetails('{{ appointment.id }}')">
                                             Details
                                         </button>
                                     </div>
@@ -676,6 +676,8 @@ function updateAppointment(appointmentId, status) {
         return;
     }
     
+    console.log(`Updating appointment ${appointmentId} to status ${status}`);
+    
     const formData = new FormData();
     formData.append('status', status);
     
@@ -683,12 +685,17 @@ function updateAppointment(appointmentId, status) {
         method: 'POST',
         body: formData
     })
-    .then(response => response.json())
+    .then(response => {
+        console.log('Response status:', response.status);
+        return response.json();
+    })
     .then(data => {
+        console.log('Response data:', data);
         if (data.success) {
+            alert('Appointment updated successfully!');
             location.reload();
         } else {
-            alert('Error: ' + data.message);
+            alert('Error: ' + (data.message || 'Unknown error'));
         }
     })
     .catch(error => {
@@ -743,12 +750,15 @@ function openEditDoctor(button) {
 
 // View appointment details
 function viewDetails(appointmentId) {
+    console.log(`Opening details for appointment: ${appointmentId}`);
+    
     // Find the appointment row in the table
     const rows = document.querySelectorAll('.appointments-table tbody tr');
     let appointmentData = null;
     
     rows.forEach(row => {
-        if (row.textContent.includes(`#${appointmentId}`)) {
+        const firstCell = row.querySelector('td');
+        if (firstCell && firstCell.textContent.includes(appointmentId)) {
             const cells = row.querySelectorAll('td');
             // Updated cell indices to match new table structure
             // ID, Patient, Doctor, DateTime, Symptoms, Status, Actions
@@ -762,7 +772,7 @@ function viewDetails(appointmentId) {
             const symptoms = cells[4] ? cells[4].textContent.trim() : '-';
             
             appointmentData = {
-                id: cells[0].textContent.trim(),
+                id: appointmentId,
                 patient: patientName,
                 doctor: cells[2].textContent.trim(),
                 date: date,
@@ -774,6 +784,7 @@ function viewDetails(appointmentId) {
     });
     
     if (appointmentData) {
+        console.log('Appointment data found:', appointmentData);
         // Populate modal fields
         document.getElementById('detailId').textContent = appointmentData.id;
         document.getElementById('detailPatient').textContent = appointmentData.patient;
@@ -784,8 +795,13 @@ function viewDetails(appointmentId) {
         
         // Open modal
         const modal = document.getElementById('appointmentDetailsModal');
-        modal.style.display = 'flex';
-        modal.classList.add('active');
+        if (modal) {
+            modal.style.display = 'flex';
+            modal.classList.add('active');
+        }
+    } else {
+        console.error('Appointment not found:', appointmentId);
+        alert('Could not find appointment details');
     }
 }
 </script>

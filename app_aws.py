@@ -862,7 +862,7 @@ def dashboard():
     
     appointments = normalized_appointments
 
-    return render_template("user.html", username=username, appointments=appointments)
+    return render_template("user.html", username=username, appointments=appointments, feedback_dict={})
 
 
 # Add route aliases for template compatibility

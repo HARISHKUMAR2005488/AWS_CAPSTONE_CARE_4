@@ -1069,9 +1069,27 @@ def doctor_download_record(record_id: str):
     try:
         doctor_username = session["username"]
         
-        # Get the record
-        record = medical_records_table.get_item(Key={"id": record_id}).get("Item")
+        # Get the record - try both 'id' and 'record_id' as key
+        record = None
+        try:
+            record = medical_records_table.get_item(Key={"record_id": record_id}).get("Item")
+        except:
+            # Fallback to 'id' if 'record_id' doesn't work
+            try:
+                record = medical_records_table.get_item(Key={"id": record_id}).get("Item")
+            except:
+                pass
+        
         if not record:
+            # If get_item fails, scan for the record
+            records_resp = medical_records_table.scan()
+            for r in records_resp.get("Items", []):
+                if r.get("id") == record_id or r.get("record_id") == record_id:
+                    record = r
+                    break
+        
+        if not record:
+            logger.error(f"Record not found: {record_id}")
             return "Record not found", 404
         
         patient_id = record.get("patient_username") or record.get("username")

@@ -148,25 +148,25 @@
                         <div class="appointment-actions">
                             {% if appointment.status == 'pending' %}
                                 <button class="btn-sm btn-success" 
-                                        onclick="updateAppointmentStatus({{ appointment.id }}, 'confirmed')">
+                                        onclick="updateAppointmentStatus('{{ appointment.id }}', 'confirmed')">
                                     <i class="fas fa-check"></i> Confirm
                                 </button>
                                 <button class="btn-sm btn-danger"
-                                        onclick="updateAppointmentStatus({{ appointment.id }}, 'cancelled')">
+                                        onclick="updateAppointmentStatus('{{ appointment.id }}', 'cancelled')">
                                     <i class="fas fa-times"></i> Cancel
                                 </button>
                             {% elif appointment.status == 'confirmed' %}
                                 <button class="btn-sm btn-primary" 
-                                        onclick="completeAppointment({{ appointment.id }})">
+                                        onclick="completeAppointment('{{ appointment.id }}')">
                                     <i class="fas fa-check-double"></i> Mark Complete
                                 </button>
                                 <button class="btn-sm btn-warning"
-                                        onclick="addPrescription({{ appointment.id }}, '{{ appointment.status }}')">
+                                        onclick="addPrescription('{{ appointment.id }}', '{{ appointment.status }}')">
                                     <i class="fas fa-prescription"></i> Add Prescription
                                 </button>
                             {% elif appointment.status == 'completed' %}
                                 <button class="btn-sm btn-warning"
-                                        onclick="addPrescription({{ appointment.id }}, '{{ appointment.status }}')">
+                                        onclick="addPrescription('{{ appointment.id }}', '{{ appointment.status }}')">
                                     <i class="fas fa-prescription"></i> Add Prescription
                                 </button>
                             {% endif %}
@@ -229,16 +229,16 @@
                                     <div class="action-buttons">
                                         {% if appointment.status == 'pending' %}
                                             <button class="btn-sm btn-success" 
-                                                    onclick="updateAppointmentStatus({{ appointment.id }}, 'confirmed')">
+                                                    onclick="updateAppointmentStatus('{{ appointment.id }}', 'confirmed')">
                                                 Confirm
                                             </button>
                                             <button class="btn-sm btn-danger"
-                                                    onclick="updateAppointmentStatus({{ appointment.id }}, 'cancelled')">
+                                                    onclick="updateAppointmentStatus('{{ appointment.id }}', 'cancelled')">
                                                 Cancel
                                             </button>
                                         {% elif appointment.status == 'confirmed' %}
                                             <button class="btn-sm btn-primary" 
-                                                    onclick="completeAppointment({{ appointment.id }})">
+                                                    onclick="completeAppointment('{{ appointment.id }}')">
                                                 Complete
                                             </button>
                                         {% endif %}

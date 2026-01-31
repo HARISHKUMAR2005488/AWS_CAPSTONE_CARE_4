@@ -789,9 +789,9 @@ def dashboard():
         today_appointments = [a for a in doctor_appts if a.get("appointment_date") == today]
         upcoming_appointments = [a for a in doctor_appts if a.get("appointment_date") and a.get("appointment_date") > today]
         
-        # Sort appointments by time
-        today_appointments.sort(key=lambda x: x.get("appointment_time", ""))
-        upcoming_appointments.sort(key=lambda x: (x.get("appointment_date"), x.get("appointment_time", "")))
+        # Sort appointments by time (handle None values)
+        today_appointments.sort(key=lambda x: (x.get("appointment_time") or "", x.get("id", "")))
+        upcoming_appointments.sort(key=lambda x: (x.get("appointment_date") or date.today(), x.get("appointment_time") or "", x.get("id", "")))
 
         return render_template(
             "doctor.html",

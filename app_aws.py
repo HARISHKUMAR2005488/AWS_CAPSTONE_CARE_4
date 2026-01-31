@@ -784,19 +784,32 @@ def dashboard():
         appointments = [a for a in appointments if a.get("username") == username]
 
     # Normalize appointment fields for template compatibility
-    from datetime import datetime as dt_class
+    from datetime import datetime as dt_class, date as date_class
+    normalized_appointments = []
     for appt in appointments:
-        appt.setdefault("appointment_date", appt.get("date"))
         appt.setdefault("appointment_time", appt.get("time"))
         appt.setdefault("status", "pending")
         appt.setdefault("symptoms", appt.get("reason", ""))
         appt.setdefault("notes", appt.get("medical_notes", ""))
         appt.setdefault("doctor", {"name": appt.get("doctor_name", "Unknown"), "specialization": "General"})
-        if isinstance(appt.get("appointment_date"), str):
+        
+        # Handle appointment_date carefully
+        date_val = appt.get("date") or appt.get("appointment_date")
+        if isinstance(date_val, str):
             try:
-                appt["appointment_date"] = dt_class.strptime(appt["appointment_date"], "%Y-%m-%d").date()
+                appt["appointment_date"] = dt_class.strptime(date_val, "%Y-%m-%d").date()
             except (ValueError, TypeError):
-                pass
+                appt["appointment_date"] = date_class.today()
+        elif isinstance(date_val, date_class):
+            appt["appointment_date"] = date_val
+        else:
+            appt["appointment_date"] = date_class.today()
+        
+        # Only include appointments with valid dates
+        if appt.get("appointment_date"):
+            normalized_appointments.append(appt)
+    
+    appointments = normalized_appointments
 
     return render_template("user.html", username=username, appointments=appointments)
 

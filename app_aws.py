@@ -1174,20 +1174,49 @@ def update_appointment_status(appointment_id: str):
 
         # Get the new status from request
         status = request.form.get("status", "").strip()
+        notes = request.form.get("notes", "").strip()
         
         if status not in ["confirmed", "cancelled", "completed"]:
             logger.error(f"Invalid status: {status}")
             return jsonify({"success": False, "message": "Invalid status"}), 400
 
-        # Update appointment status
+        # Prepare update expression for appointment
+        update_expr = "SET #status = :status"
+        expr_names = {"#status": "status"}
+        expr_values = {":status": status}
+        
+        # Add notes if provided
+        if notes:
+            update_expr += ", #notes = :notes"
+            expr_names["#notes"] = "notes"
+            expr_values[":notes"] = notes
+
+        # Update appointment status and notes
         appointments_table.update_item(
             Key={"id": appointment_id},
-            UpdateExpression="SET #status = :status",
-            ExpressionAttributeNames={"#status": "status"},
-            ExpressionAttributeValues={":status": status},
+            UpdateExpression=update_expr,
+            ExpressionAttributeNames=expr_names,
+            ExpressionAttributeValues=expr_values,
         )
         
         logger.info(f"Appointment {appointment_id} status updated to {status} by doctor {doctor_username}")
+        
+        # If notes/prescription provided, save to medical records
+        if notes:
+            patient_username = appointment.get("username")
+            save_medical_record(
+                username=patient_username,
+                doctor_id=doctor_username,
+                record_data={
+                    "appointment_id": appointment_id,
+                    "type": "prescription",
+                    "prescription": notes,
+                    "date": appointment.get("date", str(date.today())),
+                    "created_by": doctor_username,
+                    "created_at": datetime.utcnow().isoformat()
+                }
+            )
+            logger.info(f"Prescription saved to medical records for patient {patient_username}")
 
         # Get doctor info for notification
         doctor = doctors_table.get_item(Key={"id": doctor_username}).get("Item")
@@ -1197,7 +1226,7 @@ def update_appointment_status(appointment_id: str):
         message_map = {
             "confirmed": f"Your appointment has been confirmed by {doctor_name}",
             "cancelled": f"Your appointment has been cancelled by {doctor_name}",
-            "completed": "Your appointment has been marked as completed"
+            "completed": f"Your appointment has been marked as completed by {doctor_name}. Prescription: {notes[:50]}..." if notes else "Your appointment has been marked as completed"
         }
         
         send_notification(
@@ -1207,7 +1236,7 @@ def update_appointment_status(appointment_id: str):
 
         return jsonify({
             "success": True,
-            "message": f"Appointment {status} successfully"
+            "message": f"Appointment {status} successfully" + (" and prescription saved" if notes else "")
         })
 
     except ClientError as exc:

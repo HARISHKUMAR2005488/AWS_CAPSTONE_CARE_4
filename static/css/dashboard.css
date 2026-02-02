@@ -1,0 +1,572 @@
+/* ========================================
+   DASHBOARD PAGES (USER & DOCTOR)
+   ======================================== */
+
+/* ===== DASHBOARD CONTAINERS ===== */
+.user-container,
+.doctor-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: var(--spacing-xl);
+}
+
+/* ===== PROFILE HEADER (USER PAGE) ===== */
+.profile-header {
+    background: var(--white);
+    border-radius: var(--border-radius-xl);
+    padding: var(--spacing-2xl);
+    margin-bottom: var(--spacing-2xl);
+    box-shadow: var(--shadow-lg);
+    border: 1px solid var(--gray-lighter);
+}
+
+.profile-info {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xl);
+    margin-bottom: var(--spacing-xl);
+}
+
+.profile-details h2 {
+    color: var(--dark);
+    margin-bottom: 0.5rem;
+}
+
+.profile-details p {
+    color: var(--gray);
+    margin: 0.25rem 0;
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+}
+
+.btn-edit-profile {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: var(--primary-light);
+    color: var(--primary-dark);
+    border-radius: var(--border-radius-md);
+    font-weight: 600;
+    font-size: var(--font-size-sm);
+    margin-top: var(--spacing-sm);
+    transition: all var(--transition-fast);
+}
+
+.btn-edit-profile:hover {
+    background: var(--primary);
+    color: var(--white);
+    transform: translateY(-2px);
+}
+
+/* ===== PROFILE STATS ===== */
+.profile-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: var(--spacing-lg);
+    padding-top: var(--spacing-lg);
+    border-top: 1px solid var(--gray-lighter);
+}
+
+.stat-item {
+    text-align: center;
+    padding: var(--spacing-md);
+    background: var(--bg-secondary);
+    border-radius: var(--border-radius-md);
+    transition: all var(--transition-base);
+}
+
+.stat-item:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.stat-item h3 {
+    font-size: var(--font-size-3xl);
+    color: var(--primary);
+    margin-bottom: 0.25rem;
+}
+
+.stat-item p {
+    font-size: var(--font-size-sm);
+    color: var(--gray);
+    margin: 0;
+    font-weight: 500;
+}
+
+/* ===== HEALTH INFORMATION SECTION ===== */
+.health-info-section {
+    background: var(--white);
+    border-radius: var(--border-radius-lg);
+    padding: var(--spacing-xl);
+    margin-bottom: var(--spacing-2xl);
+    box-shadow: var(--shadow-md);
+    border: 1px solid var(--gray-lighter);
+}
+
+.health-info-section .section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-lg);
+    padding-bottom: var(--spacing-md);
+    border-bottom: 2px solid var(--gray-lighter);
+}
+
+.health-info-section .section-header h3 {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    color: var(--dark);
+    margin: 0;
+}
+
+.health-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: var(--spacing-lg);
+}
+
+.health-item {
+    padding: var(--spacing-md);
+    background: var(--bg-secondary);
+    border-radius: var(--border-radius-md);
+    border-left: 3px solid var(--primary);
+}
+
+.health-item.full-width {
+    grid-column: 1 / -1;
+}
+
+.health-item label {
+    display: block;
+    font-weight: 600;
+    color: var(--primary);
+    font-size: var(--font-size-sm);
+    margin-bottom: 0.25rem;
+}
+
+.health-item p {
+    color: var(--dark);
+    margin: 0;
+    font-size: var(--font-size-base);
+}
+
+.health-info-form {
+    animation: slideDown 0.3s ease-out;
+}
+
+/* ===== DOCTOR PROFILE CARD ===== */
+.doctor-profile-card {
+    background: var(--white);
+    border-radius: var(--border-radius-xl);
+    padding: var(--spacing-2xl);
+    margin-bottom: var(--spacing-2xl);
+    box-shadow: var(--shadow-lg);
+    border: 1px solid var(--gray-lighter);
+}
+
+.doctor-profile-card .profile-header {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xl);
+    margin-bottom: var(--spacing-xl);
+    padding-bottom: var(--spacing-xl);
+    border-bottom: 1px solid var(--gray-lighter);
+}
+
+.doctor-profile-card .profile-info h2 {
+    color: var(--dark);
+    margin-bottom: 0.5rem;
+}
+
+.doctor-profile-card .specialization {
+    color: var(--primary);
+    font-weight: 600;
+    font-size: var(--font-size-lg);
+    margin: 0.25rem 0;
+}
+
+.doctor-profile-card .qualifications {
+    color: var(--gray);
+    font-size: var(--font-size-sm);
+    margin: 0.25rem 0;
+}
+
+.profile-details {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: var(--spacing-md);
+}
+
+.profile-details .detail-item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm);
+    background: var(--bg-secondary);
+    border-radius: var(--border-radius-md);
+    color: var(--gray);
+    font-size: var(--font-size-sm);
+}
+
+.profile-details .detail-item i {
+    color: var(--primary);
+    width: 20px;
+    text-align: center;
+}
+
+/* ===== APPOINTMENTS SECTION ===== */
+.appointments-section {
+    background: var(--white);
+    border-radius: var(--border-radius-lg);
+    padding: var(--spacing-xl);
+    margin-bottom: var(--spacing-2xl);
+    box-shadow: var(--shadow-md);
+    border: 1px solid var(--gray-lighter);
+}
+
+/* ===== APPOINTMENTS GRID (DOCTOR PAGE) ===== */
+.appointments-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: var(--spacing-lg);
+}
+
+.appointment-card {
+    background: var(--white);
+    border-radius: var(--border-radius-lg);
+    border: 2px solid var(--gray-lighter);
+    overflow: hidden;
+    transition: all var(--transition-base);
+}
+
+.appointment-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-lg);
+}
+
+.appointment-card.pending {
+    border-left: 4px solid var(--warning);
+}
+
+.appointment-card.confirmed {
+    border-left: 4px solid var(--success);
+}
+
+.appointment-card.completed {
+    border-left: 4px solid var(--primary);
+}
+
+.appointment-card.cancelled {
+    border-left: 4px solid var(--danger);
+}
+
+.appointment-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing-md) var(--spacing-lg);
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--gray-lighter);
+}
+
+.appointment-id {
+    font-weight: 700;
+    color: var(--dark);
+    font-size: var(--font-size-sm);
+}
+
+.appointment-body {
+    padding: var(--spacing-lg);
+}
+
+.patient-info {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-md);
+    padding-bottom: var(--spacing-md);
+    border-bottom: 1px solid var(--gray-lighter);
+}
+
+.patient-info i {
+    font-size: var(--font-size-2xl);
+    color: var(--primary);
+}
+
+.patient-name {
+    font-weight: 600;
+    color: var(--dark);
+    margin: 0 0 0.25rem 0;
+}
+
+.patient-contact {
+    color: var(--gray);
+    font-size: var(--font-size-sm);
+    margin: 0;
+}
+
+.appointment-time {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-md);
+    color: var(--gray);
+    font-size: var(--font-size-sm);
+}
+
+.appointment-time i {
+    color: var(--primary);
+}
+
+.symptoms,
+.notes {
+    margin-bottom: var(--spacing-md);
+}
+
+.symptoms i,
+.notes i {
+    color: var(--primary);
+    margin-right: var(--spacing-xs);
+}
+
+.symptoms p,
+.notes p {
+    color: var(--gray);
+    font-size: var(--font-size-sm);
+    margin: 0.25rem 0 0 1.5rem;
+    line-height: 1.5;
+}
+
+.appointment-actions {
+    display: flex;
+    gap: var(--spacing-sm);
+    padding-top: var(--spacing-md);
+    border-top: 1px solid var(--gray-lighter);
+}
+
+.appointment-actions button {
+    flex: 1;
+}
+
+/* ===== STAT ICON VARIANTS ===== */
+.stat-icon.total {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+}
+
+.stat-icon.confirmed {
+    background: linear-gradient(135deg, var(--success) 0%, var(--success-dark) 100%);
+}
+
+.stat-icon.completed {
+    background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+}
+
+/* ===== ACTION BUTTONS IN TABLES ===== */
+.action-buttons {
+    display: flex;
+    gap: var(--spacing-xs);
+    flex-wrap: wrap;
+}
+
+/* ===== RESPONSIVE DASHBOARD ===== */
+@media (max-width: 1024px) {
+
+    .user-container,
+    .doctor-container {
+        padding: var(--spacing-md);
+    }
+
+    .profile-info {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .profile-stats {
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    }
+
+    .appointments-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .dashboard-header h1 {
+        font-size: var(--font-size-2xl);
+    }
+
+    .health-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .profile-details {
+        grid-template-columns: 1fr;
+    }
+
+    .doctor-profile-card .profile-header {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .appointment-actions {
+        flex-direction: column;
+    }
+
+    .action-buttons {
+        flex-direction: column;
+    }
+
+    .action-buttons button {
+        width: 100%;
+    }
+}
+
+/* ===== ADDITIONAL DASHBOARD ELEMENTS ===== */
+.quick-actions-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-2xl);
+}
+
+.quick-action-card {
+    background: var(--white);
+    padding: var(--spacing-lg);
+    border-radius: var(--border-radius-lg);
+    text-align: center;
+    box-shadow: var(--shadow-md);
+    border: 2px solid var(--gray-lighter);
+    cursor: pointer;
+    transition: all var(--transition-base);
+}
+
+.quick-action-card:hover {
+    border-color: var(--primary);
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-lg);
+}
+
+.quick-action-card i {
+    font-size: var(--font-size-3xl);
+    color: var(--primary);
+    margin-bottom: var(--spacing-sm);
+}
+
+.quick-action-card h4 {
+    color: var(--dark);
+    margin-bottom: 0.25rem;
+}
+
+.quick-action-card p {
+    color: var(--gray);
+    font-size: var(--font-size-sm);
+    margin: 0;
+}
+
+/* ===== EMPTY STATE ===== */
+.empty-state {
+    text-align: center;
+    padding: var(--spacing-2xl);
+    background: var(--bg-secondary);
+    border-radius: var(--border-radius-lg);
+    border: 2px dashed var(--gray-light);
+}
+
+.empty-state i {
+    font-size: 4rem;
+    color: var(--gray-light);
+    margin-bottom: var(--spacing-md);
+}
+
+.empty-state h3 {
+    color: var(--dark);
+    margin-bottom: var(--spacing-sm);
+}
+
+.empty-state p {
+    color: var(--gray);
+    margin-bottom: var(--spacing-lg);
+}
+
+/* ===== NOTIFICATION BADGE ===== */
+.notification-badge {
+    position: relative;
+}
+
+.notification-badge::after {
+    content: attr(data-count);
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background: var(--danger);
+    color: var(--white);
+    font-size: var(--font-size-xs);
+    font-weight: 700;
+    padding: 0.25rem 0.5rem;
+    border-radius: 50%;
+    min-width: 20px;
+    text-align: center;
+}
+
+/* ===== TIMELINE (FOR MEDICAL HISTORY) ===== */
+.timeline {
+    position: relative;
+    padding-left: var(--spacing-2xl);
+}
+
+.timeline::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: var(--gray-lighter);
+}
+
+.timeline-item {
+    position: relative;
+    margin-bottom: var(--spacing-xl);
+    padding-left: var(--spacing-lg);
+}
+
+.timeline-item::before {
+    content: '';
+    position: absolute;
+    left: -26px;
+    top: 0;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--primary);
+    border: 3px solid var(--white);
+    box-shadow: 0 0 0 2px var(--primary);
+}
+
+.timeline-date {
+    font-weight: 600;
+    color: var(--primary);
+    font-size: var(--font-size-sm);
+    margin-bottom: 0.25rem;
+}
+
+.timeline-content {
+    background: var(--white);
+    padding: var(--spacing-md);
+    border-radius: var(--border-radius-md);
+    border: 1px solid var(--gray-lighter);
+}
+
+.timeline-content h4 {
+    color: var(--dark);
+    margin-bottom: 0.5rem;
+}
+
+.timeline-content p {
+    color: var(--gray);
+    font-size: var(--font-size-sm);
+    margin: 0;
+}

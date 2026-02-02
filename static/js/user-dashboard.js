@@ -7,15 +7,98 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeCalendarDashboard();
 });
 
-// Right Sidebar Tab Switching
-function switchRightTab(tabName) {
-    // Update tab buttons
-    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-    event.target.closest('.tab-btn').classList.add('active');
+// Toggle Right Sidebar (Reminders)
+function toggleRightSidebar() {
+    const sidebar = document.getElementById('rightSidebar');
+    sidebar.classList.toggle('collapsed');
+}
+
+// Toggle Floating Chat Box
+function toggleChatBox() {
+    const chatBox = document.getElementById('floatingChatBox');
+    if (chatBox.style.display === 'none' || chatBox.style.display === '') {
+        chatBox.style.display = 'flex';
+    } else {
+        chatBox.style.display = 'none';
+    }
+}
+
+// Send Chat Message (Floating)
+function sendChatMessageFloating(event) {
+    event.preventDefault();
     
-    // Update tab content
-    document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-    document.getElementById(tabName + '-tab').classList.add('active');
+    const input = document.getElementById('chatInputFloating');
+    const messagesContainer = document.getElementById('chatMessagesFloating');
+    const userMessage = input.value.trim();
+    
+    if (!userMessage) return;
+    
+    // Add user message
+    const userDiv = document.createElement('div');
+    userDiv.className = 'message user-message';
+    userDiv.innerHTML = `
+        <div class="message-content">
+            <strong>You:</strong>
+            <p>${userMessage}</p>
+        </div>
+    `;
+    messagesContainer.appendChild(userDiv);
+    
+    // Clear input
+    input.value = '';
+    
+    // Show typing indicator
+    const typingDiv = document.createElement('div');
+    typingDiv.className = 'message bot-message typing';
+    typingDiv.innerHTML = `
+        <div class="message-content">
+            <strong>Assistant:</strong>
+            <p>Typing...</p>
+        </div>
+    `;
+    messagesContainer.appendChild(typingDiv);
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    
+    // Send to backend
+    fetch('/api/chat', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ message: userMessage })
+    })
+    .then(response => response.json())
+    .then(data => {
+        // Remove typing indicator
+        typingDiv.remove();
+        
+        // Add bot response
+        const botDiv = document.createElement('div');
+        botDiv.className = 'message bot-message';
+        botDiv.innerHTML = `
+            <div class="message-content">
+                <strong>Assistant:</strong>
+                <p>${data.response || 'I apologize, but I encountered an error. Please try again.'}</p>
+            </div>
+        `;
+        messagesContainer.appendChild(botDiv);
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        typingDiv.remove();
+        
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'message bot-message';
+        errorDiv.innerHTML = `
+            <div class="message-content">
+                <strong>Assistant:</strong>
+                <p>Sorry, I'm having trouble connecting. Please try again later.</p>
+            </div>
+        `;
+        messagesContainer.appendChild(errorDiv);
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    });
 }
 
 // Navigation Functions

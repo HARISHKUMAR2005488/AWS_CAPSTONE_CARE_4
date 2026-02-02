@@ -227,20 +227,17 @@
             </div>
         </main>
 
-        <!-- Right Sidebar - Reminders & Chat -->
-        <aside class="right-sidebar">
+        <!-- Right Sidebar - Reminders (Collapsible) -->
+        <aside class="right-sidebar collapsed" id="rightSidebar">
             <!-- Tab Navigation -->
             <div class="sidebar-tabs">
-                <button class="tab-btn active" onclick="switchRightTab('reminders')" title="Reminders">
+                <button class="tab-btn active" onclick="toggleRightSidebar()" title="Reminders">
                     <i class="fas fa-bell"></i>
-                </button>
-                <button class="tab-btn" onclick="switchRightTab('chat')" title="Chat">
-                    <i class="fas fa-envelope"></i>
                 </button>
             </div>
 
-            <!-- Reminders Tab -->
-            <div id="reminders-tab" class="tab-content active">
+            <!-- Reminders Content -->
+            <div id="reminders-content" class="sidebar-content">
                 <div class="reminders-section">
                     <div class="week-selector">
                         <span>Show:</span>
@@ -276,35 +273,43 @@
                     </div>
                 </div>
             </div>
+        </aside>
+    </div>
 
-            <!-- Chat Tab -->
-            <div id="chat-tab" class="tab-content">
-                <div class="chat-container-sidebar">
-                    <div class="chat-header-sidebar">
-                        <h4><i class="fas fa-robot"></i> Health Assistant</h4>
-                        <button class="btn-icon" onclick="clearChat()" title="Clear chat">
-                            <i class="fas fa-trash-alt"></i>
-                        </button>
-                    </div>
-                    <div id="chatMessages" class="chat-messages-sidebar">
-                        <div class="message bot-message">
-                            <div class="message-content">
-                                <strong>Assistant:</strong>
-                                <p>Hello! Describe your symptoms and I'll help analyze them and suggest appropriate specialists.</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="chat-input-sidebar">
-                        <form id="chatForm" onsubmit="sendChatMessage(event)">
-                            <textarea id="chatInput" placeholder="Describe your symptoms..." rows="2" required></textarea>
-                            <button type="submit" class="btn-send">
-                                <i class="fas fa-paper-plane"></i>
-                            </button>
-                        </form>
-                    </div>
+    <!-- Floating Chat Button -->
+    <button class="floating-chat-btn" onclick="toggleChatBox()" title="Chat with Health Assistant">
+        <i class="fas fa-envelope"></i>
+    </button>
+
+    <!-- Floating Chat Box -->
+    <div class="floating-chat-box" id="floatingChatBox" style="display: none;">
+        <div class="chat-header-floating">
+            <h4><i class="fas fa-robot"></i> Health Assistant</h4>
+            <div class="chat-header-actions">
+                <button class="btn-icon-chat" onclick="clearChat()" title="Clear chat">
+                    <i class="fas fa-trash-alt"></i>
+                </button>
+                <button class="btn-icon-chat" onclick="toggleChatBox()" title="Close">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+        <div id="chatMessagesFloating" class="chat-messages-floating">
+            <div class="message bot-message">
+                <div class="message-content">
+                    <strong>Assistant:</strong>
+                    <p>Hello! Describe your symptoms and I'll help analyze them and suggest appropriate specialists.</p>
                 </div>
             </div>
-        </aside>
+        </div>
+        <div class="chat-input-floating">
+            <form id="chatFormFloating" onsubmit="sendChatMessageFloating(event)">
+                <textarea id="chatInputFloating" placeholder="Describe your symptoms..." rows="2" required></textarea>
+                <button type="submit" class="btn-send">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </form>
+        </div>
     </div>
 
     <!-- Account Section (Hidden by default) -->

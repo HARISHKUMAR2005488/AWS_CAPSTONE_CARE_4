@@ -7,22 +7,50 @@
 <section class="hero">
     <div class="container">
         <div class="hero-content">
-            <h1>Your Health, Our Priority</h1>
-            <p>Book appointments with top specialists from the comfort of your home. Quality healthcare made simple and accessible.</p>
-            <div class="hero-buttons">
-                {% if not current_user.is_authenticated %}
-                    <a href="{{ url_for('signup') }}" class="btn btn-primary">Get Started</a>
-                    <a href="{{ url_for('doctors') }}" class="btn btn-secondary">Find a Doctor</a>
-                {% else %}
-                    <a href="{{ url_for('doctors') }}" class="btn btn-primary">Book Appointment</a>
-                    <a href="{{ url_for('user_dashboard') if current_user.user_type == 'patient' else url_for('admin_dashboard') }}" class="btn btn-secondary">
-                        My Dashboard
-                    </a>
-                {% endif %}
+            <h1>Professional<br>Family Health Care</h1>
+            <p>CREATE YOUR MEDICAL WEBSITE USING CARE_4_U</p>
+            <div class="icon-buttons-group">
+                <button class="icon-btn-circle" title="Heart Health">
+                    <i class="fas fa-heartbeat"></i>
+                </button>
+                <button class="icon-btn-circle" title="Medical Services">
+                    <i class="fas fa-user-md"></i>
+                </button>
+                <button class="icon-btn-circle" title="Emergency Care">
+                    <i class="fas fa-ambulance"></i>
+                </button>
             </div>
         </div>
         <div class="hero-image">
             <img src="{{ url_for('static', filename='images/Doctorconsultation.png') }}" alt="Doctor consultation">
+        </div>
+    </div>
+</section>
+
+<!-- Info Section -->
+<section class="info-section">
+    <div class="container">
+        <div class="info-grid">
+            <div class="info-card">
+                <div class="info-card-icon"><i class="fas fa-phone-alt"></i></div>
+                <h3>Emergency Service</h3>
+                <h2 style="color: var(--primary); font-size: 2rem; margin-bottom: 1rem;">1-800-600-380</h2>
+                <p>24/7 emergency medical assistance. Our team is always ready to help you in critical situations.</p>
+                <a href="#" class="btn btn-secondary">See More</a>
+            </div>
+            <div class="info-card">
+                <div class="info-card-icon"><i class="fas fa-calendar-check"></i></div>
+                <h3>Do you want to make an appointment</h3>
+                <p>Book your consultation with our expert doctors. Easy online scheduling available.</p>
+                <a href="{{ url_for('doctors') }}" class="btn btn-secondary">Book Now</a>
+            </div>
+            <div class="info-card">
+                <div class="info-card-icon"><i class="fas fa-clock"></i></div>
+                <h3>Opening Hours</h3>
+                <p><strong>Monday - Friday</strong><br>8:00 AM - 8:00 PM</p>
+                <p><strong>Saturday - Sunday</strong><br>9:00 AM - 5:00 PM</p>
+                <a href="#" class="btn btn-secondary">Contact Us</a>
+            </div>
         </div>
     </div>
 </section>

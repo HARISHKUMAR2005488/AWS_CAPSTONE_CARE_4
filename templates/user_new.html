@@ -475,32 +475,39 @@
         
         <div class="account-settings-container">
             <!-- Profile Section -->
-            <div class="settings-section">
-                <h4><i class="fas fa-user"></i> Profile Information</h4>
-                <div class="account-profile-preview">
-                    <div class="profile-avatar-small">
-                        {% if current_user.profile_picture %}
-                            <img src="{{ url_for('serve_profile_picture', filename=current_user.profile_picture.split('/')[-1]) }}" alt="{{ current_user.username }}">
-                        {% else %}
-                            <div class="avatar-placeholder">
-                                <i class="fas fa-user"></i>
-                            </div>
-                        {% endif %}
+            <div class="dashboard-card">
+                <div class="card-header-new">
+                    <h3><i class="fas fa-user"></i> Profile Information</h3>
+                </div>
+                <div class="card-body">
+                    <div class="account-profile-preview">
+                        <div class="profile-avatar-small">
+                            {% if current_user.profile_picture %}
+                                <img src="{{ url_for('serve_profile_picture', filename=current_user.profile_picture.split('/')[-1]) }}" alt="{{ current_user.username }}">
+                            {% else %}
+                                <div class="avatar-placeholder">
+                                    <i class="fas fa-user"></i>
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="profile-details">
+                            <h5>{{ current_user.username }}</h5>
+                            <p>{{ current_user.email }}</p>
+                            <span class="badge-small"><i class="fas fa-user-injured"></i> {{ current_user.user_type|title }}</span>
+                        </div>
+                        <button class="btn btn-primary" onclick="showEditProfileModal()">
+                            <i class="fas fa-edit"></i> Edit Profile
+                        </button>
                     </div>
-                    <div class="profile-details">
-                        <h5>{{ current_user.username }}</h5>
-                        <p>{{ current_user.email }}</p>
-                        <span class="badge-small"><i class="fas fa-user-injured"></i> {{ current_user.user_type|title }}</span>
-                    </div>
-                    <button class="btn btn-primary" onclick="showEditProfileModal()">
-                        <i class="fas fa-edit"></i> Edit Profile
-                    </button>
                 </div>
             </div>
 
             <!-- Personal Information Section -->
-            <div class="settings-section">
-                <h4><i class="fas fa-id-card"></i> Personal Information</h4>
+            <div class="dashboard-card">
+                <div class="card-header-new">
+                    <h3><i class="fas fa-id-card"></i> Personal Information</h3>
+                </div>
+                <div class="card-body">
                 <div class="setting-item">
                     <div class="setting-info">
                         <label><i class="fas fa-user"></i> Username</label>
@@ -519,11 +526,15 @@
                         <p>{{ current_user.phone or 'Not set' }}</p>
                     </div>
                 </div>
+                </div>
             </div>
 
             <!-- Security Section -->
-            <div class="settings-section">
-                <h4><i class="fas fa-shield-alt"></i> Security</h4>
+            <div class="dashboard-card">
+                <div class="card-header-new">
+                    <h3><i class="fas fa-shield-alt"></i> Security</h3>
+                </div>
+                <div class="card-body">
                 <div class="setting-item">
                     <div class="setting-info">
                         <label>Password</label>
@@ -543,11 +554,15 @@
                         <span class="toggle-slider"></span>
                     </label>
                 </div>
+                </div>
             </div>
 
             <!-- Account Statistics Section -->
-            <div class="settings-section">
-                <h4><i class="fas fa-chart-line"></i> Account Statistics</h4>
+            <div class="dashboard-card">
+                <div class="card-header-new">
+                    <h3><i class="fas fa-chart-line"></i> Account Statistics</h3>
+                </div>
+                <div class="card-body">
                 <div class="stats-grid-compact">
                     <div class="stat-item-compact">
                         <div class="stat-icon-small" style="background: #E8F5FF; color: #0284C7;">
@@ -586,11 +601,15 @@
                         </div>
                     </div>
                 </div>
+                </div>
             </div>
 
             <!-- Preferences Section -->
-            <div class="settings-section">
-                <h4><i class="fas fa-cog"></i> Preferences</h4>
+            <div class="dashboard-card">
+                <div class="card-header-new">
+                    <h3><i class="fas fa-cog"></i> Preferences</h3>
+                </div>
+                <div class="card-body">
                 <div class="setting-item">
                     <div class="setting-info">
                         <label>Email Notifications</label>
@@ -621,11 +640,15 @@
                         <span class="toggle-slider"></span>
                     </label>
                 </div>
+                </div>
             </div>
 
             <!-- Danger Zone Section -->
-            <div class="settings-section danger-section">
-                <h4><i class="fas fa-exclamation-triangle"></i> Danger Zone</h4>
+            <div class="dashboard-card danger-zone-card">
+                <div class="card-header-new">
+                    <h3><i class="fas fa-exclamation-triangle"></i> Danger Zone</h3>
+                </div>
+                <div class="card-body">
                 <div class="setting-item">
                     <div class="setting-info">
                         <label>Delete Account</label>
@@ -634,6 +657,7 @@
                     <button class="btn btn-danger btn-sm" onclick="confirmDeleteAccount()">
                         <i class="fas fa-trash"></i> Delete Account
                     </button>
+                </div>
                 </div>
             </div>
         </div>
@@ -650,14 +674,21 @@
         
         <div class="help-settings-container">
             <!-- Search Section -->
-            <div class="help-search-box">
-                <i class="fas fa-search"></i>
-                <input type="text" id="helpSearch" placeholder="Search for help articles..." onkeyup="filterHelpTopics()">
+            <div class="dashboard-card">
+                <div class="card-body">
+                    <div class="help-search-box">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="helpSearch" placeholder="Search for help articles..." onkeyup="filterHelpTopics()">
+                    </div>
+                </div>
             </div>
 
             <!-- Getting Started Section -->
-            <div class="settings-section">
-                <h4><i class="fas fa-rocket"></i> Getting Started</h4>
+            <div class="dashboard-card">
+                <div class="card-header-new">
+                    <h3><i class="fas fa-rocket"></i> Getting Started</h3>
+                </div>
+                <div class="card-body">
                 <div class="faq-item-settings" onclick="toggleFAQ(this)">
                     <div class="setting-info">
                         <label>How do I book an appointment?</label>
@@ -668,15 +699,19 @@
                 <div class="faq-item-settings" onclick="toggleFAQ(this)">
                     <div class="setting-info">
                         <label>How do I update my health information?</label>
-                        <p class="faq-answer-text" style="display: none;">Click the "Change" button on your dashboard's health data card. You can update your weight, height, blood group, and other health metrics.</p>
+                        <p class="faq-answer-text" style="display: none;">Click the edit icon on your dashboard's health information card. You can update your weight, height, blood group, and other health metrics.</p>
                     </div>
                     <i class="fas fa-chevron-down faq-toggle-icon"></i>
+                </div>
                 </div>
             </div>
 
             <!-- Medical Records Section -->
-            <div class="settings-section">
-                <h4><i class="fas fa-file-medical"></i> Medical Records</h4>
+            <div class="dashboard-card">
+                <div class="card-header-new">
+                    <h3><i class="fas fa-file-medical"></i> Medical Records</h3>
+                </div>
+                <div class="card-body">
                 <div class="faq-item-settings" onclick="toggleFAQ(this)">
                     <div class="setting-info">
                         <label>How do I upload medical documents?</label>
@@ -691,11 +726,15 @@
                     </div>
                     <i class="fas fa-chevron-down faq-toggle-icon"></i>
                 </div>
+                </div>
             </div>
 
             <!-- Health Assistant Section -->
-            <div class="settings-section">
-                <h4><i class="fas fa-robot"></i> AI Health Assistant</h4>
+            <div class="dashboard-card">
+                <div class="card-header-new">
+                    <h3><i class="fas fa-robot"></i> AI Health Assistant</h3>
+                </div>
+                <div class="card-body">
                 <div class="faq-item-settings" onclick="toggleFAQ(this)">
                     <div class="setting-info">
                         <label>How does the AI Health Assistant work?</label>
@@ -710,11 +749,15 @@
                     </div>
                     <i class="fas fa-chevron-down faq-toggle-icon"></i>
                 </div>
+                </div>
             </div>
 
             <!-- Contact Support Section -->
-            <div class="settings-section">
-                <h4><i class="fas fa-headset"></i> Contact Support</h4>
+            <div class="dashboard-card">
+                <div class="card-header-new">
+                    <h3><i class="fas fa-headset"></i> Contact Support</h3>
+                </div>
+                <div class="card-body">
                 <div class="contact-grid">
                     <div class="contact-item">
                         <div class="contact-icon" style="background: #E8F5FF; color: #0284C7;">
@@ -749,11 +792,15 @@
                         </div>
                     </div>
                 </div>
+                </div>
             </div>
 
             <!-- Quick Links Section -->
-            <div class="settings-section">
-                <h4><i class="fas fa-link"></i> Quick Links</h4>
+            <div class="dashboard-card">
+                <div class="card-header-new">
+                    <h3><i class="fas fa-link"></i> Quick Links</h3>
+                </div>
+                <div class="card-body">
                 <div class="quick-links-grid">
                     <a href="#" class="quick-link-item" onclick="showDashboardSection(event)">
                         <i class="fas fa-home"></i>
@@ -771,6 +818,7 @@
                         <i class="fas fa-cog"></i>
                         <span>Preferences</span>
                     </a>
+                </div>
                 </div>
             </div>
         </div>

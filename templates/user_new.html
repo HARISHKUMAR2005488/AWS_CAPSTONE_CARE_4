@@ -189,41 +189,6 @@
                         <div class="loading">Loading records...</div>
                     </div>
                 </div>
-
-                <!-- Calendar Section -->
-                <div class="card calendar-card-dashboard">
-                    <div class="card-header">
-                        <h3><i class="fas fa-calendar-alt"></i> Appointments Calendar</h3>
-                        <div class="calendar-controls-dashboard">
-                            <button class="btn-icon-sm" onclick="previousMonth()">
-                                <i class="fas fa-chevron-left"></i>
-                            </button>
-                            <span id="currentMonthYearDashboard"></span>
-                            <button class="btn-icon-sm" onclick="nextMonth()">
-                                <i class="fas fa-chevron-right"></i>
-                            </button>
-                        </div>
-                    </div>
-                    <div id="calendarDashboard" class="calendar-grid-dashboard"></div>
-                    <div class="upcoming-appointments-dashboard">
-                        <h4>Upcoming Appointments</h4>
-                        <div class="appointments-list-dashboard">
-                            {% for appointment in appointments[:3] %}
-                            <div class="appointment-item-dashboard">
-                                <div class="appointment-date-dashboard">
-                                    <span class="day">{{ appointment.appointment_date.strftime('%d') }}</span>
-                                    <span class="month">{{ appointment.appointment_date.strftime('%b') }}</span>
-                                </div>
-                                <div class="appointment-info-dashboard">
-                                    <h5>{{ appointment.symptoms[:30] }}{% if appointment.symptoms|length > 30 %}...{% endif %}</h5>
-                                    <p><i class="fas fa-clock"></i> {% if appointment.appointment_time %}{{ appointment.appointment_time }}{% else %}Not set{% endif %}</p>
-                                </div>
-                                <span class="status-badge-sm status-{{ appointment.status }}">{{ appointment.status|title }}</span>
-                            </div>
-                            {% endfor %}
-                        </div>
-                    </div>
-                </div>
             </div>
         </main>
     </div>
@@ -321,123 +286,167 @@
                 <i class="fas fa-times"></i>
             </button>
         </div>
-        <div class="account-wrapper">
-            <!-- Profile Card -->
-            <div class="account-profile-card">
-                <div class="profile-banner">
-                    <div class="profile-large">
+        
+        <div class="account-settings-container">
+            <!-- Profile Section -->
+            <div class="settings-section">
+                <h4><i class="fas fa-user"></i> Profile Information</h4>
+                <div class="account-profile-preview">
+                    <div class="profile-avatar-small">
                         {% if current_user.profile_picture %}
                             <img src="{{ url_for('serve_profile_picture', filename=current_user.profile_picture.split('/')[-1]) }}" alt="{{ current_user.username }}">
                         {% else %}
-                            <div class="profile-placeholder">
+                            <div class="avatar-placeholder">
                                 <i class="fas fa-user"></i>
                             </div>
                         {% endif %}
                     </div>
-                </div>
-                <div class="profile-info">
-                    <h3>{{ current_user.username }}</h3>
-                    <p><i class="fas fa-envelope"></i> {{ current_user.email }}</p>
-                    <span class="account-badge"><i class="fas fa-user-injured"></i> Patient Account</span>
-                </div>
-                <div class="profile-actions">
-                    <button class="btn btn-primary btn-block" onclick="showEditProfileModal()">
+                    <div class="profile-details">
+                        <h5>{{ current_user.username }}</h5>
+                        <p>{{ current_user.email }}</p>
+                        <span class="badge-small"><i class="fas fa-user-injured"></i> {{ current_user.user_type|title }}</span>
+                    </div>
+                    <button class="btn btn-primary" onclick="showEditProfileModal()">
                         <i class="fas fa-edit"></i> Edit Profile
                     </button>
-                    <button class="btn btn-secondary btn-block" onclick="showChangePasswordModal()">
+                </div>
+            </div>
+
+            <!-- Personal Information Section -->
+            <div class="settings-section">
+                <h4><i class="fas fa-id-card"></i> Personal Information</h4>
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <label><i class="fas fa-user"></i> Username</label>
+                        <p>{{ current_user.username }}</p>
+                    </div>
+                </div>
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <label><i class="fas fa-envelope"></i> Email Address</label>
+                        <p>{{ current_user.email or 'Not set' }}</p>
+                    </div>
+                </div>
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <label><i class="fas fa-phone"></i> Phone Number</label>
+                        <p>{{ current_user.phone or 'Not set' }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Security Section -->
+            <div class="settings-section">
+                <h4><i class="fas fa-shield-alt"></i> Security</h4>
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <label>Password</label>
+                        <p>Last changed: Recently</p>
+                    </div>
+                    <button class="btn btn-secondary btn-sm" onclick="showChangePasswordModal()">
                         <i class="fas fa-key"></i> Change Password
                     </button>
                 </div>
-            </div>
-
-            <!-- Account Stats Grid -->
-            <div class="account-stats-grid">
-                <div class="stat-card-account">
-                    <div class="stat-icon" style="background: #E8F5FF; color: #0284C7;">
-                        <i class="fas fa-calendar-check"></i>
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <label>Two-Factor Authentication</label>
+                        <p>Add an extra layer of security to your account</p>
                     </div>
-                    <div class="stat-content">
-                        <h4>{{ appointments|length }}</h4>
-                        <p>Total Appointments</p>
-                    </div>
-                </div>
-                <div class="stat-card-account">
-                    <div class="stat-icon" style="background: #FFF4E6; color: #F59E0B;">
-                        <i class="fas fa-file-medical"></i>
-                    </div>
-                    <div class="stat-content">
-                        <h4>0</h4>
-                        <p>Medical Records</p>
-                    </div>
-                </div>
-                <div class="stat-card-account">
-                    <div class="stat-icon" style="background: #F3E8FF; color: #9333EA;">
-                        <i class="fas fa-user-md"></i>
-                    </div>
-                    <div class="stat-content">
-                        <h4>{% if assigned_doctor %}1{% else %}0{% endif %}</h4>
-                        <p>Assigned Doctor</p>
-                    </div>
-                </div>
-                <div class="stat-card-account">
-                    <div class="stat-icon" style="background: #DCFCE7; color: #16A34A;">
-                        <i class="fas fa-heartbeat"></i>
-                    </div>
-                    <div class="stat-content">
-                        <h4>Active</h4>
-                        <p>Account Status</p>
-                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="twoFactorAuth" disabled>
+                        <span class="toggle-slider"></span>
+                    </label>
                 </div>
             </div>
 
-            <!-- Account Information Card -->
-            <div class="account-info-card">
-                <h4><i class="fas fa-id-card"></i> Personal Information</h4>
-                <div class="detail-grid">
-                    <div class="detail-row">
-                        <span class="detail-label"><i class="fas fa-user"></i> Username</span>
-                        <span class="detail-value">{{ current_user.username }}</span>
-                    </div>
-                    <div class="detail-row">
-                        <span class="detail-label"><i class="fas fa-envelope"></i> Email Address</span>
-                        <span class="detail-value">{{ current_user.email or 'Not set' }}</span>
-                    </div>
-                    <div class="detail-row">
-                        <span class="detail-label"><i class="fas fa-phone"></i> Phone Number</span>
-                        <span class="detail-value">{{ current_user.phone or 'Not set' }}</span>
-                    </div>
-                    <div class="detail-row">
-                        <span class="detail-label"><i class="fas fa-id-badge"></i> Account Type</span>
-                        <span class="detail-value">{{ current_user.user_type|title }}</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Security Settings Card -->
-            <div class="account-security-card">
-                <h4><i class="fas fa-shield-alt"></i> Security Settings</h4>
-                <div class="security-item">
-                    <div class="security-info">
-                        <i class="fas fa-key"></i>
+            <!-- Account Statistics Section -->
+            <div class="settings-section">
+                <h4><i class="fas fa-chart-line"></i> Account Statistics</h4>
+                <div class="stats-grid-compact">
+                    <div class="stat-item-compact">
+                        <div class="stat-icon-small" style="background: #E8F5FF; color: #0284C7;">
+                            <i class="fas fa-calendar-check"></i>
+                        </div>
                         <div>
-                            <h5>Password</h5>
-                            <p>Last changed: Recently</p>
+                            <h5>{{ appointments|length }}</h5>
+                            <p>Total Appointments</p>
                         </div>
                     </div>
-                    <button class="btn btn-outline" onclick="showChangePasswordModal()">
-                        <i class="fas fa-edit"></i> Change
-                    </button>
-                </div>
-                <div class="security-item">
-                    <div class="security-info">
-                        <i class="fas fa-lock"></i>
+                    <div class="stat-item-compact">
+                        <div class="stat-icon-small" style="background: #FFF4E6; color: #F59E0B;">
+                            <i class="fas fa-file-medical"></i>
+                        </div>
                         <div>
-                            <h5>Two-Factor Authentication</h5>
-                            <p>Not enabled</p>
+                            <h5>0</h5>
+                            <p>Medical Records</p>
                         </div>
                     </div>
-                    <button class="btn btn-outline" disabled>
-                        <i class="fas fa-plus"></i> Enable
+                    <div class="stat-item-compact">
+                        <div class="stat-icon-small" style="background: #F3E8FF; color: #9333EA;">
+                            <i class="fas fa-user-md"></i>
+                        </div>
+                        <div>
+                            <h5>{% if assigned_doctor %}1{% else %}0{% endif %}</h5>
+                            <p>Assigned Doctor</p>
+                        </div>
+                    </div>
+                    <div class="stat-item-compact">
+                        <div class="stat-icon-small" style="background: #DCFCE7; color: #16A34A;">
+                            <i class="fas fa-heartbeat"></i>
+                        </div>
+                        <div>
+                            <h5>Active</h5>
+                            <p>Account Status</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Preferences Section -->
+            <div class="settings-section">
+                <h4><i class="fas fa-cog"></i> Preferences</h4>
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <label>Email Notifications</label>
+                        <p>Receive appointment reminders via email</p>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="emailNotifAccount" checked>
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <label>SMS Notifications</label>
+                        <p>Get SMS alerts for appointments</p>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="smsNotifAccount">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <label>Share Health Data</label>
+                        <p>Allow doctors to view your health records</p>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="shareDataAccount" checked>
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Danger Zone Section -->
+            <div class="settings-section danger-section">
+                <h4><i class="fas fa-exclamation-triangle"></i> Danger Zone</h4>
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <label>Delete Account</label>
+                        <p>Permanently delete your account and all associated data</p>
+                    </div>
+                    <button class="btn btn-danger btn-sm" onclick="confirmDeleteAccount()">
+                        <i class="fas fa-trash"></i> Delete Account
                     </button>
                 </div>
             </div>

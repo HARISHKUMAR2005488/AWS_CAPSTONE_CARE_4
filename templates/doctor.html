@@ -4,150 +4,481 @@
 
 {% block content %}
 <div class="doctor-container">
-    <!-- Dashboard Header -->
-    <div class="dashboard-header">
-        <h1><i class="fas fa-user-md"></i> Doctor Dashboard</h1>
-        <p class="welcome-message">Welcome, {{ doctor.name }}!</p>
-    </div>
-    
-    <!-- Stats Cards -->
-    <div class="stats-cards">
-        <div class="stat-card">
-            <div class="stat-icon total">
-                <i class="fas fa-calendar-alt"></i>
+    <!-- Top Header -->
+    <div class="doctor-header">
+        <div class="header-left">
+            <div class="logo-section">
+                <i class="fas fa-heart"></i>
+                <span>Care_4_U Hospitals</span>
             </div>
-            <div class="stat-info">
-                <h3>{{ total_appointments }}</h3>
-                <p>Total Appointments</p>
-            </div>
+            <h1>Doctor Dashboard</h1>
         </div>
-        
-        <div class="stat-card">
-            <div class="stat-icon pending">
-                <i class="fas fa-clock"></i>
+        <div class="header-right">
+            <div class="doctor-info-header">
+                <div class="doctor-avatar-header">
+                    {% if doctor.profile_image %}
+                        <img src="{{ url_for('serve_profile_picture', filename=doctor.profile_image.split('/')[-1]) }}" alt="{{ doctor.name }}">
+                    {% else %}
+                        <i class="fas fa-user-md"></i>
+                    {% endif %}
+                </div>
+                <div class="doctor-details-header">
+                    <h3>{{ doctor.name }}</h3>
+                    <p>{{ doctor.specialization }}</p>
+                </div>
             </div>
-            <div class="stat-info">
-                <h3>{{ pending_count }}</h3>
-                <p>Pending</p>
-            </div>
-        </div>
-        
-        <div class="stat-card">
-            <div class="stat-icon confirmed">
-                <i class="fas fa-check-circle"></i>
-            </div>
-            <div class="stat-info">
-                <h3>{{ confirmed_count }}</h3>
-                <p>Confirmed</p>
-            </div>
-        </div>
-        
-        <div class="stat-card">
-            <div class="stat-icon completed">
-                <i class="fas fa-clipboard-check"></i>
-            </div>
-            <div class="stat-info">
-                <h3>{{ completed_count }}</h3>
-                <p>Completed</p>
-            </div>
+            <button class="btn-logout" onclick="location.href='{{ url_for('logout') }}'">
+                <i class="fas fa-sign-out-alt"></i> Logout
+            </button>
         </div>
     </div>
-    
-    <!-- Doctor Profile Section -->
-    <div class="doctor-profile-card">
-        <div class="profile-header">
-            <div class="profile-avatar">
-                {% if doctor.profile_image %}
-                    <img src="{{ url_for('serve_profile_picture', filename=doctor.profile_image.split('/')[-1]) }}" alt="{{ doctor.name }}">
+
+    <!-- Main Dashboard Content -->
+    <div class="doctor-dashboard-wrapper">
+        <!-- Sidebar Navigation -->
+        <aside class="doctor-sidebar">
+            <nav class="doctor-nav">
+                <a href="#" class="nav-item active" onclick="showDashboardView(event)">
+                    <i class="fas fa-home"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="#" class="nav-item" onclick="showTodayView(event)">
+                    <i class="fas fa-calendar-day"></i>
+                    <span>Today's Appointments</span>
+                </a>
+                <a href="{{ url_for('doctor_patients') }}" class="nav-item">
+                    <i class="fas fa-user-injured"></i>
+                    <span>Patient Records</span>
+                </a>
+                <a href="#" class="nav-item" onclick="showRequestsView(event)">
+                    <i class="fas fa-clock"></i>
+                    <span>Appointment Requests</span>
+                </a>
+                <a href="#" class="nav-item" onclick="showScheduleView(event)">
+                    <i class="fas fa-calendar-alt"></i>
+                    <span>My Schedule</span>
+                </a>
+                <a href="#" class="nav-item" onclick="showSettingsView(event)">
+                    <i class="fas fa-cog"></i>
+                    <span>Settings</span>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="doctor-main-content">
+            <!-- Dashboard View -->
+            <div class="content-view dashboard-view" id="dashboardView">
+                <!-- Overview Cards -->
+                <div class="overview-grid">
+                    <div class="overview-card">
+                        <div class="card-icon appointments-icon">
+                            <i class="fas fa-calendar-check"></i>
+                        </div>
+                        <div class="card-content">
+                            <h3>{{ total_appointments }}</h3>
+                            <p>Appointments Today</p>
+                        </div>
+                    </div>
+                    
+                    <div class="overview-card">
+                        <div class="card-icon pending-icon">
+                            <i class="fas fa-hourglass-start"></i>
+                        </div>
+                        <div class="card-content">
+                            <h3>{{ pending_count }}</h3>
+                            <p>Pending Requests</p>
+                        </div>
+                    </div>
+                    
+                    <div class="overview-card">
+                        <div class="card-icon completed-icon">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <div class="card-content">
+                            <h3>{{ completed_count }}</h3>
+                            <p>Completed Today</p>
+                        </div>
+                    </div>
+                    
+                    <div class="overview-card">
+                        <div class="card-icon available-icon">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div class="card-content">
+                            <h3>{{ confirmed_count }}</h3>
+                            <p>Confirmed Slots</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Doctor Profile Quick View -->
+                <div class="doctor-profile-quick">
+                    <div class="profile-quick-header">
+                        <h2><i class="fas fa-user-md"></i> Your Profile</h2>
+                    </div>
+                    <div class="profile-quick-content">
+                        <div class="profile-quick-avatar">
+                            {% if doctor.profile_image %}
+                                <img src="{{ url_for('serve_profile_picture', filename=doctor.profile_image.split('/')[-1]) }}" alt="{{ doctor.name }}">
+                            {% else %}
+                                <i class="fas fa-user-md"></i>
+                            {% endif %}
+                        </div>
+                        <div class="profile-quick-info">
+                            <h3>{{ doctor.name }}</h3>
+                            <p class="specialization">{{ doctor.specialization }}</p>
+                            <p class="experience"><i class="fas fa-award"></i> {{ doctor.experience }} years experience</p>
+                            <div class="profile-quick-actions">
+                                <button class="btn-text" onclick="showSettingsView(event)">
+                                    <i class="fas fa-edit"></i> Edit Profile
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Upcoming Appointments Preview -->
+                <div class="appointments-preview">
+                    <div class="section-header">
+                        <h2><i class="fas fa-calendar-day"></i> Next Appointments</h2>
+                        <a href="#" class="view-all-link" onclick="showTodayView(event)">View All →</a>
+                    </div>
+                    {% if today_appointments %}
+                        <div class="appointments-list">
+                            {% for appointment in today_appointments[:3] %}
+                                <div class="appointment-item">
+                                    <div class="appointment-time-badge">
+                                        <span class="time">{{ appointment.appointment_time }}</span>
+                                    </div>
+                                    <div class="appointment-info">
+                                        <h4>{{ appointment.patient.username }}</h4>
+                                        <p>{{ appointment.symptoms[:50] }}{% if appointment.symptoms|length > 50 %}...{% endif %}</p>
+                                    </div>
+                                    <span class="status-badge-mini status-{{ appointment.status|lower }}">
+                                        {{ appointment.status|title }}
+                                    </span>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="empty-state">
+                            <i class="fas fa-inbox"></i>
+                            <p>No appointments today</p>
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- Appointment Requests Summary -->
+                <div class="requests-summary">
+                    <div class="section-header">
+                        <h2><i class="fas fa-bell"></i> Pending Requests</h2>
+                        <a href="#" class="view-all-link" onclick="showRequestsView(event)">View All →</a>
+                    </div>
+                    <div class="request-summary-content">
+                        <div class="request-stat">
+                            <div class="stat-number">{{ pending_count }}</div>
+                            <p>Awaiting Your Approval</p>
+                        </div>
+                        <button class="btn btn-primary" onclick="showRequestsView(event)">
+                            <i class="fas fa-list-check"></i> Review Requests
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Today's Appointments View -->
+            <div class="content-view today-view" id="todayView" style="display: none;">
+                <div class="section-header">
+                    <h2><i class="fas fa-calendar-day"></i> Today's Appointments</h2>
+                    <p class="date-display">{{ today.strftime('%A, %B %d, %Y') }}</p>
+                </div>
+                {% if today_appointments %}
+                    <div class="appointments-table-container">
+                        <div class="appointments-cards">
+                            {% for appointment in today_appointments %}
+                                <div class="appointment-card-detailed {{ appointment.status|lower }}">
+                                    <div class="card-header">
+                                        <div class="patient-section">
+                                            <h3>{{ appointment.patient.username }}</h3>
+                                            <p class="email">{{ appointment.patient.email }}</p>
+                                        </div>
+                                        <span class="status-badge status-{{ appointment.status|lower }}">
+                                            {{ 'Approved' if appointment.status == 'confirmed' else appointment.status|title }}
+                                        </span>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="appointment-detail">
+                                            <i class="fas fa-clock"></i>
+                                            <span>{{ appointment.appointment_time }}</span>
+                                        </div>
+                                        {% if appointment.symptoms %}
+                                            <div class="appointment-detail">
+                                                <i class="fas fa-notes-medical"></i>
+                                                <span>{{ appointment.symptoms }}</span>
+                                            </div>
+                                        {% endif %}
+                                        {% if appointment.notes %}
+                                            <div class="appointment-detail">
+                                                <i class="fas fa-sticky-note"></i>
+                                                <span>{{ appointment.notes }}</span>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="card-actions">
+                                        <button class="btn btn-outline btn-sm">
+                                            <i class="fas fa-eye"></i> View Details
+                                        </button>
+                                        {% if appointment.status == 'pending' %}
+                                            <button class="btn btn-success btn-sm">
+                                                <i class="fas fa-check"></i> Approve
+                                            </button>
+                                            <button class="btn btn-danger btn-sm">
+                                                <i class="fas fa-times"></i> Reject
+                                            </button>
+                                        {% elif appointment.status == 'confirmed' %}
+                                            <button class="btn btn-primary btn-sm">
+                                                <i class="fas fa-video"></i> Start Consultation
+                                            </button>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
                 {% else %}
-                    <i class="fas fa-user-md"></i>
+                    <div class="empty-state large">
+                        <i class="fas fa-calendar-check"></i>
+                        <h3>No Appointments Today</h3>
+                        <p>Enjoy your break! You have no scheduled appointments.</p>
+                    </div>
                 {% endif %}
-                <button class="btn-upload-profile" onclick="document.getElementById('doctorProfilePictureInput').click()" title="Upload Profile Picture">
-                    <i class="fas fa-camera"></i>
-                </button>
             </div>
-            <input type="file" id="doctorProfilePictureInput" accept="image/*" style="display: none;" onchange="uploadDoctorProfilePicture()">
-            <div class="profile-info">
-                <h2>{{ doctor.name }}</h2>
-                <p class="specialization">{{ doctor.specialization }}</p>
-                <p class="qualifications">{{ doctor.qualifications }}</p>
-            </div>
-        </div>
-        <div class="profile-details">
-            <div class="detail-item">
-                <i class="fas fa-briefcase"></i>
-                <span>{{ doctor.experience }} years experience</span>
-            </div>
-            <div class="detail-item">
-                <i class="fas fa-envelope"></i>
-                <span>{{ doctor.email }}</span>
-            </div>
-            <div class="detail-item">
-                <i class="fas fa-phone"></i>
-                <span>{{ doctor.phone }}</span>
-            </div>
-            <div class="detail-item">
-                <i class="fas fa-dollar-sign"></i>
-                <span>Consultation Fee: ${{ "%.2f"|format(doctor.consultation_fee) }}</span>
-            </div>
-            <div class="detail-item">
-                <i class="fas fa-calendar"></i>
-                <span>Available: {{ doctor.available_days }}</span>
-            </div>
-            <div class="detail-item">
-                <i class="fas fa-clock"></i>
-                <span>{{ doctor.available_time }}</span>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Today's Appointments -->
-    <div class="appointments-section">
-        <div class="section-header">
-            <h2><i class="fas fa-calendar-day"></i> Today's Appointments ({{ today.strftime('%B %d, %Y') }})</h2>
-            <a href="{{ url_for('doctor_patients') }}" class="btn btn-primary">
-                <i class="fas fa-users"></i> View All Patients & Records
-            </a>
-        </div>
-        
-        {% if today_appointments %}
-            <div class="appointments-grid">
-                {% for appointment in today_appointments %}
-                    <div class="appointment-card {{ appointment.status }}">
-                        <div class="appointment-header">
-                            <span class="appointment-id">#{{ appointment.id }}</span>
-                            <span class="status-badge {{ appointment.status }}">
-                                {{ 'Approved' if appointment.status == 'confirmed' else appointment.status|title }}
-                            </span>
-                        </div>
-                        <div class="appointment-body">
-                            <div class="patient-info">
-                                <i class="fas fa-user"></i>
-                                <div>
-                                    <p class="patient-name">{{ appointment.patient.username }}</p>
-                                    <p class="patient-contact">{{ appointment.patient.email }}</p>
-                                </div>
-                            </div>
-                            <div class="appointment-time">
-                                <i class="fas fa-clock"></i>
-                                <span>{{ appointment.appointment_time }}</span>
-                            </div>
-                            {% if appointment.symptoms %}
-                                <div class="symptoms">
-                                    <i class="fas fa-notes-medical"></i>
-                                    <p>{{ appointment.symptoms }}</p>
-                                </div>
-                            {% endif %}
-                            {% if appointment.notes %}
-                                <div class="notes">
-                                    <i class="fas fa-sticky-note"></i>
-                                    <p>{{ appointment.notes }}</p>
-                                </div>
-                            {% endif %}
-                        </div>
-                        <div class="appointment-actions">
+
+            <!-- Appointment Requests View -->
+            <div class="content-view requests-view" id="requestsView" style="display: none;">
+                <div class="section-header">
+                    <h2><i class="fas fa-clock"></i> Appointment Requests</h2>
+                    <p class="subtitle">Review and approve pending appointment requests</p>
+                </div>
+                {% if pending_count > 0 %}
+                    <div class="requests-container">
+                        {% for appointment in today_appointments %}
                             {% if appointment.status == 'pending' %}
-                                <button class="btn-sm btn-success" 
+                                <div class="request-card">
+                                    <div class="request-header">
+                                        <h3>{{ appointment.patient.username }}</h3>
+                                        <span class="request-time">Requested: {{ appointment.appointment_date.strftime('%b %d') }} at {{ appointment.appointment_time }}</span>
+                                    </div>
+                                    <div class="request-body">
+                                        <div class="reason">
+                                            <label>Reason for Visit:</label>
+                                            <p>{{ appointment.symptoms }}</p>
+                                        </div>
+                                        {% if appointment.notes %}
+                                            <div class="notes">
+                                                <label>Additional Notes:</label>
+                                                <p>{{ appointment.notes }}</p>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="request-actions">
+                                        <button class="btn btn-success">
+                                            <i class="fas fa-check-circle"></i> Approve
+                                        </button>
+                                        <button class="btn btn-danger">
+                                            <i class="fas fa-times-circle"></i> Reject
+                                        </button>
+                                    </div>
+                                </div>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="empty-state large">
+                        <i class="fas fa-inbox"></i>
+                        <h3>No Pending Requests</h3>
+                        <p>All appointment requests have been processed.</p>
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Schedule View -->
+            <div class="content-view schedule-view" id="scheduleView" style="display: none;">
+                <div class="section-header">
+                    <h2><i class="fas fa-calendar-alt"></i> My Schedule</h2>
+                    <button class="btn btn-primary" onclick="showEditScheduleModal()">
+                        <i class="fas fa-edit"></i> Edit Availability
+                    </button>
+                </div>
+                <div class="schedule-card">
+                    <div class="schedule-info">
+                        <div class="schedule-item">
+                            <label><i class="fas fa-calendar"></i> Available Days</label>
+                            <p>{{ doctor.available_days }}</p>
+                        </div>
+                        <div class="schedule-item">
+                            <label><i class="fas fa-clock"></i> Available Hours</label>
+                            <p>{{ doctor.available_time }}</p>
+                        </div>
+                        <div class="schedule-item">
+                            <label><i class="fas fa-dollar-sign"></i> Consultation Fee</label>
+                            <p>${{ "%.2f"|format(doctor.consultation_fee) }}</p>
+                        </div>
+                    </div>
+                    <div class="schedule-preview">
+                        <h3>Weekly Schedule</h3>
+                        <div class="weekly-grid">
+                            <div class="day-slot">
+                                <span class="day">Mon</span>
+                                <span class="time">09:00-17:00</span>
+                                <span class="status available">Available</span>
+                            </div>
+                            <div class="day-slot">
+                                <span class="day">Tue</span>
+                                <span class="time">09:00-17:00</span>
+                                <span class="status available">Available</span>
+                            </div>
+                            <div class="day-slot">
+                                <span class="day">Wed</span>
+                                <span class="time">09:00-17:00</span>
+                                <span class="status available">Available</span>
+                            </div>
+                            <div class="day-slot">
+                                <span class="day">Thu</span>
+                                <span class="time">09:00-17:00</span>
+                                <span class="status available">Available</span>
+                            </div>
+                            <div class="day-slot">
+                                <span class="day">Fri</span>
+                                <span class="time">09:00-17:00</span>
+                                <span class="status available">Available</span>
+                            </div>
+                            <div class="day-slot">
+                                <span class="day">Sat</span>
+                                <span class="time">10:00-14:00</span>
+                                <span class="status available">Available</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Settings View -->
+            <div class="content-view settings-view" id="settingsView" style="display: none;">
+                <div class="section-header">
+                    <h2><i class="fas fa-cog"></i> Profile Settings</h2>
+                </div>
+                <div class="settings-grid">
+                    <div class="settings-card">
+                        <h3><i class="fas fa-user"></i> Personal Information</h3>
+                        <div class="settings-item">
+                            <label>Full Name</label>
+                            <p>{{ doctor.name }}</p>
+                        </div>
+                        <div class="settings-item">
+                            <label>Specialization</label>
+                            <p>{{ doctor.specialization }}</p>
+                        </div>
+                        <div class="settings-item">
+                            <label>Qualifications</label>
+                            <p>{{ doctor.qualifications }}</p>
+                        </div>
+                        <button class="btn btn-primary btn-sm" onclick="showEditProfileModal()">
+                            <i class="fas fa-edit"></i> Edit
+                        </button>
+                    </div>
+
+                    <div class="settings-card">
+                        <h3><i class="fas fa-phone"></i> Contact Information</h3>
+                        <div class="settings-item">
+                            <label>Email</label>
+                            <p>{{ doctor.email }}</p>
+                        </div>
+                        <div class="settings-item">
+                            <label>Phone</label>
+                            <p>{{ doctor.phone }}</p>
+                        </div>
+                        <button class="btn btn-primary btn-sm" onclick="showEditContactModal()">
+                            <i class="fas fa-edit"></i> Edit
+                        </button>
+                    </div>
+
+                    <div class="settings-card">
+                        <h3><i class="fas fa-lock"></i> Account Security</h3>
+                        <div class="settings-item">
+                            <label>Password</label>
+                            <p>••••••••</p>
+                        </div>
+                        <button class="btn btn-primary btn-sm" onclick="showChangePasswordModal()">
+                            <i class="fas fa-key"></i> Change Password
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+
+<script>
+function showDashboardView(event) {
+    event.preventDefault();
+    showView('dashboardView');
+    setActiveNav(event.target.closest('.nav-item'));
+}
+
+function showTodayView(event) {
+    event.preventDefault();
+    showView('todayView');
+    setActiveNav(document.querySelector('[onclick*="showTodayView"]'));
+}
+
+function showRequestsView(event) {
+    event.preventDefault();
+    showView('requestsView');
+    setActiveNav(document.querySelector('[onclick*="showRequestsView"]'));
+}
+
+function showScheduleView(event) {
+    event.preventDefault();
+    showView('scheduleView');
+    setActiveNav(document.querySelector('[onclick*="showScheduleView"]'));
+}
+
+function showSettingsView(event) {
+    event.preventDefault();
+    showView('settingsView');
+    setActiveNav(document.querySelector('[onclick*="showSettingsView"]'));
+}
+
+function showView(viewId) {
+    const views = document.querySelectorAll('.content-view');
+    views.forEach(view => view.style.display = 'none');
+    document.getElementById(viewId).style.display = 'block';
+}
+
+function setActiveNav(element) {
+    document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+    if (element) element.classList.add('active');
+}
+
+function showEditScheduleModal() {
+    alert('Edit Schedule feature - UI representation only');
+}
+
+function showEditProfileModal() {
+    alert('Edit Profile feature - UI representation only');
+}
+
+function showEditContactModal() {
+    alert('Edit Contact feature - UI representation only');
+}
+
+function showChangePasswordModal() {
+    alert('Change Password feature - UI representation only');
+}
+</script>
+ 
                                         onclick="updateAppointmentStatus('{{ appointment.id }}', 'confirmed')">
                                     <i class="fas fa-check"></i> Confirm
                                 </button>

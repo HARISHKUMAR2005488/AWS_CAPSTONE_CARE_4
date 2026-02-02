@@ -1910,5 +1910,119 @@ def health_info_api():
             return jsonify({"success": False, "message": "Failed to update health info"}), 500
 
 
+@app.route("/api/medical-records", methods=["GET"])
+def get_medical_records_api():
+    """Get medical records for the current user"""
+    if "username" not in session:
+        return jsonify({"success": False, "message": "Please log in"}), 401
+    
+    try:
+        username = session["username"]
+        
+        # Scan for records belonging to this user
+        response = medical_records_table.scan(
+            FilterExpression="patient_username = :username",
+            ExpressionAttributeValues={":username": username}
+        )
+        
+        records = response.get("Items", [])
+        
+        # Convert datetime to strings for JSON serialization
+        for record in records:
+            if "upload_date" in record:
+                record["upload_date"] = record["upload_date"].isoformat() if hasattr(record["upload_date"], "isoformat") else str(record["upload_date"])
+        
+        return jsonify({
+            "success": True,
+            "records": records
+        })
+    
+    except Exception as e:
+        logger.error(f"Error fetching medical records: {e}")
+        return jsonify({"success": False, "message": "Failed to fetch records"}), 500
+
+
+@app.route("/api/view-record/<record_id>", methods=["GET"])
+def view_record(record_id):
+    """View a specific medical record document"""
+    if "username" not in session:
+        return redirect(url_for("login"))
+    
+    try:
+        username = session["username"]
+        
+        # Get the record from database
+        response = medical_records_table.get_item(Key={"id": record_id})
+        record = response.get("Item")
+        
+        if not record or record.get("patient_username") != username:
+            return ("Unauthorized", 403)
+        
+        # Serve the file
+        file_path = record.get("file_path")
+        if file_path and os.path.exists(file_path):
+            directory = os.path.dirname(file_path)
+            filename = os.path.basename(file_path)
+            return send_from_directory(directory, filename)
+        else:
+            return ("File not found", 404)
+    
+    except Exception as e:
+        logger.error(f"Error viewing record: {e}")
+        return ("Error viewing record", 500)
+
+
+@app.route("/api/appointments", methods=["GET"])
+def get_appointments_api():
+    """Get appointments for the current user"""
+    if "username" not in session:
+        return jsonify({"success": False, "message": "Please log in"}), 401
+    
+    try:
+        username = session["username"]
+        
+        # Scan for appointments belonging to this user
+        response = appointments_table.scan(
+            FilterExpression="username = :username",
+            ExpressionAttributeValues={":username": username}
+        )
+        
+        appointments = response.get("Items", [])
+        
+        # Normalize appointments for frontend
+        from datetime import datetime as dt_class, date as date_class
+        normalized_appointments = []
+        
+        for appt in appointments:
+            # Handle date conversion
+            date_val = appt.get("date") or appt.get("appointment_date")
+            if isinstance(date_val, str):
+                try:
+                    appt["appointment_date"] = date_val
+                except Exception:
+                    appt["appointment_date"] = str(date_class.today())
+            elif isinstance(date_val, (date_class, dt_class)):
+                appt["appointment_date"] = date_val.isoformat() if hasattr(date_val, "isoformat") else str(date_val)
+            else:
+                appt["appointment_date"] = str(date_class.today())
+            
+            # Ensure required fields
+            appt.setdefault("appointment_time", appt.get("time", ""))
+            appt.setdefault("status", "pending")
+            appt.setdefault("symptoms", appt.get("reason", ""))
+            appt.setdefault("doctor_name", "")
+            
+            normalized_appointments.append(appt)
+        
+        return jsonify({
+            "success": True,
+            "appointments": normalized_appointments
+        })
+    
+    except Exception as e:
+        logger.error(f"Error fetching appointments: {e}")
+        return jsonify({"success": False, "message": "Failed to fetch appointments"}), 500
+
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)

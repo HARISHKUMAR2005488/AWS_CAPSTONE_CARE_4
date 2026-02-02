@@ -69,7 +69,7 @@
             </div>
 
             <nav class="sidebar-nav">
-                <a href="#" class="nav-item active">
+                <a href="#" class="nav-item active" id="nav-dashboard" onclick="showDashboardSection(event)">
                     <i class="fas fa-th-large"></i>
                     <span>Dashboard</span>
                 </a>
@@ -77,15 +77,15 @@
                     <i class="fas fa-calendar-check"></i>
                     <span>Appointment</span>
                 </a>
-                <a href="#" class="nav-item" onclick="showRecordsSection()">
+                <a href="#" class="nav-item" id="nav-records" onclick="showRecordsSection(event)">
                     <i class="fas fa-file-medical"></i>
                     <span>Record</span>
                 </a>
-                <a href="#" class="nav-item">
+                <a href="#" class="nav-item" id="nav-chat" onclick="showChatSection(event)">
                     <i class="fas fa-comments"></i>
                     <span>Chat</span>
                 </a>
-                <a href="#" class="nav-item">
+                <a href="#" class="nav-item" id="nav-calendar" onclick="showCalendarSection(event)">
                     <i class="fas fa-calendar-alt"></i>
                     <span>Calendar</span>
                 </a>
@@ -262,16 +262,120 @@
                         </div>
                         <div class="reminder-content">
                             <h4>{{ appointment.symptoms[:30] }}...</h4>
-                            <p>{{ appointment.appointment_date.strftime('%H:%M, %d.%m.%Y') }}</p>
+                            <p>{% if appointment.appointment_time %}{{ appointment.appointment_time }}, {% endif %}{{ appointment.appointment_date.strftime('%d.%m.%Y') }}</p>
                         </div>
-                        <button class="change-btn-sm" onclick="editAppointment({{ appointment.id }})">
+                        <a href="{{ url_for('appointments') }}" class="change-btn-sm">
                             <i class="fas fa-pen"></i> Change
-                        </button>
+                        </a>
                     </div>
                     {% endfor %}
                 </div>
             </div>
         </aside>
+    </div>
+
+    <!-- Records Section (Hidden by default) -->
+    <div id="recordsSection" class="content-section" style="display: none;">
+        <div class="section-header">
+            <h2><i class="fas fa-file-medical"></i> Medical Records</h2>
+            <button class="btn btn-primary" onclick="showUploadModal()">
+                <i class="fas fa-upload"></i> Upload Document
+            </button>
+        </div>
+        <div id="recordsContainer" class="records-grid">
+            <div class="loading">Loading records...</div>
+        </div>
+    </div>
+
+    <!-- Chat Section (Hidden by default) -->
+    <div id="chatSection" class="content-section" style="display: none;">
+        <div class="chat-container">
+            <div class="chat-header">
+                <h2><i class="fas fa-robot"></i> Health Assistant</h2>
+                <button class="btn btn-secondary" onclick="clearChat()">
+                    <i class="fas fa-trash"></i> Clear
+                </button>
+            </div>
+            <div id="chatMessages" class="chat-messages">
+                <div class="message bot-message">
+                    <div class="message-content">
+                        <strong>Health Assistant:</strong>
+                        <p>Hello! I'm your AI health assistant. Describe your symptoms and I'll help analyze them and suggest appropriate specialists.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="chat-input-container">
+                <form id="chatForm" onsubmit="sendChatMessage(event)">
+                    <input type="text" id="chatInput" placeholder="Describe your symptoms..." required>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-paper-plane"></i> Send
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Calendar Section (Hidden by default) -->
+    <div id="calendarSection" class="content-section" style="display: none;">
+        <div class="calendar-header">
+            <h2><i class="fas fa-calendar-alt"></i> My Appointments Calendar</h2>
+            <div class="calendar-controls">
+                <button class="btn btn-secondary" onclick="previousMonth()">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                <h3 id="currentMonthYear"></h3>
+                <button class="btn btn-secondary" onclick="nextMonth()">
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+            </div>
+        </div>
+        <div id="calendar" class="calendar-grid"></div>
+        <div class="appointments-list">
+            <h3>Upcoming Appointments</h3>
+            <div id="calendarAppointments">
+                {% for appointment in appointments %}
+                <div class="appointment-card">
+                    <div class="appointment-date">
+                        <span class="day">{{ appointment.appointment_date.strftime('%d') }}</span>
+                        <span class="month">{{ appointment.appointment_date.strftime('%b') }}</span>
+                    </div>
+                    <div class="appointment-details">
+                        <h4>{{ appointment.symptoms[:50] }}{% if appointment.symptoms|length > 50 %}...{% endif %}</h4>
+                        <p><i class="fas fa-user-md"></i> {{ appointment.doctor_name if appointment.doctor_name else 'Doctor' }}</p>
+                        <p><i class="fas fa-clock"></i> {% if appointment.appointment_time %}{{ appointment.appointment_time }}{% else %}Not set{% endif %}</p>
+                        <span class="status-badge status-{{ appointment.status }}">{{ appointment.status|title }}</span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <!-- Upload Document Modal -->
+    <div id="uploadModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Upload Medical Document</h3>
+                <button class="close-modal" onclick="closeUploadModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="uploadForm" enctype="multipart/form-data">
+                    <div class="form-group">
+                        <label for="documentFile">Select File (PDF, JPG, PNG)</label>
+                        <input type="file" id="documentFile" name="document" accept=".pdf,.jpg,.jpeg,.png" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="documentDescription">Description</label>
+                        <textarea id="documentDescription" name="description" rows="3" placeholder="Brief description of the document..."></textarea>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">Upload</button>
+                        <button type="button" class="btn btn-secondary" onclick="closeUploadModal()">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
     </div>
 
     <!-- Modals -->

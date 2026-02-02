@@ -1017,7 +1017,7 @@ body {
 .content-section {
     padding: 2rem;
     background: var(--bg-secondary);
-    min-height: 100vh;
+    height: 100vh;
     position: fixed;
     top: 0;
     left: 0;

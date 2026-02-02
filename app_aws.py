@@ -1460,7 +1460,8 @@ def my_appointments():
     if not has_username_index():
         appointments = [a for a in appointments if a.get("username") == username]
 
-    return render_template("appointments.html", appointments=appointments)
+    # Redirect to dashboard which shows appointments
+    return redirect(url_for("dashboard"))
 
 
 @app.route("/cancel-appointment/<appointment_id>", methods=["GET", "POST"])

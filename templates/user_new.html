@@ -457,108 +457,134 @@
     <div id="helpSection" class="content-section" style="display: none;">
         <div class="section-header">
             <h2><i class="fas fa-question-circle"></i> Help Center</h2>
+            <button class="btn-close-section" onclick="showDashboardSection(event)" title="Back to Dashboard">
+                <i class="fas fa-times"></i>
+            </button>
         </div>
-        <div class="help-container">
-            <div class="help-search">
-                <input type="text" id="helpSearch" placeholder="Search for help..." onkeyup="filterHelpTopics()">
+        
+        <div class="help-settings-container">
+            <!-- Search Section -->
+            <div class="help-search-box">
                 <i class="fas fa-search"></i>
+                <input type="text" id="helpSearch" placeholder="Search for help articles..." onkeyup="filterHelpTopics()">
             </div>
-            
-            <div class="help-categories">
-                <div class="help-category">
-                    <h3><i class="fas fa-info-circle"></i> Getting Started</h3>
-                    <div class="faq-list">
-                        <div class="faq-item" onclick="toggleFAQ(this)">
-                            <div class="faq-question">
-                                <span>How do I book an appointment?</span>
-                                <i class="fas fa-chevron-down"></i>
-                            </div>
-                            <div class="faq-answer">
-                                <p>To book an appointment, navigate to the Appointment section from the sidebar, browse available doctors, select your preferred doctor, choose a date and time, and confirm your booking.</p>
-                            </div>
-                        </div>
-                        <div class="faq-item" onclick="toggleFAQ(this)">
-                            <div class="faq-question">
-                                <span>How do I update my health information?</span>
-                                <i class="fas fa-chevron-down"></i>
-                            </div>
-                            <div class="faq-answer">
-                                <p>Click the "Edit Info" button on your dashboard's health data card. You can update your weight, height, blood group, and other health metrics.</p>
-                            </div>
-                        </div>
+
+            <!-- Getting Started Section -->
+            <div class="settings-section">
+                <h4><i class="fas fa-rocket"></i> Getting Started</h4>
+                <div class="faq-item-settings" onclick="toggleFAQ(this)">
+                    <div class="setting-info">
+                        <label>How do I book an appointment?</label>
+                        <p class="faq-answer-text" style="display: none;">Navigate to the Appointment section from the sidebar, browse available doctors, select your preferred doctor, choose a date and time, and confirm your booking.</p>
                     </div>
+                    <i class="fas fa-chevron-down faq-toggle-icon"></i>
                 </div>
-                
-                <div class="help-category">
-                    <h3><i class="fas fa-file-medical"></i> Medical Records</h3>
-                    <div class="faq-list">
-                        <div class="faq-item" onclick="toggleFAQ(this)">
-                            <div class="faq-question">
-                                <span>How do I upload medical documents?</span>
-                                <i class="fas fa-chevron-down"></i>
-                            </div>
-                            <div class="faq-answer">
-                                <p>Go to the Records section, click "Upload Document", select your file (PDF, JPG, or PNG), add a description, and click upload. Your documents are securely stored and accessible anytime.</p>
-                            </div>
-                        </div>
-                        <div class="faq-item" onclick="toggleFAQ(this)">
-                            <div class="faq-question">
-                                <span>Can I delete my medical records?</span>
-                                <i class="fas fa-chevron-down"></i>
-                            </div>
-                            <div class="faq-answer">
-                                <p>For security and compliance reasons, medical records cannot be deleted by users. Please contact support if you have concerns about specific documents.</p>
-                            </div>
-                        </div>
+                <div class="faq-item-settings" onclick="toggleFAQ(this)">
+                    <div class="setting-info">
+                        <label>How do I update my health information?</label>
+                        <p class="faq-answer-text" style="display: none;">Click the "Change" button on your dashboard's health data card. You can update your weight, height, blood group, and other health metrics.</p>
                     </div>
+                    <i class="fas fa-chevron-down faq-toggle-icon"></i>
                 </div>
-                
-                <div class="help-category">
-                    <h3><i class="fas fa-comments"></i> Health Assistant</h3>
-                    <div class="faq-list">
-                        <div class="faq-item" onclick="toggleFAQ(this)">
-                            <div class="faq-question">
-                                <span>How does the AI Health Assistant work?</span>
-                                <i class="fas fa-chevron-down"></i>
-                            </div>
-                            <div class="faq-answer">
-                                <p>The Health Assistant uses AI to analyze your symptoms and recommend appropriate specialists. Simply describe your symptoms in the chat, and it will provide guidance and suggestions.</p>
-                            </div>
-                        </div>
-                        <div class="faq-item" onclick="toggleFAQ(this)">
-                            <div class="faq-question">
-                                <span>Is my chat history saved?</span>
-                                <i class="fas fa-chevron-down"></i>
-                            </div>
-                            <div class="faq-answer">
-                                <p>Chat history is stored locally in your browser session. You can clear it anytime by clicking the trash icon in the chat header.</p>
-                            </div>
-                        </div>
+            </div>
+
+            <!-- Medical Records Section -->
+            <div class="settings-section">
+                <h4><i class="fas fa-file-medical"></i> Medical Records</h4>
+                <div class="faq-item-settings" onclick="toggleFAQ(this)">
+                    <div class="setting-info">
+                        <label>How do I upload medical documents?</label>
+                        <p class="faq-answer-text" style="display: none;">Click the "Upload" button in the Medical Records section, select your file (PDF, JPG, or PNG), add a description, and click upload. Your documents are securely stored and accessible anytime.</p>
                     </div>
+                    <i class="fas fa-chevron-down faq-toggle-icon"></i>
                 </div>
-                
-                <div class="help-category">
-                    <h3><i class="fas fa-headset"></i> Contact Support</h3>
-                    <div class="contact-options">
-                        <div class="contact-card">
+                <div class="faq-item-settings" onclick="toggleFAQ(this)">
+                    <div class="setting-info">
+                        <label>Can I delete my medical records?</label>
+                        <p class="faq-answer-text" style="display: none;">For security and compliance reasons, medical records cannot be deleted by users. Please contact support if you have concerns about specific documents.</p>
+                    </div>
+                    <i class="fas fa-chevron-down faq-toggle-icon"></i>
+                </div>
+            </div>
+
+            <!-- Health Assistant Section -->
+            <div class="settings-section">
+                <h4><i class="fas fa-robot"></i> AI Health Assistant</h4>
+                <div class="faq-item-settings" onclick="toggleFAQ(this)">
+                    <div class="setting-info">
+                        <label>How does the AI Health Assistant work?</label>
+                        <p class="faq-answer-text" style="display: none;">The Health Assistant uses AI to analyze your symptoms and recommend appropriate specialists. Simply describe your symptoms in the chat, and it will provide guidance and suggestions.</p>
+                    </div>
+                    <i class="fas fa-chevron-down faq-toggle-icon"></i>
+                </div>
+                <div class="faq-item-settings" onclick="toggleFAQ(this)">
+                    <div class="setting-info">
+                        <label>Is my chat history saved?</label>
+                        <p class="faq-answer-text" style="display: none;">Chat history is stored locally in your browser session. You can clear it anytime by clearing your browser data.</p>
+                    </div>
+                    <i class="fas fa-chevron-down faq-toggle-icon"></i>
+                </div>
+            </div>
+
+            <!-- Contact Support Section -->
+            <div class="settings-section">
+                <h4><i class="fas fa-headset"></i> Contact Support</h4>
+                <div class="contact-grid">
+                    <div class="contact-item">
+                        <div class="contact-icon" style="background: #E8F5FF; color: #0284C7;">
                             <i class="fas fa-envelope"></i>
-                            <h4>Email Support</h4>
+                        </div>
+                        <div class="contact-details">
+                            <h5>Email Support</h5>
                             <p>support@care4u.com</p>
                             <span>Response within 24 hours</span>
                         </div>
-                        <div class="contact-card">
+                    </div>
+                    <div class="contact-item">
+                        <div class="contact-icon" style="background: #DCFCE7; color: #16A34A;">
                             <i class="fas fa-phone"></i>
-                            <h4>Phone Support</h4>
+                        </div>
+                        <div class="contact-details">
+                            <h5>Phone Support</h5>
                             <p>1-800-CARE-4-U</p>
                             <span>Mon-Fri, 9 AM - 6 PM</span>
                         </div>
-                        <div class="contact-card">
+                    </div>
+                    <div class="contact-item">
+                        <div class="contact-icon" style="background: #FFF4E6; color: #F59E0B;">
                             <i class="fas fa-comment-dots"></i>
-                            <h4>Live Chat</h4>
+                        </div>
+                        <div class="contact-details">
+                            <h5>Live Chat</h5>
                             <p>Available Now</p>
-                            <button class="btn btn-sm btn-primary" onclick="switchRightTab('chat')">Start Chat</button>
+                            <button class="btn btn-sm btn-primary" onclick="toggleChatBox()">
+                                <i class="fas fa-comments"></i> Start Chat
+                            </button>
                         </div>
                     </div>
+                </div>
+            </div>
+
+            <!-- Quick Links Section -->
+            <div class="settings-section">
+                <h4><i class="fas fa-link"></i> Quick Links</h4>
+                <div class="quick-links-grid">
+                    <a href="#" class="quick-link-item" onclick="showDashboardSection(event)">
+                        <i class="fas fa-home"></i>
+                        <span>Dashboard</span>
+                    </a>
+                    <a href="{{ url_for('doctors') }}" class="quick-link-item">
+                        <i class="fas fa-calendar-check"></i>
+                        <span>Book Appointment</span>
+                    </a>
+                    <a href="#" class="quick-link-item" onclick="showAccountSection(event)">
+                        <i class="fas fa-user-cog"></i>
+                        <span>Account Settings</span>
+                    </a>
+                    <a href="#" class="quick-link-item" onclick="showSettingsModal(event)">
+                        <i class="fas fa-cog"></i>
+                        <span>Preferences</span>
+                    </a>
                 </div>
             </div>
         </div>

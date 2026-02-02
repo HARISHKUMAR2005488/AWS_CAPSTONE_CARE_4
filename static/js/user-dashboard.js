@@ -677,21 +677,59 @@ document.getElementById('changePasswordForm')?.addEventListener('submit', functi
 
 // Help Center Functions
 function toggleFAQ(element) {
+    const answerText = element.querySelector('.faq-answer-text');
+    const isActive = element.classList.contains('active');
+    
+    // Close all other FAQs in the same section
+    const section = element.closest('.settings-section');
+    if (section) {
+        section.querySelectorAll('.faq-item-settings').forEach(item => {
+            if (item !== element) {
+                item.classList.remove('active');
+                const otherAnswer = item.querySelector('.faq-answer-text');
+                if (otherAnswer) otherAnswer.style.display = 'none';
+            }
+        });
+    }
+    
+    // Toggle current FAQ
     element.classList.toggle('active');
+    if (answerText) {
+        answerText.style.display = isActive ? 'none' : 'block';
+    }
 }
 
 function filterHelpTopics() {
     const searchValue = document.getElementById('helpSearch').value.toLowerCase();
-    const faqItems = document.querySelectorAll('.faq-item');
+    const faqItems = document.querySelectorAll('.faq-item-settings');
+    const sections = document.querySelectorAll('.help-settings-container .settings-section');
+    
+    if (!searchValue) {
+        // Show all items and sections
+        faqItems.forEach(item => item.style.display = 'flex');
+        sections.forEach(section => section.style.display = 'block');
+        return;
+    }
     
     faqItems.forEach(item => {
-        const question = item.querySelector('.faq-question span').textContent.toLowerCase();
-        const answer = item.querySelector('.faq-answer p').textContent.toLowerCase();
+        const label = item.querySelector('.setting-info label');
+        const answer = item.querySelector('.faq-answer-text');
         
-        if (question.includes(searchValue) || answer.includes(searchValue)) {
-            item.style.display = 'block';
-        } else {
-            item.style.display = 'none';
+        if (label && answer) {
+            const question = label.textContent.toLowerCase();
+            const answerText = answer.textContent.toLowerCase();
+            
+            if (question.includes(searchValue) || answerText.includes(searchValue)) {
+                item.style.display = 'flex';
+            } else {
+                item.style.display = 'none';
+            }
         }
+    });
+    
+    // Hide sections with no visible items
+    sections.forEach(section => {
+        const visibleItems = section.querySelectorAll('.faq-item-settings[style*="display: flex"], .faq-item-settings:not([style*="display: none"])');
+        section.style.display = visibleItems.length > 0 ? 'block' : 'none';
     });
 }

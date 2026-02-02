@@ -3,8 +3,6 @@
 // Load health data on page load
 document.addEventListener('DOMContentLoaded', function() {
     loadHealthData();
-    loadMedicalRecords(); // Load records for the default active tab
-    initializeCalendar(); // Initialize calendar
 });
 
 // Right Sidebar Tab Switching
@@ -16,13 +14,6 @@ function switchRightTab(tabName) {
     // Update tab content
     document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
     document.getElementById(tabName + '-tab').classList.add('active');
-    
-    // Load data for specific tabs
-    if (tabName === 'records') {
-        loadMedicalRecords();
-    } else if (tabName === 'calendar') {
-        initializeCalendar();
-    }
 }
 
 // Navigation Functions
@@ -37,32 +28,27 @@ function showDashboardSection(event) {
 function showRecordsSection(event) {
     if (event) event.preventDefault();
     hideAllSections();
-    document.querySelector('.dashboard-layout main').style.display = 'block';
-    document.querySelector('.right-sidebar').style.display = 'block';
+    document.getElementById('recordsCalendarSection').style.display = 'block';
     setActiveNav('nav-records-calendar');
-    
-    // Switch to records tab
-    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-    document.querySelector('.tab-btn[onclick*="records"]').classList.add('active');
-    document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-    document.getElementById('records-tab').classList.add('active');
-    
     loadMedicalRecords();
+    initializeCalendar();
+}
+
+function showRecordsCalendarSection(event) {
+    if (event) event.preventDefault();
+    hideAllSections();
+    document.getElementById('recordsCalendarSection').style.display = 'block';
+    setActiveNav('nav-records-calendar');
+    loadMedicalRecords();
+    initializeCalendar();
 }
 
 function showCalendarSection(event) {
     if (event) event.preventDefault();
     hideAllSections();
-    document.querySelector('.dashboard-layout main').style.display = 'block';
-    document.querySelector('.right-sidebar').style.display = 'block';
+    document.getElementById('recordsCalendarSection').style.display = 'block';
     setActiveNav('nav-records-calendar');
-    
-    // Switch to calendar tab
-    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-    document.querySelector('.tab-btn[onclick*="calendar"]').classList.add('active');
-    document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-    document.getElementById('calendar-tab').classList.add('active');
-    
+    loadMedicalRecords();
     initializeCalendar();
 }
 
@@ -83,6 +69,7 @@ function showHelpCenter(event) {
 function hideAllSections() {
     document.querySelector('.dashboard-layout main').style.display = 'none';
     document.querySelector('.right-sidebar').style.display = 'none';
+    document.getElementById('recordsCalendarSection').style.display = 'none';
     document.getElementById('accountSection').style.display = 'none';
     document.getElementById('helpSection').style.display = 'none';
 }
@@ -162,7 +149,9 @@ document.getElementById('healthInfoForm')?.addEventListener('submit', function(e
 
 // Medical Records Functions
 function loadMedicalRecords() {
-    const container = document.getElementById('recordsContainer');
+    const container = document.getElementById('recordsContainerMain');
+    if (!container) return; // Exit if container not found
+    
     container.innerHTML = '<div class="loading">Loading records...</div>';
     
     fetch('/api/medical-records')
@@ -170,11 +159,11 @@ function loadMedicalRecords() {
         .then(data => {
             if (data.success && data.records && data.records.length > 0) {
                 container.innerHTML = data.records.map(record => `
-                    <div class="record-card-sidebar">
-                        <div class="record-icon-sidebar">
+                    <div class="record-card-compact">
+                        <div class="record-icon-compact">
                             <i class="fas fa-file-${record.file_type === 'pdf' ? 'pdf' : 'image'}"></i>
                         </div>
-                        <div class="record-info-sidebar">
+                        <div class="record-info-compact">
                             <h5>${record.description || 'Medical Document'}</h5>
                             <p><i class="fas fa-calendar"></i> ${new Date(record.upload_date).toLocaleDateString()}</p>
                         </div>

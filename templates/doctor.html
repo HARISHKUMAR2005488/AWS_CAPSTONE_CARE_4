@@ -3,6 +3,20 @@
 {% block title %}Doctor Dashboard - Care_4_U Hospitals{% endblock %}
 
 {% block content %}
+<style>
+    /* Hide navbar and footer for doctor dashboard */
+    .navbar, .footer, .flash-messages {
+        display: none !important;
+    }
+    body {
+        margin: 0;
+        padding: 0;
+    }
+    main {
+        padding: 0;
+        margin: 0;
+    }
+</style>
 <div class="doctor-container">
     <!-- Top Header -->
     <div class="doctor-header">

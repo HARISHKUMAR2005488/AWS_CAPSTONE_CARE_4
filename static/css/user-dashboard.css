@@ -190,6 +190,7 @@ body {
     background: var(--white);
     padding: 2.5rem 3rem;
     overflow-y: auto;
+    align-content: start;
 }
 
 .content-header {
@@ -250,6 +251,8 @@ body {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 1.5rem;
+    align-items: start;
+    align-content: start;
 }
 
 .card {
@@ -257,6 +260,7 @@ body {
     border-radius: 16px;
     padding: 1.5rem;
     border: 1px solid var(--gray-lighter);
+    align-self: start;
 }
 
 .card-header {

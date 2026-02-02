@@ -5,6 +5,17 @@ document.addEventListener('DOMContentLoaded', function() {
     loadHealthData();
 });
 
+// Right Sidebar Tab Switching
+function switchRightTab(tabName) {
+    // Update tab buttons
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+    event.target.closest('.tab-btn').classList.add('active');
+    
+    // Update tab content
+    document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+    document.getElementById(tabName + '-tab').classList.add('active');
+}
+
 // Navigation Functions
 function showDashboardSection(event) {
     if (event) event.preventDefault();
@@ -22,13 +33,6 @@ function showRecordsSection(event) {
     loadMedicalRecords();
 }
 
-function showChatSection(event) {
-    if (event) event.preventDefault();
-    hideAllSections();
-    document.getElementById('chatSection').style.display = 'block';
-    setActiveNav('nav-chat');
-}
-
 function showCalendarSection(event) {
     if (event) event.preventDefault();
     hideAllSections();
@@ -37,12 +41,27 @@ function showCalendarSection(event) {
     initializeCalendar();
 }
 
+function showAccountSection(event) {
+    if (event) event.preventDefault();
+    hideAllSections();
+    document.getElementById('accountSection').style.display = 'block';
+    setActiveNav(null); // No nav item active for footer items
+}
+
+function showHelpCenter(event) {
+    if (event) event.preventDefault();
+    hideAllSections();
+    document.getElementById('helpSection').style.display = 'block';
+    setActiveNav(null);
+}
+
 function hideAllSections() {
     document.querySelector('.dashboard-layout main').style.display = 'none';
     document.querySelector('.right-sidebar').style.display = 'none';
     document.getElementById('recordsSection').style.display = 'none';
-    document.getElementById('chatSection').style.display = 'none';
     document.getElementById('calendarSection').style.display = 'none';
+    document.getElementById('accountSection').style.display = 'none';
+    document.getElementById('helpSection').style.display = 'none';
 }
 
 function setActiveNav(navId) {
@@ -230,15 +249,15 @@ function sendChatMessage(event) {
             let response = data.response;
             
             if (data.is_emergency) {
-                response = `<strong style="color: #ff4444;">⚠️ EMERGENCY DETECTED</strong><br>${response}`;
+                response = `<strong style="color: #ff4444;">⚠️ EMERGENCY</strong><br>${response}`;
             }
             
             if (data.specializations && data.specializations.length > 0) {
-                response += `<br><br><strong>Recommended Specialists:</strong><br>`;
+                response += `<br><br><strong>Recommended:</strong><br>`;
                 data.specializations.forEach(spec => {
                     response += `• ${spec}<br>`;
                 });
-                response += `<br><a href="/doctors" class="btn btn-sm btn-primary">Find a Doctor</a>`;
+                response += `<br><a href="/doctors" style="color: #5FEABE; text-decoration: underline;">Find a Doctor</a>`;
             }
             
             addChatMessage(response, 'bot');
@@ -262,7 +281,7 @@ function addChatMessage(message, type) {
     contentDiv.className = 'message-content';
     
     if (type === 'bot') {
-        contentDiv.innerHTML = `<strong>Health Assistant:</strong><p>${message}</p>`;
+        contentDiv.innerHTML = `<strong>Assistant:</strong><p>${message}</p>`;
     } else {
         contentDiv.innerHTML = `<strong>You:</strong><p>${message}</p>`;
     }
@@ -276,7 +295,7 @@ function addTypingIndicator() {
     const messagesContainer = document.getElementById('chatMessages');
     const typingDiv = document.createElement('div');
     typingDiv.className = 'message bot-message typing';
-    typingDiv.innerHTML = '<div class="message-content"><strong>Health Assistant:</strong><p>Typing...</p></div>';
+    typingDiv.innerHTML = '<div class="message-content"><strong>Assistant:</strong><p>Typing...</p></div>';
     messagesContainer.appendChild(typingDiv);
     messagesContainer.scrollTop = messagesContainer.scrollHeight;
     return typingDiv;
@@ -288,8 +307,8 @@ function clearChat() {
         messagesContainer.innerHTML = `
             <div class="message bot-message">
                 <div class="message-content">
-                    <strong>Health Assistant:</strong>
-                    <p>Hello! I'm your AI health assistant. Describe your symptoms and I'll help analyze them and suggest appropriate specialists.</p>
+                    <strong>Assistant:</strong>
+                    <p>Hello! Describe your symptoms and I'll help analyze them and suggest appropriate specialists.</p>
                 </div>
             </div>
         `;
@@ -405,7 +424,15 @@ function changeDoctor() {
 }
 
 function messageDoctor() {
-    showChatSection(new Event('click'));
+    // Switch to chat tab in right sidebar
+    document.querySelectorAll('.tab-btn').forEach((btn, index) => {
+        btn.classList.remove('active');
+        if (index === 1) btn.classList.add('active'); // Chat tab
+    });
+    document.querySelectorAll('.tab-content').forEach((content, index) => {
+        content.classList.remove('active');
+        if (index === 1) content.classList.add('active'); // Chat content
+    });
 }
 
 function callDoctor() {
@@ -413,13 +440,16 @@ function callDoctor() {
 }
 
 function openChat() {
-    showChatSection(new Event('click'));
+    messageDoctor();
 }
 
 // Close modals when clicking outside
 window.onclick = function(event) {
     const healthModal = document.getElementById('healthModal');
     const uploadModal = document.getElementById('uploadModal');
+    const settingsModal = document.getElementById('settingsModal');
+    const editProfileModal = document.getElementById('editProfileModal');
+    const changePasswordModal = document.getElementById('changePasswordModal');
     
     if (event.target == healthModal) {
         closeHealthModal();
@@ -427,4 +457,166 @@ window.onclick = function(event) {
     if (event.target == uploadModal) {
         closeUploadModal();
     }
+    if (event.target == settingsModal) {
+        closeSettingsModal();
+    }
+    if (event.target == editProfileModal) {
+        closeEditProfileModal();
+    }
+    if (event.target == changePasswordModal) {
+        closeChangePasswordModal();
+    }
+}
+
+// Settings Modal Functions
+function showSettingsModal(event) {
+    if (event) event.preventDefault();
+    document.getElementById('settingsModal').classList.add('active');
+    loadSettings();
+}
+
+function closeSettingsModal() {
+    document.getElementById('settingsModal').classList.remove('active');
+}
+
+function loadSettings() {
+    // Load settings from localStorage
+    const emailNotif = localStorage.getItem('emailNotif') !== 'false';
+    const smsNotif = localStorage.getItem('smsNotif') === 'true';
+    const shareData = localStorage.getItem('shareData') !== 'false';
+    const theme = localStorage.getItem('theme') || 'light';
+    
+    document.getElementById('emailNotif').checked = emailNotif;
+    document.getElementById('smsNotif').checked = smsNotif;
+    document.getElementById('shareData').checked = shareData;
+    document.getElementById('themeSelect').value = theme;
+}
+
+function saveSettings() {
+    const emailNotif = document.getElementById('emailNotif').checked;
+    const smsNotif = document.getElementById('smsNotif').checked;
+    const shareData = document.getElementById('shareData').checked;
+    const theme = document.getElementById('themeSelect').value;
+    
+    localStorage.setItem('emailNotif', emailNotif);
+    localStorage.setItem('smsNotif', smsNotif);
+    localStorage.setItem('shareData', shareData);
+    localStorage.setItem('theme', theme);
+    
+    alert('Settings saved successfully!');
+    closeSettingsModal();
+}
+
+// Edit Profile Modal Functions
+function showEditProfileModal() {
+    document.getElementById('editProfileModal').classList.add('active');
+}
+
+function closeEditProfileModal() {
+    document.getElementById('editProfileModal').classList.remove('active');
+}
+
+document.getElementById('editProfileForm')?.addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData();
+    formData.append('email', document.getElementById('editEmail').value);
+    formData.append('phone', document.getElementById('editPhone').value);
+    
+    const profilePicture = document.getElementById('editProfilePicture').files[0];
+    if (profilePicture) {
+        formData.append('profile_picture', profilePicture);
+    }
+    
+    fetch('/api/update-profile', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Profile updated successfully!');
+            closeEditProfileModal();
+            location.reload();
+        } else {
+            alert('Error updating profile: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error updating profile');
+    });
+});
+
+// Change Password Modal Functions
+function showChangePasswordModal() {
+    document.getElementById('changePasswordModal').classList.add('active');
+}
+
+function closeChangePasswordModal() {
+    document.getElementById('changePasswordModal').classList.remove('active');
+    document.getElementById('changePasswordForm').reset();
+}
+
+document.getElementById('changePasswordForm')?.addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const currentPassword = document.getElementById('currentPassword').value;
+    const newPassword = document.getElementById('newPassword').value;
+    const confirmPassword = document.getElementById('confirmPassword').value;
+    
+    if (newPassword !== confirmPassword) {
+        alert('New passwords do not match!');
+        return;
+    }
+    
+    if (newPassword.length < 6) {
+        alert('Password must be at least 6 characters long!');
+        return;
+    }
+    
+    fetch('/api/change-password', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            current_password: currentPassword,
+            new_password: newPassword
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Password changed successfully!');
+            closeChangePasswordModal();
+        } else {
+            alert('Error: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error changing password');
+    });
+});
+
+// Help Center Functions
+function toggleFAQ(element) {
+    element.classList.toggle('active');
+}
+
+function filterHelpTopics() {
+    const searchValue = document.getElementById('helpSearch').value.toLowerCase();
+    const faqItems = document.querySelectorAll('.faq-item');
+    
+    faqItems.forEach(item => {
+        const question = item.querySelector('.faq-question span').textContent.toLowerCase();
+        const answer = item.querySelector('.faq-answer p').textContent.toLowerCase();
+        
+        if (question.includes(searchValue) || answer.includes(searchValue)) {
+            item.style.display = 'block';
+        } else {
+            item.style.display = 'none';
+        }
+    });
 }

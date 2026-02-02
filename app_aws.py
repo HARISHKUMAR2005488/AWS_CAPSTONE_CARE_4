@@ -2024,5 +2024,107 @@ def get_appointments_api():
         return jsonify({"success": False, "message": "Failed to fetch appointments"}), 500
 
 
+@app.route("/api/update-profile", methods=["POST"])
+def update_profile():
+    """Update user profile information"""
+    if "username" not in session:
+        return jsonify({"success": False, "message": "Please log in"}), 401
+    
+    try:
+        username = session["username"]
+        email = request.form.get("email", "").strip()
+        phone = request.form.get("phone", "").strip()
+        
+        # Handle profile picture upload
+        profile_picture_path = None
+        if "profile_picture" in request.files:
+            file = request.files["profile_picture"]
+            if file and file.filename:
+                filename = secure_filename(file.filename)
+                safe_name = f"{datetime.utcnow().strftime('%Y%m%d%H%M%S')}_{filename}"
+                
+                upload_dir = os.path.join(app.instance_path, "uploads", "profile_pictures")
+                os.makedirs(upload_dir, exist_ok=True)
+                
+                file_path = os.path.join(upload_dir, safe_name)
+                file.save(file_path)
+                profile_picture_path = f"profile_pictures/{safe_name}"
+        
+        # Build update expression
+        update_parts = []
+        expr_values = {}
+        
+        if email:
+            update_parts.append("email = :email")
+            expr_values[":email"] = email
+            session["email"] = email  # Update session
+        
+        if phone:
+            update_parts.append("phone = :phone")
+            expr_values[":phone"] = phone
+            session["phone"] = phone  # Update session
+        
+        if profile_picture_path:
+            update_parts.append("profile_picture = :pp")
+            expr_values[":pp"] = profile_picture_path
+            session["profile_picture"] = profile_picture_path  # Update session
+        
+        if update_parts:
+            update_expr = "SET " + ", ".join(update_parts)
+            users_table.update_item(
+                Key={"username": username},
+                UpdateExpression=update_expr,
+                ExpressionAttributeValues=expr_values
+            )
+        
+        return jsonify({"success": True, "message": "Profile updated successfully"})
+    
+    except Exception as e:
+        logger.error(f"Error updating profile: {e}")
+        return jsonify({"success": False, "message": "Failed to update profile"}), 500
+
+
+@app.route("/api/change-password", methods=["POST"])
+def change_password():
+    """Change user password"""
+    if "username" not in session:
+        return jsonify({"success": False, "message": "Please log in"}), 401
+    
+    try:
+        username = session["username"]
+        data = request.get_json()
+        current_password = data.get("current_password", "")
+        new_password = data.get("new_password", "")
+        
+        if not current_password or not new_password:
+            return jsonify({"success": False, "message": "All fields are required"}), 400
+        
+        # Get user from database
+        response = users_table.get_item(Key={"username": username})
+        user = response.get("Item")
+        
+        if not user:
+            return jsonify({"success": False, "message": "User not found"}), 404
+        
+        # Verify current password
+        if not check_password_hash(user.get("password_hash", ""), current_password):
+            return jsonify({"success": False, "message": "Current password is incorrect"}), 400
+        
+        # Update password
+        new_password_hash = generate_password_hash(new_password)
+        users_table.update_item(
+            Key={"username": username},
+            UpdateExpression="SET password_hash = :ph",
+            ExpressionAttributeValues={":ph": new_password_hash}
+        )
+        
+        logger.info(f"Password changed for user: {username}")
+        return jsonify({"success": True, "message": "Password changed successfully"})
+    
+    except Exception as e:
+        logger.error(f"Error changing password: {e}")
+        return jsonify({"success": False, "message": "Failed to change password"}), 500
+
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)

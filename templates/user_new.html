@@ -81,10 +81,6 @@
                     <i class="fas fa-file-medical"></i>
                     <span>Record</span>
                 </a>
-                <a href="#" class="nav-item" id="nav-chat" onclick="showChatSection(event)">
-                    <i class="fas fa-comments"></i>
-                    <span>Chat</span>
-                </a>
                 <a href="#" class="nav-item" id="nav-calendar" onclick="showCalendarSection(event)">
                     <i class="fas fa-calendar-alt"></i>
                     <span>Calendar</span>
@@ -92,15 +88,15 @@
             </nav>
 
             <div class="sidebar-footer">
-                <a href="#" class="footer-item">
+                <a href="#" class="footer-item" onclick="showAccountSection(event)">
                     <i class="fas fa-user-cog"></i>
                     <span>Account</span>
                 </a>
-                <a href="#" class="footer-item">
+                <a href="#" class="footer-item" onclick="showSettingsModal(event)">
                     <i class="fas fa-cog"></i>
                     <span>Settings</span>
                 </a>
-                <a href="#" class="footer-item">
+                <a href="#" class="footer-item" onclick="showHelpCenter(event)">
                     <i class="fas fa-question-circle"></i>
                     <span>Help center</span>
                 </a>
@@ -232,11 +228,21 @@
             </div>
         </main>
 
-        <!-- Right Sidebar - Reminders -->
+        <!-- Right Sidebar - Reminders & Chat -->
         <aside class="right-sidebar">
-            <div class="reminders-section">
-                <div class="reminders-header">
-                    <h3>Remind me</h3>
+            <!-- Tab Navigation -->
+            <div class="sidebar-tabs">
+                <button class="tab-btn active" onclick="switchRightTab('reminders')">
+                    <i class="fas fa-bell"></i> Reminders
+                </button>
+                <button class="tab-btn" onclick="switchRightTab('chat')">
+                    <i class="fas fa-comments"></i> Chat
+                </button>
+            </div>
+
+            <!-- Reminders Tab -->
+            <div id="reminders-tab" class="tab-content active">
+                <div class="reminders-section">
                     <div class="week-selector">
                         <span>Show:</span>
                         <select id="weekSelector">
@@ -245,30 +251,58 @@
                             <option>All</option>
                         </select>
                     </div>
-                </div>
 
-                <div class="progress-info">
-                    <p>{{ completed_tasks }} task completed out of {{ total_tasks }}</p>
-                    <div class="progress-bar">
-                        <div class="progress-fill" style="width: {% if total_tasks > 0 %}{{ (completed_tasks / total_tasks * 100)|int }}%{% else %}0%{% endif %}"></div>
+                    <div class="progress-info">
+                        <p>{{ completed_tasks }} task completed out of {{ total_tasks }}</p>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: {% if total_tasks > 0 %}{{ (completed_tasks / total_tasks * 100)|int }}%{% else %}0%{% endif %}"></div>
+                        </div>
+                    </div>
+
+                    <div class="reminders-list">
+                        {% for appointment in appointments[:7] %}
+                        <div class="reminder-item {% if appointment.status == 'completed' %}completed{% endif %}">
+                            <div class="reminder-icon">
+                                <i class="fas fa-{% if 'drug' in appointment.symptoms.lower() %}pills{% elif 'test' in appointment.symptoms.lower() %}vial{% elif 'consultation' in appointment.symptoms.lower() %}user-md{% else %}calendar-check{% endif %}"></i>
+                            </div>
+                            <div class="reminder-content">
+                                <h4>{{ appointment.symptoms[:30] }}...</h4>
+                                <p>{% if appointment.appointment_time %}{{ appointment.appointment_time }}, {% endif %}{{ appointment.appointment_date.strftime('%d.%m.%Y') }}</p>
+                            </div>
+                            <a href="{{ url_for('appointments') }}" class="change-btn-sm">
+                                <i class="fas fa-pen"></i> Change
+                            </a>
+                        </div>
+                        {% endfor %}
                     </div>
                 </div>
+            </div>
 
-                <div class="reminders-list">
-                    {% for appointment in appointments[:7] %}
-                    <div class="reminder-item {% if appointment.status == 'completed' %}completed{% endif %}">
-                        <div class="reminder-icon">
-                            <i class="fas fa-{% if 'drug' in appointment.symptoms.lower() %}pills{% elif 'test' in appointment.symptoms.lower() %}vial{% elif 'consultation' in appointment.symptoms.lower() %}user-md{% else %}calendar-check{% endif %}"></i>
-                        </div>
-                        <div class="reminder-content">
-                            <h4>{{ appointment.symptoms[:30] }}...</h4>
-                            <p>{% if appointment.appointment_time %}{{ appointment.appointment_time }}, {% endif %}{{ appointment.appointment_date.strftime('%d.%m.%Y') }}</p>
-                        </div>
-                        <a href="{{ url_for('appointments') }}" class="change-btn-sm">
-                            <i class="fas fa-pen"></i> Change
-                        </a>
+            <!-- Chat Tab -->
+            <div id="chat-tab" class="tab-content">
+                <div class="chat-container-sidebar">
+                    <div class="chat-header-sidebar">
+                        <h4><i class="fas fa-robot"></i> Health Assistant</h4>
+                        <button class="btn-icon" onclick="clearChat()" title="Clear chat">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
                     </div>
-                    {% endfor %}
+                    <div id="chatMessages" class="chat-messages-sidebar">
+                        <div class="message bot-message">
+                            <div class="message-content">
+                                <strong>Assistant:</strong>
+                                <p>Hello! Describe your symptoms and I'll help analyze them and suggest appropriate specialists.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="chat-input-sidebar">
+                        <form id="chatForm" onsubmit="sendChatMessage(event)">
+                            <textarea id="chatInput" placeholder="Describe your symptoms..." rows="2" required></textarea>
+                            <button type="submit" class="btn-send">
+                                <i class="fas fa-paper-plane"></i>
+                            </button>
+                        </form>
+                    </div>
                 </div>
             </div>
         </aside>
@@ -351,6 +385,199 @@
         </div>
     </div>
 
+    <!-- Account Section (Hidden by default) -->
+    <div id="accountSection" class="content-section" style="display: none;">
+        <div class="section-header">
+            <h2><i class="fas fa-user-cog"></i> Account Settings</h2>
+        </div>
+        <div class="account-container">
+            <div class="account-card">
+                <div class="account-header">
+                    <div class="profile-large">
+                        {% if current_user.profile_picture %}
+                            <img src="{{ url_for('serve_profile_picture', filename=current_user.profile_picture.split('/')[-1]) }}" alt="{{ current_user.username }}">
+                        {% else %}
+                            <div class="profile-placeholder">
+                                <i class="fas fa-user"></i>
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="account-info">
+                        <h3>{{ current_user.username }}</h3>
+                        <p>{{ current_user.email }}</p>
+                        <span class="account-badge">Patient Account</span>
+                    </div>
+                </div>
+                
+                <div class="account-details">
+                    <h4>Personal Information</h4>
+                    <div class="detail-grid">
+                        <div class="detail-row">
+                            <span class="detail-label"><i class="fas fa-user"></i> Username</span>
+                            <span class="detail-value">{{ current_user.username }}</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label"><i class="fas fa-envelope"></i> Email</span>
+                            <span class="detail-value">{{ current_user.email or 'Not set' }}</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label"><i class="fas fa-phone"></i> Phone</span>
+                            <span class="detail-value">{{ current_user.phone or 'Not set' }}</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label"><i class="fas fa-id-card"></i> Account Type</span>
+                            <span class="detail-value">{{ current_user.user_type|title }}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="account-actions">
+                        <button class="btn btn-primary" onclick="showEditProfileModal()">
+                            <i class="fas fa-edit"></i> Edit Profile
+                        </button>
+                        <button class="btn btn-secondary" onclick="showChangePasswordModal()">
+                            <i class="fas fa-key"></i> Change Password
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="account-stats">
+                <div class="stat-card-account">
+                    <i class="fas fa-calendar-check"></i>
+                    <div>
+                        <h4>{{ appointments|length }}</h4>
+                        <p>Total Appointments</p>
+                    </div>
+                </div>
+                <div class="stat-card-account">
+                    <i class="fas fa-file-medical"></i>
+                    <div>
+                        <h4>0</h4>
+                        <p>Medical Records</p>
+                    </div>
+                </div>
+                <div class="stat-card-account">
+                    <i class="fas fa-user-md"></i>
+                    <div>
+                        <h4>{% if assigned_doctor %}1{% else %}0{% endif %}</h4>
+                        <p>Assigned Doctor</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Help Center Section (Hidden by default) -->
+    <div id="helpSection" class="content-section" style="display: none;">
+        <div class="section-header">
+            <h2><i class="fas fa-question-circle"></i> Help Center</h2>
+        </div>
+        <div class="help-container">
+            <div class="help-search">
+                <input type="text" id="helpSearch" placeholder="Search for help..." onkeyup="filterHelpTopics()">
+                <i class="fas fa-search"></i>
+            </div>
+            
+            <div class="help-categories">
+                <div class="help-category">
+                    <h3><i class="fas fa-info-circle"></i> Getting Started</h3>
+                    <div class="faq-list">
+                        <div class="faq-item" onclick="toggleFAQ(this)">
+                            <div class="faq-question">
+                                <span>How do I book an appointment?</span>
+                                <i class="fas fa-chevron-down"></i>
+                            </div>
+                            <div class="faq-answer">
+                                <p>To book an appointment, navigate to the Appointment section from the sidebar, browse available doctors, select your preferred doctor, choose a date and time, and confirm your booking.</p>
+                            </div>
+                        </div>
+                        <div class="faq-item" onclick="toggleFAQ(this)">
+                            <div class="faq-question">
+                                <span>How do I update my health information?</span>
+                                <i class="fas fa-chevron-down"></i>
+                            </div>
+                            <div class="faq-answer">
+                                <p>Click the "Edit Info" button on your dashboard's health data card. You can update your weight, height, blood group, and other health metrics.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="help-category">
+                    <h3><i class="fas fa-file-medical"></i> Medical Records</h3>
+                    <div class="faq-list">
+                        <div class="faq-item" onclick="toggleFAQ(this)">
+                            <div class="faq-question">
+                                <span>How do I upload medical documents?</span>
+                                <i class="fas fa-chevron-down"></i>
+                            </div>
+                            <div class="faq-answer">
+                                <p>Go to the Records section, click "Upload Document", select your file (PDF, JPG, or PNG), add a description, and click upload. Your documents are securely stored and accessible anytime.</p>
+                            </div>
+                        </div>
+                        <div class="faq-item" onclick="toggleFAQ(this)">
+                            <div class="faq-question">
+                                <span>Can I delete my medical records?</span>
+                                <i class="fas fa-chevron-down"></i>
+                            </div>
+                            <div class="faq-answer">
+                                <p>For security and compliance reasons, medical records cannot be deleted by users. Please contact support if you have concerns about specific documents.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="help-category">
+                    <h3><i class="fas fa-comments"></i> Health Assistant</h3>
+                    <div class="faq-list">
+                        <div class="faq-item" onclick="toggleFAQ(this)">
+                            <div class="faq-question">
+                                <span>How does the AI Health Assistant work?</span>
+                                <i class="fas fa-chevron-down"></i>
+                            </div>
+                            <div class="faq-answer">
+                                <p>The Health Assistant uses AI to analyze your symptoms and recommend appropriate specialists. Simply describe your symptoms in the chat, and it will provide guidance and suggestions.</p>
+                            </div>
+                        </div>
+                        <div class="faq-item" onclick="toggleFAQ(this)">
+                            <div class="faq-question">
+                                <span>Is my chat history saved?</span>
+                                <i class="fas fa-chevron-down"></i>
+                            </div>
+                            <div class="faq-answer">
+                                <p>Chat history is stored locally in your browser session. You can clear it anytime by clicking the trash icon in the chat header.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="help-category">
+                    <h3><i class="fas fa-headset"></i> Contact Support</h3>
+                    <div class="contact-options">
+                        <div class="contact-card">
+                            <i class="fas fa-envelope"></i>
+                            <h4>Email Support</h4>
+                            <p>support@care4u.com</p>
+                            <span>Response within 24 hours</span>
+                        </div>
+                        <div class="contact-card">
+                            <i class="fas fa-phone"></i>
+                            <h4>Phone Support</h4>
+                            <p>1-800-CARE-4-U</p>
+                            <span>Mon-Fri, 9 AM - 6 PM</span>
+                        </div>
+                        <div class="contact-card">
+                            <i class="fas fa-comment-dots"></i>
+                            <h4>Live Chat</h4>
+                            <p>Available Now</p>
+                            <button class="btn btn-sm btn-primary" onclick="switchRightTab('chat')">Start Chat</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Modals -->
     <!-- Upload Document Modal -->
     <div id="uploadModal" class="modal">
@@ -413,6 +640,136 @@
                     <div class="form-actions">
                         <button type="submit" class="btn btn-primary">Save</button>
                         <button type="button" class="btn btn-secondary" onclick="closeHealthModal()">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settingsModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Settings</h3>
+                <button class="close-modal" onclick="closeSettingsModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="settings-section">
+                    <h4><i class="fas fa-bell"></i> Notifications</h4>
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <label>Email Notifications</label>
+                            <p>Receive appointment reminders via email</p>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="emailNotif" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <label>SMS Notifications</label>
+                            <p>Get SMS alerts for appointments</p>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="smsNotif">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="settings-section">
+                    <h4><i class="fas fa-shield-alt"></i> Privacy</h4>
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <label>Share Health Data</label>
+                            <p>Allow doctors to view your health records</p>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="shareData" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="settings-section">
+                    <h4><i class="fas fa-palette"></i> Appearance</h4>
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <label>Theme</label>
+                            <p>Choose your preferred theme</p>
+                        </div>
+                        <select id="themeSelect" class="setting-select">
+                            <option value="light">Light</option>
+                            <option value="dark">Dark (Coming Soon)</option>
+                            <option value="auto">Auto (Coming Soon)</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-actions">
+                    <button class="btn btn-primary" onclick="saveSettings()">Save Settings</button>
+                    <button class="btn btn-secondary" onclick="closeSettingsModal()">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Profile Modal -->
+    <div id="editProfileModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Edit Profile</h3>
+                <button class="close-modal" onclick="closeEditProfileModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="editProfileForm">
+                    <div class="form-group">
+                        <label for="editEmail">Email</label>
+                        <input type="email" id="editEmail" value="{{ current_user.email or '' }}" placeholder="Enter your email">
+                    </div>
+                    <div class="form-group">
+                        <label for="editPhone">Phone Number</label>
+                        <input type="tel" id="editPhone" value="{{ current_user.phone or '' }}" placeholder="Enter your phone number">
+                    </div>
+                    <div class="form-group">
+                        <label for="editProfilePicture">Profile Picture</label>
+                        <input type="file" id="editProfilePicture" accept="image/*">
+                        <small>Upload a new profile picture (JPG, PNG)</small>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">Update Profile</button>
+                        <button type="button" class="btn btn-secondary" onclick="closeEditProfileModal()">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Change Password Modal -->
+    <div id="changePasswordModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Change Password</h3>
+                <button class="close-modal" onclick="closeChangePasswordModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="changePasswordForm">
+                    <div class="form-group">
+                        <label for="currentPassword">Current Password</label>
+                        <input type="password" id="currentPassword" placeholder="Enter current password" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="newPassword">New Password</label>
+                        <input type="password" id="newPassword" placeholder="Enter new password" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="confirmPassword">Confirm New Password</label>
+                        <input type="password" id="confirmPassword" placeholder="Confirm new password" required>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">Change Password</button>
+                        <button type="button" class="btn btn-secondary" onclick="closeChangePasswordModal()">Cancel</button>
                     </div>
                 </form>
             </div>

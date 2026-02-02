@@ -265,7 +265,7 @@
                                 <h4>{{ appointment.symptoms[:30] }}...</h4>
                                 <p>{% if appointment.appointment_time %}{{ appointment.appointment_time }}, {% endif %}{{ appointment.appointment_date.strftime('%d.%m.%Y') }}</p>
                             </div>
-                            <a href="{{ url_for('appointments') }}" class="change-btn-sm">
+                            <a href="{{ url_for('my_appointments') }}" class="change-btn-sm">
                                 <i class="fas fa-pen"></i> Change
                             </a>
                         </div>

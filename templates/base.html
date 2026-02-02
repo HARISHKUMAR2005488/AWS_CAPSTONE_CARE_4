@@ -1,24 +1,28 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Care_4_U Hospitals{% endblock %}</title>
-    
+
     <!-- Main Stylesheet -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/pages.css') }}">
+
     <!-- Font Awesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
+
 <body>
     <!-- Dark Mode Toggle Button removed per request -->
-    
+
     <!-- Navigation -->
     <nav class="navbar">
         <div class="container">
             <a href="{{ url_for('index') }}" class="logo">
-                <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Care_4_U Hospitals Logo" class="logo-img">
+                <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Care_4_U Hospitals Logo"
+                    class="logo-img">
                 <span>Care_4_U Hospitals</span>
             </a>
             <ul class="nav-menu">
@@ -26,15 +30,15 @@
                 <li><a href="{{ url_for('about') }}">About</a></li>
                 <li><a href="{{ url_for('doctors') }}">Doctors</a></li>
                 {% if current_user.is_authenticated %}
-                    {% if current_user.user_type == 'admin' %}
-                        <li><a href="{{ url_for('admin_dashboard') }}">Admin Dashboard</a></li>
-                    {% else %}
-                        <li><a href="{{ url_for('user_dashboard') }}">My Dashboard</a></li>
-                    {% endif %}
-                    <li><a href="{{ url_for('logout') }}">Logout</a></li>
+                {% if current_user.user_type == 'admin' %}
+                <li><a href="{{ url_for('admin_dashboard') }}">Admin Dashboard</a></li>
                 {% else %}
-                    <li><a href="{{ url_for('login') }}">Login</a></li>
-                    <li><a href="{{ url_for('signup') }}" class="btn-signup">Sign Up</a></li>
+                <li><a href="{{ url_for('user_dashboard') }}">My Dashboard</a></li>
+                {% endif %}
+                <li><a href="{{ url_for('logout') }}">Logout</a></li>
+                {% else %}
+                <li><a href="{{ url_for('login') }}">Login</a></li>
+                <li><a href="{{ url_for('signup') }}" class="btn-signup">Sign Up</a></li>
                 {% endif %}
             </ul>
             <button class="mobile-toggle">
@@ -45,13 +49,13 @@
 
     <!-- Flash Messages -->
     {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            <div class="flash-messages">
-                {% for category, message in messages %}
-                    <div class="flash {{ category }}">{{ message }}</div>
-                {% endfor %}
-            </div>
-        {% endif %}
+    {% if messages %}
+    <div class="flash-messages">
+        {% for category, message in messages %}
+        <div class="flash {{ category }}">{{ message }}</div>
+        {% endfor %}
+    </div>
+    {% endif %}
     {% endwith %}
 
     <!-- Main Content -->
@@ -91,4 +95,5 @@
     <script src="{{ url_for('static', filename='js/script.js') }}"></script>
     {% block scripts %}{% endblock %}
 </body>
+
 </html>

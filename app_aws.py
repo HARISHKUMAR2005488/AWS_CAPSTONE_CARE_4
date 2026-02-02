@@ -25,6 +25,9 @@ class CurrentUser:
         self.is_authenticated = "username" in session
         self.username = session.get("username")
         self.user_type = session.get("role", "user")
+        self.email = session.get("email", "")
+        self.phone = session.get("phone", "")
+        self.profile_picture = session.get("profile_picture", "")
     
     @property
     def is_anonymous(self):
@@ -662,6 +665,9 @@ def login():
             ):
                 session["username"] = username
                 session["role"] = item.get("role", "user")
+                session["email"] = item.get("email", "")
+                session["phone"] = item.get("phone", "")
+                session["profile_picture"] = item.get("profile_picture", "")
                 
                 # Send notification for successful login
                 role_display = item.get("role", "user").capitalize()
@@ -896,8 +902,31 @@ def dashboard():
             normalized_appointments.append(appt)
     
     appointments = normalized_appointments
+    
+    # Get assigned doctor if any
+    assigned_doctor = None
+    if appointments:
+        # Get the doctor from the most recent appointment
+        latest_appt = max(appointments, key=lambda x: x.get('created_at', dt_class.min))
+        doctor_id = latest_appt.get('doctor_id')
+        if doctor_id:
+            try:
+                doctor_resp = doctors_table.get_item(Key={"doctor_id": doctor_id})
+                assigned_doctor = doctor_resp.get('Item')
+            except Exception as e:
+                logger.error(f"Error getting doctor: {e}")
+    
+    # Calculate task completion (appointments as tasks)
+    total_tasks = len(appointments)
+    completed_tasks = len([a for a in appointments if a.get('status') == 'completed'])
 
-    return render_template("user.html", username=username, appointments=appointments, feedback_dict={})
+    return render_template("user_new.html", 
+                         username=username, 
+                         appointments=appointments, 
+                         feedback_dict={},
+                         assigned_doctor=assigned_doctor,
+                         total_tasks=total_tasks,
+                         completed_tasks=completed_tasks)
 
 
 # Add route aliases for template compatibility
@@ -1810,6 +1839,75 @@ def admin_delete_user(username):
     except Exception as e:
         logger.error(f"Error deleting user {username}: {e}")
         return jsonify({"success": False, "message": "Failed to delete user"}), 500
+
+
+@app.route("/api/health-info", methods=["GET", "POST"])
+def health_info_api():
+    """API endpoint for user health information"""
+    if "username" not in session:
+        return jsonify({"success": False, "message": "Not authenticated"}), 401
+    
+    username = session["username"]
+    
+    if request.method == "GET":
+        try:
+            user = get_user(username)
+            if not user:
+                return jsonify({"success": False, "message": "User not found"}), 404
+            
+            return jsonify({
+                "success": True,
+                "weight": user.get("weight"),
+                "height": user.get("height"),
+                "blood_group": user.get("blood_group"),
+                "age": user.get("age"),
+                "gender": user.get("gender"),
+                "allergies": user.get("allergies"),
+                "conditions": user.get("conditions")
+            })
+        except Exception as e:
+            logger.error(f"Error getting health info: {e}")
+            return jsonify({"success": False, "message": "Failed to get health info"}), 500
+    
+    elif request.method == "POST":
+        try:
+            data = request.get_json()
+            
+            updates = {}
+            if data.get("weight"):
+                updates["weight"] = to_decimal(data.get("weight"))
+            if data.get("height"):
+                updates["height"] = to_decimal(data.get("height"))
+            if data.get("blood_group"):
+                updates["blood_group"] = data.get("blood_group")
+            if data.get("age"):
+                updates["age"] = int(data.get("age"))
+            if data.get("gender"):
+                updates["gender"] = data.get("gender")
+            if data.get("allergies"):
+                updates["allergies"] = data.get("allergies")
+            if data.get("conditions"):
+                updates["conditions"] = data.get("conditions")
+            
+            if not updates:
+                return jsonify({"success": False, "message": "No data to update"}), 400
+            
+            # Update user in DynamoDB
+            update_expr = "SET " + ", ".join([f"{k} = :{k}" for k in updates.keys()])
+            expr_values = {f":{k}": v for k, v in updates.items()}
+            
+            users_table.update_item(
+                Key={"username": username},
+                UpdateExpression=update_expr,
+                ExpressionAttributeValues=expr_values
+            )
+            
+            logger.info(f"User {username} updated health information")
+            return jsonify({"success": True, "message": "Health information updated successfully"})
+        
+        except Exception as e:
+            logger.error(f"Error updating health info: {e}")
+            return jsonify({"success": False, "message": "Failed to update health info"}), 500
 
 
 if __name__ == "__main__":

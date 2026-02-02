@@ -5,17 +5,16 @@
 
 /* ===== CSS VARIABLES ===== */
 :root {
-    /* Primary Healthcare Colors */
-    --primary: #2563eb;
-    /* Medical Blue */
-    --primary-dark: #1e40af;
-    --primary-light: #dbeafe;
-    --primary-lighter: #eff6ff;
+    /* Primary Healthcare Colors - Mint/Turquoise Theme */
+    --primary: #7dd3c0;
+    --primary-dark: #5bb9a6;
+    --primary-light: #d4f4ed;
+    --primary-lighter: #e0f7f4;
 
     /* Success/Confirmation Green */
-    --success: #10b981;
-    --success-dark: #059669;
-    --success-light: #d1fae5;
+    --success: #48bb78;
+    --success-dark: #38a169;
+    --success-light: #c6f6d5;
 
     /* Warning/Alert Colors */
     --warning: #f59e0b;
@@ -27,29 +26,31 @@
     --danger-light: #fee2e2;
 
     /* Neutral Grays */
-    --dark: #1f2937;
-    --gray: #6b7280;
-    --gray-light: #d1d5db;
-    --gray-lighter: #f3f4f6;
-    --gray-lightest: #f9fafb;
+    --dark: #2d3748;
+    --gray: #718096;
+    --gray-light: #cbd5e0;
+    --gray-lighter: #edf2f7;
+    --gray-lightest: #f7fafc;
     --white: #ffffff;
 
     /* Background Layers */
     --bg-primary: #ffffff;
-    --bg-secondary: #f9fafb;
-    --bg-tertiary: #f3f4f6;
+    --bg-secondary: #f7fafc;
+    --bg-tertiary: #edf2f7;
+    --bg-accent: #e0f7f4;
 
-    /* Shadows */
-    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-    --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    /* Shadows - Softer */
+    --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.03);
+    --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 10px 10px -5px rgba(0, 0, 0, 0.02);
 
     /* Border Radius */
     --border-radius-sm: 0.375rem;
     --border-radius-md: 0.5rem;
     --border-radius-lg: 0.75rem;
     --border-radius-xl: 1rem;
+    --border-radius-full: 9999px;
 
     /* Spacing */
     --spacing-xs: 0.5rem;
@@ -58,9 +59,10 @@
     --spacing-lg: 1.5rem;
     --spacing-xl: 2rem;
     --spacing-2xl: 3rem;
+    --spacing-3xl: 4rem;
 
     /* Typography */
-    --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    --font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
     --font-size-xs: 0.75rem;
     --font-size-sm: 0.875rem;
     --font-size-base: 1rem;
@@ -69,6 +71,7 @@
     --font-size-2xl: 1.5rem;
     --font-size-3xl: 1.875rem;
     --font-size-4xl: 2.25rem;
+    --font-size-5xl: 3rem;
 
     /* Transitions */
     --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
@@ -164,11 +167,13 @@ main {
 /* ===== NAVIGATION ===== */
 .navbar {
     background: var(--white);
-    box-shadow: var(--shadow-md);
+    /* Minimal or no shadow for cleaner look */
+    /* box-shadow: var(--shadow-sm); */
     position: sticky;
     top: 0;
     z-index: 1000;
-    border-bottom: 1px solid var(--gray-lighter);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    /* Very subtle border */
 }
 
 .navbar .container {
@@ -207,21 +212,29 @@ main {
 .nav-menu li a {
     font-weight: 500;
     padding: var(--spacing-sm) var(--spacing-md);
-    border-radius: var(--border-radius-md);
+    /* border-radius: var(--border-radius-md); */
+    /* Remove bg radius */
     transition: all var(--transition-fast);
     color: var(--dark);
+    font-size: 0.9rem;
+    /* Slightly smaller, cleaner */
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
 .nav-menu li a:hover {
-    background: var(--primary-lighter);
+    background: transparent;
+    /* No background on hover */
     color: var(--primary);
+    /* Just color change */
 }
 
 .btn-signup {
     background: var(--primary);
     color: var(--white) !important;
     padding: var(--spacing-sm) var(--spacing-lg) !important;
-    border-radius: var(--border-radius-md);
+    border-radius: var(--border-radius-full);
+    /* Pill shape */
     font-weight: 600;
     box-shadow: var(--shadow-sm);
 }
@@ -250,7 +263,8 @@ main {
     font-size: var(--font-size-base);
     font-weight: 600;
     border: none;
-    border-radius: var(--border-radius-md);
+    border-radius: var(--border-radius-full);
+    /* Pill shape buttons */
     cursor: pointer;
     transition: all var(--transition-fast);
     text-align: center;

@@ -98,11 +98,11 @@
 /* ===== HEALTH INFORMATION SECTION ===== */
 .health-info-section {
     background: var(--white);
-    border-radius: var(--border-radius-lg);
+    border-radius: var(--border-radius-xl);
     padding: var(--spacing-xl);
     margin-bottom: var(--spacing-2xl);
     box-shadow: var(--shadow-md);
-    border: 1px solid var(--gray-lighter);
+    border: none;
 }
 
 .health-info-section .section-header {
@@ -131,7 +131,7 @@
 .health-item {
     padding: var(--spacing-md);
     background: var(--bg-secondary);
-    border-radius: var(--border-radius-md);
+    border-radius: var(--border-radius-lg);
     border-left: 3px solid var(--primary);
 }
 
@@ -164,7 +164,7 @@
     padding: var(--spacing-2xl);
     margin-bottom: var(--spacing-2xl);
     box-shadow: var(--shadow-lg);
-    border: 1px solid var(--gray-lighter);
+    border: none;
 }
 
 .doctor-profile-card .profile-header {
@@ -220,11 +220,12 @@
 /* ===== APPOINTMENTS SECTION ===== */
 .appointments-section {
     background: var(--white);
-    border-radius: var(--border-radius-lg);
+    border-radius: var(--border-radius-xl);
     padding: var(--spacing-xl);
     margin-bottom: var(--spacing-2xl);
     box-shadow: var(--shadow-md);
-    border: 1px solid var(--gray-lighter);
+    border: none;
+    /* Cleaner look */
 }
 
 /* ===== APPOINTMENTS GRID (DOCTOR PAGE) ===== */
@@ -352,16 +353,35 @@
 }
 
 /* ===== STAT ICON VARIANTS ===== */
+/* ===== STAT ICON VARIANTS ===== */
+.stat-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    /* Make fully circular */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto var(--spacing-md);
+    color: var(--white);
+    font-size: 1.5rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
 .stat-icon.total {
-    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+    background: var(--primary);
 }
 
 .stat-icon.confirmed {
-    background: linear-gradient(135deg, var(--success) 0%, var(--success-dark) 100%);
+    background: var(--success);
 }
 
 .stat-icon.completed {
-    background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+    background: #8b5cf6;
+}
+
+.stat-icon.pending {
+    background: var(--warning);
 }
 
 /* ===== ACTION BUTTONS IN TABLES ===== */

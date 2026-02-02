@@ -664,13 +664,16 @@ body {
     padding: 1rem;
     background: none;
     border: none;
-    font-size: 0.875rem;
+    font-size: 1.25rem;
     font-weight: 500;
     color: var(--gray);
     cursor: pointer;
     transition: all 0.2s;
     border-bottom: 3px solid transparent;
     font-family: var(--font-family);
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .tab-btn:hover {
@@ -685,7 +688,7 @@ body {
 }
 
 .tab-btn i {
-    margin-right: 0.5rem;
+    font-size: 1.25rem;
 }
 
 .tab-content {

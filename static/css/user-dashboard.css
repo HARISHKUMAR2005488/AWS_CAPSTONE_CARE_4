@@ -4154,6 +4154,7 @@ body {
     padding: 0;
     box-shadow: inset -1px 0 0 var(--gray-100);
     overflow-y: auto;
+    flex-shrink: 0;
 }
 
 .doctor-nav {
@@ -4208,10 +4209,15 @@ body {
     flex: 1;
     overflow-y: auto;
     padding: 2rem;
+    background: transparent;
 }
 
 .content-view {
     display: none;
+}
+
+.content-view#dashboardView {
+    display: block;
 }
 
 .content-view.active,
@@ -4233,9 +4239,48 @@ body {
 /* Overview Cards Grid */
 .overview-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    grid-template-columns: repeat(4, 1fr);
     gap: 1.5rem;
     margin-bottom: 2rem;
+}
+
+@media (max-width: 1400px) {
+    .overview-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .overview-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Dashboard Content Grid */
+.dashboard-view {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 2rem;
+}
+
+.dashboard-content-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 2rem;
+    align-items: start;
+}
+
+.dashboard-left-column,
+.dashboard-right-column {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+@media (max-width: 1024px) {
+    .dashboard-content-grid {
+        grid-template-columns: 1fr;
+    }
 }
 
 .overview-card {
@@ -4988,25 +5033,19 @@ body {
 /* Responsive Design */
 @media (max-width: 1200px) {
     .doctor-header {
-        flex-direction: column;
-        align-items: flex-start;
+        flex-direction: row;
+        flex-wrap: wrap;
         gap: 1rem;
     }
     
     .header-right {
-        width: 100%;
-        justify-content: space-between;
+        width: auto;
+        justify-content: flex-end;
     }
     
     .doctor-info-header {
         border-right: none;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-        padding-bottom: 1rem;
-        padding-right: 0;
-    }
-    
-    .overview-grid {
-        grid-template-columns: repeat(2, 1fr);
+        padding-right: 1rem;
     }
 }
 

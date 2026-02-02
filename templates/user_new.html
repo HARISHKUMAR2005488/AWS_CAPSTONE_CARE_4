@@ -102,91 +102,277 @@
 
         <!-- Main Content -->
         <main class="main-content">
-            <div class="content-header">
-                <div class="greeting">
-                    <h1>Hello, {{ current_user.username }}!</h1>
-                    <p>How are you feeling today?</p>
+            <!-- Header -->
+            <div class="dashboard-header">
+                <div class="header-left">
+                    <h1 class="page-title">Patient Dashboard</h1>
+                    <p class="page-subtitle">Welcome back, {{ current_user.username }}</p>
                 </div>
-                <div class="header-actions">
-                    <button class="icon-btn" onclick="openChat()">
-                        <i class="fas fa-envelope"></i>
+                <div class="header-right">
+                    <button class="btn-header btn-header-secondary" onclick="toggleChatBox()">
+                        <i class="fas fa-comments"></i>
+                        <span>Health Assistant</span>
                     </button>
-                    <button class="icon-btn" onclick="callDoctor()">
-                        <i class="fas fa-phone"></i>
+                    <button class="btn-header btn-header-primary" onclick="location.href='{{ url_for('doctors') }}'">
+                        <i class="fas fa-calendar-plus"></i>
+                        <span>Book Appointment</span>
                     </button>
                 </div>
             </div>
 
-            <div class="dashboard-grid">
-                <!-- Your Doctor Section -->
-                <div class="card doctor-card">
-                    <div class="card-header">
-                        <h3>Your doctor</h3>
-                        <button class="change-btn" onclick="changeDoctor()">
-                            <i class="fas fa-pen"></i> Change
-                        </button>
+            <!-- Dashboard Content -->
+            <div class="dashboard-content">
+                <!-- Welcome Card -->
+                <div class="welcome-card">
+                    <div class="welcome-content">
+                        <div class="welcome-icon">
+                            <i class="fas fa-hand-holding-medical"></i>
+                        </div>
+                        <div class="welcome-text">
+                            <h2>Hello, {{ current_user.username }}!</h2>
+                            <p>Your health, our priority. How are you feeling today?</p>
+                        </div>
                     </div>
-                    <div class="doctor-info" id="doctorInfo">
+                    <div class="welcome-decoration">
+                        <i class="fas fa-heartbeat"></i>
+                    </div>
+                </div>
+
+                <!-- Appointment Summary Stats -->
+                <div class="stats-grid">
+                    <div class="stat-card stat-card-blue">
+                        <div class="stat-icon">
+                            <i class="fas fa-calendar-alt"></i>
+                        </div>
+                        <div class="stat-details">
+                            <h3>{{ appointments|length }}</h3>
+                            <p>Total Appointments</p>
+                        </div>
+                    </div>
+                    <div class="stat-card stat-card-green">
+                        <div class="stat-icon">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <div class="stat-details">
+                            <h3>{{ completed_tasks }}</h3>
+                            <p>Completed</p>
+                        </div>
+                    </div>
+                    <div class="stat-card stat-card-orange">
+                        <div class="stat-icon">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div class="stat-details">
+                            <h3>{{ total_tasks - completed_tasks }}</h3>
+                            <p>Upcoming</p>
+                        </div>
+                    </div>
+                    <div class="stat-card stat-card-purple">
+                        <div class="stat-icon">
+                            <i class="fas fa-user-md"></i>
+                        </div>
+                        <div class="stat-details">
+                            <h3>{% if assigned_doctor %}1{% else %}0{% endif %}</h3>
+                            <p>Assigned Doctor</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Main Grid Layout -->
+                <div class="main-grid">
+                    <!-- Left Column -->
+                    <div class="main-column-left">
+                        <!-- Upcoming Appointment Card -->
+                        <div class="dashboard-card upcoming-appointment-card">
+                            <div class="card-header-new">
+                                <h3><i class="fas fa-calendar-check"></i> Next Appointment</h3>
+                            </div>
+                            <div class="card-body">
+                                {% if appointments and appointments|length > 0 %}
+                                    {% set next_appointment = appointments[0] %}
+                                    <div class="appointment-preview">
+                                        <div class="appointment-date-badge">
+                                            <div class="date-day">{{ next_appointment.appointment_date.strftime('%d') }}</div>
+                                            <div class="date-month">{{ next_appointment.appointment_date.strftime('%b') }}</div>
+                                        </div>
+                                        <div class="appointment-details">
+                                            <h4>{{ next_appointment.doctor_name }}</h4>
+                                            <p class="appointment-specialty">
+                                                <i class="fas fa-stethoscope"></i>
+                                                {% if next_appointment.specialization %}{{ next_appointment.specialization }}{% else %}General Physician{% endif %}
+                                            </p>
+                                            <p class="appointment-time">
+                                                <i class="fas fa-clock"></i>
+                                                {% if next_appointment.appointment_time %}{{ next_appointment.appointment_time }}{% else %}Not scheduled{% endif %}
+                                            </p>
+                                            <span class="status-badge status-{{ next_appointment.status|lower }}">
+                                                {{ next_appointment.status|title }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div class="card-actions">
+                                        <a href="{{ url_for('my_appointments') }}" class="btn btn-primary btn-block">
+                                            <i class="fas fa-eye"></i> View Details
+                                        </a>
+                                    </div>
+                                {% else %}
+                                    <div class="empty-state">
+                                        <i class="fas fa-calendar-times"></i>
+                                        <p>No upcoming appointments</p>
+                                        <a href="{{ url_for('doctors') }}" class="btn btn-primary btn-sm">
+                                            <i class="fas fa-plus"></i> Book Appointment
+                                        </a>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Health Data Card -->
+                        <div class="dashboard-card health-data-card">
+                            <div class="card-header-new">
+                                <h3><i class="fas fa-heartbeat"></i> Health Information</h3>
+                                <button class="btn-icon-action" onclick="toggleHealthInfoEdit()" title="Update Health Data">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                            </div>
+                            <div class="card-body">
+                                <div class="health-metrics">
+                                    <div class="health-metric">
+                                        <div class="metric-icon metric-icon-blue">
+                                            <i class="fas fa-weight"></i>
+                                        </div>
+                                        <div class="metric-info">
+                                            <label>Weight</label>
+                                            <p id="displayWeight">-- kg</p>
+                                        </div>
+                                    </div>
+                                    <div class="health-metric">
+                                        <div class="metric-icon metric-icon-green">
+                                            <i class="fas fa-ruler-vertical"></i>
+                                        </div>
+                                        <div class="metric-info">
+                                            <label>Height</label>
+                                            <p id="displayHeight">-- m</p>
+                                        </div>
+                                    </div>
+                                    <div class="health-metric">
+                                        <div class="metric-icon metric-icon-red">
+                                            <i class="fas fa-tint"></i>
+                                        </div>
+                                        <div class="metric-info">
+                                            <label>Blood Group</label>
+                                            <p id="displayBloodGroup">--</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right Column -->
+                    <div class="main-column-right">
+                        <!-- Quick Actions -->
+                        <div class="dashboard-card quick-actions-card">
+                            <div class="card-header-new">
+                                <h3><i class="fas fa-bolt"></i> Quick Actions</h3>
+                            </div>
+                            <div class="card-body">
+                                <div class="quick-actions-grid">
+                                    <a href="{{ url_for('doctors') }}" class="quick-action-item quick-action-blue">
+                                        <div class="quick-action-icon">
+                                            <i class="fas fa-calendar-plus"></i>
+                                        </div>
+                                        <span>Book Appointment</span>
+                                    </a>
+                                    <a href="{{ url_for('doctors') }}" class="quick-action-item quick-action-green">
+                                        <div class="quick-action-icon">
+                                            <i class="fas fa-user-md"></i>
+                                        </div>
+                                        <span>View Doctors</span>
+                                    </a>
+                                    <button onclick="showUploadModal()" class="quick-action-item quick-action-purple">
+                                        <div class="quick-action-icon">
+                                            <i class="fas fa-file-medical"></i>
+                                        </div>
+                                        <span>Medical History</span>
+                                    </button>
+                                    <button onclick="toggleChatBox()" class="quick-action-item quick-action-orange">
+                                        <div class="quick-action-icon">
+                                            <i class="fas fa-ambulance"></i>
+                                        </div>
+                                        <span>Emergency Help</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Assigned Doctor -->
                         {% if assigned_doctor %}
-                        <div class="doctor-avatar">
-                            {% if assigned_doctor.profile_image %}
-                                <img src="{{ url_for('serve_profile_picture', filename=assigned_doctor.profile_image.split('/')[-1]) }}" alt="Doctor">
-                            {% else %}
-                                <i class="fas fa-user-md"></i>
-                            {% endif %}
+                        <div class="dashboard-card doctor-profile-card">
+                            <div class="card-header-new">
+                                <h3><i class="fas fa-user-md"></i> Your Doctor</h3>
+                            </div>
+                            <div class="card-body">
+                                <div class="doctor-profile">
+                                    <div class="doctor-avatar-large">
+                                        {% if assigned_doctor.profile_image %}
+                                            <img src="{{ url_for('serve_profile_picture', filename=assigned_doctor.profile_image.split('/')[-1]) }}" alt="{{ assigned_doctor.name }}">
+                                        {% else %}
+                                            <i class="fas fa-user-md"></i>
+                                        {% endif %}
+                                    </div>
+                                    <div class="doctor-profile-info">
+                                        <h4>{{ assigned_doctor.name }}</h4>
+                                        <p class="doctor-specialty"><i class="fas fa-stethoscope"></i> {{ assigned_doctor.specialization }}</p>
+                                        {% if assigned_doctor.experience %}
+                                        <p class="doctor-experience"><i class="fas fa-award"></i> {{ assigned_doctor.experience }} years experience</p>
+                                        {% endif %}
+                                    </div>
+                                    <div class="doctor-contact-actions">
+                                        <button class="btn btn-outline btn-sm" onclick="messageDoctor()">
+                                            <i class="fas fa-comment"></i> Message
+                                        </button>
+                                        <button class="btn btn-outline btn-sm" onclick="callDoctor()">
+                                            <i class="fas fa-phone"></i> Call
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                        <div class="doctor-details">
-                            <h4>{{ assigned_doctor.name }}</h4>
-                            <p>{{ assigned_doctor.specialization }}</p>
-                        </div>
-                        <div class="doctor-actions">
-                            <button class="icon-btn-sm" onclick="messageDoctor()">
-                                <i class="fas fa-comment"></i>
-                            </button>
-                            <button class="icon-btn-sm" onclick="callDoctor()">
-                                <i class="fas fa-phone"></i>
-                            </button>
-                        </div>
-                        {% else %}
-                        <p class="no-doctor">No doctor assigned yet</p>
                         {% endif %}
-                    </div>
-                </div>
 
-                <!-- Your Data Section -->
-                <div class="card data-card">
-                    <div class="card-header">
-                        <h3>Your data</h3>
-                        <button class="change-btn" onclick="toggleHealthInfoEdit()">
-                            <i class="fas fa-pen"></i> Change
-                        </button>
-                    </div>
-                    <div class="health-stats">
-                        <div class="stat">
-                            <label>Weight</label>
-                            <p id="displayWeight">-- kg</p>
+                        <!-- Recent Activity -->
+                        <div class="dashboard-card recent-activity-card">
+                            <div class="card-header-new">
+                                <h3><i class="fas fa-history"></i> Recent Activity</h3>
+                                <a href="{{ url_for('my_appointments') }}" class="link-view-all">View All</a>
+                            </div>
+                            <div class="card-body">
+                                {% if appointments and appointments|length > 0 %}
+                                    <div class="activity-list">
+                                        {% for appointment in appointments[:3] %}
+                                        <div class="activity-item">
+                                            <div class="activity-icon activity-icon-{{ appointment.status|lower }}">
+                                                <i class="fas fa-{% if appointment.status == 'completed' %}check{% elif appointment.status == 'approved' %}clock{% else %}calendar{% endif %}"></i>
+                                            </div>
+                                            <div class="activity-details">
+                                                <h5>{{ appointment.doctor_name }}</h5>
+                                                <p>{{ appointment.appointment_date.strftime('%b %d, %Y') }}</p>
+                                            </div>
+                                            <span class="status-badge-sm status-{{ appointment.status|lower }}">
+                                                {{ appointment.status|title }}
+                                            </span>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                {% else %}
+                                    <div class="empty-state-small">
+                                        <i class="fas fa-inbox"></i>
+                                        <p>No recent activity</p>
+                                    </div>
+                                {% endif %}
+                            </div>
                         </div>
-                        <div class="stat">
-                            <label>Height</label>
-                            <p id="displayHeight">-- m</p>
-                        </div>
-                        <div class="stat">
-                            <label>Blood</label>
-                            <p id="displayBloodGroup">--</p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Medical Records Section -->
-                <div class="card records-card-dashboard">
-                    <div class="card-header">
-                        <h3><i class="fas fa-file-medical"></i> Medical Records</h3>
-                        <button class="change-btn" onclick="showUploadModal()">
-                            <i class="fas fa-upload"></i> Upload
-                        </button>
-                    </div>
-                    <div id="recordsContainerDashboard" class="records-grid-dashboard">
-                        <div class="loading">Loading records...</div>
                     </div>
                 </div>
             </div>

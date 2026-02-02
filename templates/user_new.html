@@ -317,10 +317,14 @@
     <div id="accountSection" class="content-section" style="display: none;">
         <div class="section-header">
             <h2><i class="fas fa-user-cog"></i> Account Settings</h2>
+            <button class="btn-close-section" onclick="showDashboardSection(event)" title="Back to Dashboard">
+                <i class="fas fa-times"></i>
+            </button>
         </div>
-        <div class="account-container">
-            <div class="account-card">
-                <div class="account-header">
+        <div class="account-wrapper">
+            <!-- Profile Card -->
+            <div class="account-profile-card">
+                <div class="profile-banner">
                     <div class="profile-large">
                         {% if current_user.profile_picture %}
                             <img src="{{ url_for('serve_profile_picture', filename=current_user.profile_picture.split('/')[-1]) }}" alt="{{ current_user.username }}">
@@ -330,66 +334,111 @@
                             </div>
                         {% endif %}
                     </div>
-                    <div class="account-info">
-                        <h3>{{ current_user.username }}</h3>
-                        <p>{{ current_user.email }}</p>
-                        <span class="account-badge">Patient Account</span>
-                    </div>
                 </div>
-                
-                <div class="account-details">
-                    <h4>Personal Information</h4>
-                    <div class="detail-grid">
-                        <div class="detail-row">
-                            <span class="detail-label"><i class="fas fa-user"></i> Username</span>
-                            <span class="detail-value">{{ current_user.username }}</span>
-                        </div>
-                        <div class="detail-row">
-                            <span class="detail-label"><i class="fas fa-envelope"></i> Email</span>
-                            <span class="detail-value">{{ current_user.email or 'Not set' }}</span>
-                        </div>
-                        <div class="detail-row">
-                            <span class="detail-label"><i class="fas fa-phone"></i> Phone</span>
-                            <span class="detail-value">{{ current_user.phone or 'Not set' }}</span>
-                        </div>
-                        <div class="detail-row">
-                            <span class="detail-label"><i class="fas fa-id-card"></i> Account Type</span>
-                            <span class="detail-value">{{ current_user.user_type|title }}</span>
-                        </div>
-                    </div>
-                    
-                    <div class="account-actions">
-                        <button class="btn btn-primary" onclick="showEditProfileModal()">
-                            <i class="fas fa-edit"></i> Edit Profile
-                        </button>
-                        <button class="btn btn-secondary" onclick="showChangePasswordModal()">
-                            <i class="fas fa-key"></i> Change Password
-                        </button>
-                    </div>
+                <div class="profile-info">
+                    <h3>{{ current_user.username }}</h3>
+                    <p><i class="fas fa-envelope"></i> {{ current_user.email }}</p>
+                    <span class="account-badge"><i class="fas fa-user-injured"></i> Patient Account</span>
+                </div>
+                <div class="profile-actions">
+                    <button class="btn btn-primary btn-block" onclick="showEditProfileModal()">
+                        <i class="fas fa-edit"></i> Edit Profile
+                    </button>
+                    <button class="btn btn-secondary btn-block" onclick="showChangePasswordModal()">
+                        <i class="fas fa-key"></i> Change Password
+                    </button>
                 </div>
             </div>
-            
-            <div class="account-stats">
+
+            <!-- Account Stats Grid -->
+            <div class="account-stats-grid">
                 <div class="stat-card-account">
-                    <i class="fas fa-calendar-check"></i>
-                    <div>
+                    <div class="stat-icon" style="background: #E8F5FF; color: #0284C7;">
+                        <i class="fas fa-calendar-check"></i>
+                    </div>
+                    <div class="stat-content">
                         <h4>{{ appointments|length }}</h4>
                         <p>Total Appointments</p>
                     </div>
                 </div>
                 <div class="stat-card-account">
-                    <i class="fas fa-file-medical"></i>
-                    <div>
+                    <div class="stat-icon" style="background: #FFF4E6; color: #F59E0B;">
+                        <i class="fas fa-file-medical"></i>
+                    </div>
+                    <div class="stat-content">
                         <h4>0</h4>
                         <p>Medical Records</p>
                     </div>
                 </div>
                 <div class="stat-card-account">
-                    <i class="fas fa-user-md"></i>
-                    <div>
+                    <div class="stat-icon" style="background: #F3E8FF; color: #9333EA;">
+                        <i class="fas fa-user-md"></i>
+                    </div>
+                    <div class="stat-content">
                         <h4>{% if assigned_doctor %}1{% else %}0{% endif %}</h4>
                         <p>Assigned Doctor</p>
                     </div>
+                </div>
+                <div class="stat-card-account">
+                    <div class="stat-icon" style="background: #DCFCE7; color: #16A34A;">
+                        <i class="fas fa-heartbeat"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h4>Active</h4>
+                        <p>Account Status</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Account Information Card -->
+            <div class="account-info-card">
+                <h4><i class="fas fa-id-card"></i> Personal Information</h4>
+                <div class="detail-grid">
+                    <div class="detail-row">
+                        <span class="detail-label"><i class="fas fa-user"></i> Username</span>
+                        <span class="detail-value">{{ current_user.username }}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label"><i class="fas fa-envelope"></i> Email Address</span>
+                        <span class="detail-value">{{ current_user.email or 'Not set' }}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label"><i class="fas fa-phone"></i> Phone Number</span>
+                        <span class="detail-value">{{ current_user.phone or 'Not set' }}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label"><i class="fas fa-id-badge"></i> Account Type</span>
+                        <span class="detail-value">{{ current_user.user_type|title }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Security Settings Card -->
+            <div class="account-security-card">
+                <h4><i class="fas fa-shield-alt"></i> Security Settings</h4>
+                <div class="security-item">
+                    <div class="security-info">
+                        <i class="fas fa-key"></i>
+                        <div>
+                            <h5>Password</h5>
+                            <p>Last changed: Recently</p>
+                        </div>
+                    </div>
+                    <button class="btn btn-outline" onclick="showChangePasswordModal()">
+                        <i class="fas fa-edit"></i> Change
+                    </button>
+                </div>
+                <div class="security-item">
+                    <div class="security-info">
+                        <i class="fas fa-lock"></i>
+                        <div>
+                            <h5>Two-Factor Authentication</h5>
+                            <p>Not enabled</p>
+                        </div>
+                    </div>
+                    <button class="btn btn-outline" disabled>
+                        <i class="fas fa-plus"></i> Enable
+                    </button>
                 </div>
             </div>
         </div>

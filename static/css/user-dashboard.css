@@ -1081,6 +1081,21 @@ body {
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
+.calendar-header-days {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.calendar-day-name {
+    text-align: center;
+    font-weight: 600;
+    color: var(--dark);
+    padding: 1rem;
+    font-size: 0.875rem;
+}
+
 .calendar-header-row {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
@@ -1096,6 +1111,12 @@ body {
     font-size: 0.875rem;
 }
 
+.calendar-days-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 0.5rem;
+}
+
 .calendar-days {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
@@ -1107,6 +1128,7 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
+    position: relative;
     border-radius: 12px;
     cursor: pointer;
     transition: all 0.2s;
@@ -1114,9 +1136,27 @@ body {
     background: var(--bg-secondary);
 }
 
-.calendar-day:hover {
+.calendar-day .day-number {
+    z-index: 1;
+}
+
+.calendar-day .appointment-dot {
+    position: absolute;
+    bottom: 6px;
+    width: 8px;
+    height: 8px;
+    background: var(--primary);
+    border-radius: 50%;
+    z-index: 2;
+}
+
+.calendar-day:hover:not(.empty) {
     background: var(--primary-lighter);
     color: var(--primary-dark);
+}
+
+.calendar-day:hover:not(.empty) .appointment-dot {
+    background: var(--primary-dark);
 }
 
 .calendar-day.today {
@@ -1124,8 +1164,13 @@ body {
     color: var(--white);
 }
 
+.calendar-day.today .appointment-dot {
+    background: var(--white);
+}
+
 .calendar-day.has-appointment {
-    background: var(--accent-pink);
+    background: #e8f9f3;
+    border: 2px solid var(--primary);
     color: var(--dark);
     font-weight: 600;
 }
@@ -1133,7 +1178,7 @@ body {
 .calendar-day.has-appointment.today {
     background: var(--primary);
     color: var(--white);
-    border: 2px solid var(--accent-pink);
+    border-color: var(--accent-yellow);
 }
 
 .calendar-day.empty {
@@ -1853,6 +1898,233 @@ body {
 
 .toggle-switch input:checked + .toggle-slider:before {
     transform: translateX(24px);
+}
+
+/* ===== RECORDS & CALENDAR COMBINED SECTION ===== */
+.records-calendar-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    height: calc(100vh - 180px);
+}
+
+.records-panel,
+.calendar-panel {
+    background: var(--white);
+    border-radius: 16px;
+    padding: 2rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid var(--bg-secondary);
+}
+
+.panel-header h3 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--dark);
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.panel-header h3 i {
+    color: var(--primary);
+}
+
+.records-grid-compact {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1rem;
+    overflow-y: auto;
+    flex: 1;
+    padding-right: 0.5rem;
+}
+
+.record-card-compact {
+    background: var(--bg-secondary);
+    border-radius: 12px;
+    padding: 1rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.record-card-compact:hover {
+    background: var(--primary-lighter);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.record-icon-compact {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    background: var(--primary);
+    color: var(--white);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+}
+
+.record-info-compact h5 {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--dark);
+    margin: 0 0 0.25rem 0;
+}
+
+.record-info-compact p {
+    font-size: 0.75rem;
+    color: var(--gray);
+    margin: 0;
+}
+
+.btn-icon-sm {
+    background: transparent;
+    border: none;
+    color: var(--primary);
+    font-size: 1rem;
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 8px;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-icon-sm:hover {
+    background: var(--primary-lighter);
+    color: var(--primary-dark);
+}
+
+.calendar-grid-compact {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.calendar-controls-compact {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.calendar-controls-compact h4 {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--dark);
+}
+
+.appointments-list-compact {
+    margin-top: 1.5rem;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.appointment-item-compact {
+    background: var(--bg-secondary);
+    padding: 0.875rem;
+    border-radius: 10px;
+    margin-bottom: 0.75rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: all 0.2s;
+}
+
+.appointment-item-compact:hover {
+    background: var(--primary-lighter);
+    transform: translateX(4px);
+}
+
+.appointment-item-compact h6 {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--dark);
+    margin: 0 0 0.25rem 0;
+}
+
+.appointment-item-compact p {
+    font-size: 0.75rem;
+    color: var(--gray);
+    margin: 0;
+}
+
+.status-badge-sm {
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.7rem;
+    font-weight: 600;
+}
+
+.status-badge-sm.confirmed {
+    background: var(--primary-lighter);
+    color: var(--primary-dark);
+}
+
+.status-badge-sm.pending {
+    background: var(--accent-yellow);
+    color: var(--dark);
+}
+
+.status-badge-sm.completed {
+    background: var(--accent-pink);
+    color: var(--dark);
+}
+
+.no-records-compact {
+    text-align: center;
+    padding: 2rem;
+    color: var(--gray);
+}
+
+.no-records-compact i {
+    font-size: 3rem;
+    color: var(--gray-light);
+    margin-bottom: 1rem;
+}
+
+.no-records-compact p {
+    font-size: 0.875rem;
+    margin: 0;
+}
+
+/* Scrollbar styling for compact lists */
+.records-grid-compact::-webkit-scrollbar,
+.appointments-list-compact::-webkit-scrollbar {
+    width: 6px;
+}
+
+.records-grid-compact::-webkit-scrollbar-track,
+.appointments-list-compact::-webkit-scrollbar-track {
+    background: var(--bg-secondary);
+    border-radius: 10px;
+}
+
+.records-grid-compact::-webkit-scrollbar-thumb,
+.appointments-list-compact::-webkit-scrollbar-thumb {
+    background: var(--primary);
+    border-radius: 10px;
+}
+
+.records-grid-compact::-webkit-scrollbar-thumb:hover,
+.appointments-list-compact::-webkit-scrollbar-thumb:hover {
+    background: var(--primary-dark);
 }
 
 .setting-select {

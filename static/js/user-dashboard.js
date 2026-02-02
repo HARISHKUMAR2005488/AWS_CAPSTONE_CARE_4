@@ -28,16 +28,27 @@ function showDashboardSection(event) {
 function showRecordsSection(event) {
     if (event) event.preventDefault();
     hideAllSections();
-    document.getElementById('recordsSection').style.display = 'block';
-    setActiveNav('nav-records');
+    document.getElementById('recordsCalendarSection').style.display = 'block';
+    setActiveNav('nav-records-calendar');
     loadMedicalRecords();
+    initializeCalendar();
+}
+
+function showRecordsCalendarSection(event) {
+    if (event) event.preventDefault();
+    hideAllSections();
+    document.getElementById('recordsCalendarSection').style.display = 'block';
+    setActiveNav('nav-records-calendar');
+    loadMedicalRecords();
+    initializeCalendar();
 }
 
 function showCalendarSection(event) {
     if (event) event.preventDefault();
     hideAllSections();
-    document.getElementById('calendarSection').style.display = 'block';
-    setActiveNav('nav-calendar');
+    document.getElementById('recordsCalendarSection').style.display = 'block';
+    setActiveNav('nav-records-calendar');
+    loadMedicalRecords();
     initializeCalendar();
 }
 
@@ -58,8 +69,7 @@ function showHelpCenter(event) {
 function hideAllSections() {
     document.querySelector('.dashboard-layout main').style.display = 'none';
     document.querySelector('.right-sidebar').style.display = 'none';
-    document.getElementById('recordsSection').style.display = 'none';
-    document.getElementById('calendarSection').style.display = 'none';
+    document.getElementById('recordsCalendarSection').style.display = 'none';
     document.getElementById('accountSection').style.display = 'none';
     document.getElementById('helpSection').style.display = 'none';
 }
@@ -147,28 +157,25 @@ function loadMedicalRecords() {
         .then(data => {
             if (data.success && data.records && data.records.length > 0) {
                 container.innerHTML = data.records.map(record => `
-                    <div class="record-card">
-                        <div class="record-icon">
+                    <div class="record-card-compact">
+                        <div class="record-icon-compact">
                             <i class="fas fa-file-${record.file_type === 'pdf' ? 'pdf' : 'image'}"></i>
                         </div>
-                        <div class="record-info">
-                            <h4>${record.description || 'Medical Document'}</h4>
+                        <div class="record-info-compact">
+                            <h5>${record.description || 'Medical Document'}</h5>
                             <p><i class="fas fa-calendar"></i> ${new Date(record.upload_date).toLocaleDateString()}</p>
-                            <p><i class="fas fa-file"></i> ${record.file_type.toUpperCase()}</p>
                         </div>
-                        <div class="record-actions">
-                            <button class="btn btn-sm btn-primary" onclick="viewRecord('${record.id}')">
-                                <i class="fas fa-eye"></i> View
-                            </button>
-                        </div>
+                        <button class="btn-icon-sm" onclick="viewRecord('${record.id}')" title="View">
+                            <i class="fas fa-eye"></i>
+                        </button>
                     </div>
                 `).join('');
             } else {
                 container.innerHTML = `
-                    <div class="no-records">
+                    <div class="no-records-compact">
                         <i class="fas fa-folder-open"></i>
-                        <h3>No Medical Records</h3>
-                        <p>Upload your medical documents to get started</p>
+                        <p>No Medical Records</p>
+                        <button class="btn btn-sm btn-primary" onclick="showUploadModal()">Upload Document</button>
                     </div>
                 `;
             }
@@ -348,11 +355,11 @@ function renderCalendar() {
     const firstDay = new Date(currentYear, currentMonth, 1).getDay();
     const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
     
-    let html = '<div class="calendar-header">';
+    let html = '<div class="calendar-header-days">';
     ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].forEach(day => {
-        html += `<div class="calendar-day-header">${day}</div>`;
+        html += `<div class="calendar-day-name">${day}</div>`;
     });
-    html += '</div><div class="calendar-days">';
+    html += '</div><div class="calendar-days-grid">';
     
     // Empty cells for days before month starts
     for (let i = 0; i < firstDay; i++) {
@@ -360,14 +367,22 @@ function renderCalendar() {
     }
     
     // Days of the month
+    const today = new Date();
     for (let day = 1; day <= daysInMonth; day++) {
         const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-        const hasAppointment = appointmentsData.some(apt => apt.appointment_date === dateStr);
-        const isToday = new Date().toDateString() === new Date(currentYear, currentMonth, day).toDateString();
+        const appointmentsOnDay = appointmentsData.filter(apt => apt.appointment_date === dateStr);
+        const hasAppointment = appointmentsOnDay.length > 0;
+        const isToday = today.getFullYear() === currentYear && 
+                       today.getMonth() === currentMonth && 
+                       today.getDate() === day;
         
-        html += `<div class="calendar-day ${isToday ? 'today' : ''} ${hasAppointment ? 'has-appointment' : ''}" 
-                      onclick="showDayAppointments('${dateStr}')">
-                    ${day}
+        let classes = 'calendar-day';
+        if (isToday) classes += ' today';
+        if (hasAppointment) classes += ' has-appointment';
+        
+        html += `<div class="${classes}" onclick="showDayAppointments('${dateStr}')" title="${hasAppointment ? appointmentsOnDay.length + ' appointment(s)' : ''}">
+                    <span class="day-number">${day}</span>
+                    ${hasAppointment ? '<span class="appointment-dot"></span>' : ''}
                  </div>`;
     }
     

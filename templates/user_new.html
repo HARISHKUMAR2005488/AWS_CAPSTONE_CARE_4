@@ -77,13 +77,9 @@
                     <i class="fas fa-calendar-check"></i>
                     <span>Appointment</span>
                 </a>
-                <a href="#" class="nav-item" id="nav-records" onclick="showRecordsSection(event)">
+                <a href="#" class="nav-item" id="nav-records-calendar" onclick="showRecordsCalendarSection(event)">
                     <i class="fas fa-file-medical"></i>
-                    <span>Record</span>
-                </a>
-                <a href="#" class="nav-item" id="nav-calendar" onclick="showCalendarSection(event)">
-                    <i class="fas fa-calendar-alt"></i>
-                    <span>Calendar</span>
+                    <span>Record & Calendar</span>
                 </a>
             </nav>
 
@@ -308,79 +304,61 @@
         </aside>
     </div>
 
-    <!-- Records Section (Hidden by default) -->
-    <div id="recordsSection" class="content-section" style="display: none;">
+    <!-- Records & Calendar Combined Section (Hidden by default) -->
+    <div id="recordsCalendarSection" class="content-section" style="display: none;">
         <div class="section-header">
-            <h2><i class="fas fa-file-medical"></i> Medical Records</h2>
-            <button class="btn btn-primary" onclick="showUploadModal()">
-                <i class="fas fa-upload"></i> Upload Document
-            </button>
+            <h2><i class="fas fa-file-medical"></i> Medical Records & Calendar</h2>
         </div>
-        <div id="recordsContainer" class="records-grid">
-            <div class="loading">Loading records...</div>
-        </div>
-    </div>
-
-    <!-- Chat Section (Hidden by default) -->
-    <div id="chatSection" class="content-section" style="display: none;">
-        <div class="chat-container">
-            <div class="chat-header">
-                <h2><i class="fas fa-robot"></i> Health Assistant</h2>
-                <button class="btn btn-secondary" onclick="clearChat()">
-                    <i class="fas fa-trash"></i> Clear
-                </button>
-            </div>
-            <div id="chatMessages" class="chat-messages">
-                <div class="message bot-message">
-                    <div class="message-content">
-                        <strong>Health Assistant:</strong>
-                        <p>Hello! I'm your AI health assistant. Describe your symptoms and I'll help analyze them and suggest appropriate specialists.</p>
-                    </div>
-                </div>
-            </div>
-            <div class="chat-input-container">
-                <form id="chatForm" onsubmit="sendChatMessage(event)">
-                    <input type="text" id="chatInput" placeholder="Describe your symptoms..." required>
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-paper-plane"></i> Send
+        
+        <div class="records-calendar-container">
+            <!-- Left Side - Medical Records -->
+            <div class="records-panel">
+                <div class="panel-header">
+                    <h3><i class="fas fa-file-medical"></i> Medical Records</h3>
+                    <button class="btn btn-primary" onclick="showUploadModal()">
+                        <i class="fas fa-upload"></i> Upload
                     </button>
-                </form>
+                </div>
+                <div id="recordsContainer" class="records-grid-compact">
+                    <div class="loading">Loading records...</div>
+                </div>
             </div>
-        </div>
-    </div>
-
-    <!-- Calendar Section (Hidden by default) -->
-    <div id="calendarSection" class="content-section" style="display: none;">
-        <div class="calendar-header">
-            <h2><i class="fas fa-calendar-alt"></i> My Appointments Calendar</h2>
-            <div class="calendar-controls">
-                <button class="btn btn-secondary" onclick="previousMonth()">
-                    <i class="fas fa-chevron-left"></i>
-                </button>
-                <h3 id="currentMonthYear"></h3>
-                <button class="btn btn-secondary" onclick="nextMonth()">
-                    <i class="fas fa-chevron-right"></i>
-                </button>
-            </div>
-        </div>
-        <div id="calendar" class="calendar-grid"></div>
-        <div class="appointments-list">
-            <h3>Upcoming Appointments</h3>
-            <div id="calendarAppointments">
-                {% for appointment in appointments %}
-                <div class="appointment-card">
-                    <div class="appointment-date">
-                        <span class="day">{{ appointment.appointment_date.strftime('%d') }}</span>
-                        <span class="month">{{ appointment.appointment_date.strftime('%b') }}</span>
-                    </div>
-                    <div class="appointment-details">
-                        <h4>{{ appointment.symptoms[:50] }}{% if appointment.symptoms|length > 50 %}...{% endif %}</h4>
-                        <p><i class="fas fa-user-md"></i> {{ appointment.doctor_name if appointment.doctor_name else 'Doctor' }}</p>
-                        <p><i class="fas fa-clock"></i> {% if appointment.appointment_time %}{{ appointment.appointment_time }}{% else %}Not set{% endif %}</p>
-                        <span class="status-badge status-{{ appointment.status }}">{{ appointment.status|title }}</span>
+            
+            <!-- Right Side - Calendar -->
+            <div class="calendar-panel">
+                <div class="panel-header">
+                    <h3><i class="fas fa-calendar-alt"></i> Appointments Calendar</h3>
+                    <div class="calendar-controls-compact">
+                        <button class="btn-icon-sm" onclick="previousMonth()">
+                            <i class="fas fa-chevron-left"></i>
+                        </button>
+                        <span id="currentMonthYear"></span>
+                        <button class="btn-icon-sm" onclick="nextMonth()">
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
                     </div>
                 </div>
-                {% endfor %}
+                
+                <div id="calendar" class="calendar-grid-compact"></div>
+                
+                <div class="upcoming-appointments-compact">
+                    <h4>Upcoming Appointments</h4>
+                    <div id="calendarAppointments" class="appointments-list-compact">
+                        {% for appointment in appointments[:5] %}
+                        <div class="appointment-item-compact">
+                            <div class="appointment-date-compact">
+                                <span class="day">{{ appointment.appointment_date.strftime('%d') }}</span>
+                                <span class="month">{{ appointment.appointment_date.strftime('%b') }}</span>
+                            </div>
+                            <div class="appointment-info-compact">
+                                <h5>{{ appointment.symptoms[:35] }}{% if appointment.symptoms|length > 35 %}...{% endif %}</h5>
+                                <p><i class="fas fa-clock"></i> {% if appointment.appointment_time %}{{ appointment.appointment_time }}{% else %}Not set{% endif %}</p>
+                            </div>
+                            <span class="status-badge-sm status-{{ appointment.status }}">{{ appointment.status|title }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
             </div>
         </div>
     </div>

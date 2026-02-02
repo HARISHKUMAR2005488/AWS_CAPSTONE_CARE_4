@@ -109,8 +109,8 @@ function sendChatMessageFloating(event) {
 function showDashboardSection(event) {
     if (event) event.preventDefault();
     hideAllSections();
-    document.querySelector('.dashboard-layout main').style.display = 'block';
-    document.querySelector('.right-sidebar').style.display = 'block';
+    const mainContent = document.querySelector('.main-content');
+    if (mainContent) mainContent.style.display = 'block';
     setActiveNav('nav-dashboard');
 }
 
@@ -118,8 +118,8 @@ function showRecordsSection(event) {
     if (event) event.preventDefault();
     // Just stay on dashboard, records are already visible
     hideAllSections();
-    document.querySelector('.dashboard-layout main').style.display = 'block';
-    document.querySelector('.right-sidebar').style.display = 'block';
+    const mainContent = document.querySelector('.main-content');
+    if (mainContent) mainContent.style.display = 'block';
     setActiveNav('nav-records-calendar');
 }
 
@@ -127,8 +127,8 @@ function showRecordsCalendarSection(event) {
     if (event) event.preventDefault();
     // Just stay on dashboard, records and calendar are already visible
     hideAllSections();
-    document.querySelector('.dashboard-layout main').style.display = 'block';
-    document.querySelector('.right-sidebar').style.display = 'block';
+    const mainContent = document.querySelector('.main-content');
+    if (mainContent) mainContent.style.display = 'block';
     setActiveNav('nav-records-calendar');
 }
 
@@ -136,8 +136,8 @@ function showCalendarSection(event) {
     if (event) event.preventDefault();
     // Just stay on dashboard, calendar is already visible
     hideAllSections();
-    document.querySelector('.dashboard-layout main').style.display = 'block';
-    document.querySelector('.right-sidebar').style.display = 'block';
+    const mainContent = document.querySelector('.main-content');
+    if (mainContent) mainContent.style.display = 'block';
     setActiveNav('nav-records-calendar');
 }
 
@@ -156,10 +156,11 @@ function showHelpCenter(event) {
 }
 
 function hideAllSections() {
-    document.querySelector('.dashboard-layout main').style.display = 'none';
-    document.querySelector('.right-sidebar').style.display = 'none';
-    document.getElementById('accountSection').style.display = 'none';
-    document.getElementById('helpSection').style.display = 'none';
+    document.querySelector('.main-content').style.display = 'none';
+    const accountSection = document.getElementById('accountSection');
+    const helpSection = document.getElementById('helpSection');
+    if (accountSection) accountSection.style.display = 'none';
+    if (helpSection) helpSection.style.display = 'none';
 }
 
 function setActiveNav(navId) {

@@ -6,11 +6,11 @@
 /* ===== CSS VARIABLES ===== */
 :root {
     /* Primary Healthcare Colors */
-    --primary: #7FDEDB;
-    /* Mint/Turquoise */
-    --primary-dark: #5BC5C1;
-    --primary-light: #A0E7E5;
-    --primary-lighter: #D4F4F2;
+    --primary: #2563eb;
+    /* Medical Blue */
+    --primary-dark: #1e40af;
+    --primary-light: #dbeafe;
+    --primary-lighter: #eff6ff;
 
     /* Success/Confirmation Green */
     --success: #10b981;
@@ -27,17 +27,17 @@
     --danger-light: #fee2e2;
 
     /* Neutral Grays */
-    --dark: #2D3748;
-    --gray: #4A5568;
-    --gray-light: #CBD5E0;
-    --gray-lighter: #E2E8F0;
-    --gray-lightest: #F7FAFC;
+    --dark: #1f2937;
+    --gray: #6b7280;
+    --gray-light: #d1d5db;
+    --gray-lighter: #f3f4f6;
+    --gray-lightest: #f9fafb;
     --white: #ffffff;
 
     /* Background Layers */
     --bg-primary: #ffffff;
-    --bg-secondary: #FAFAFA;
-    --bg-tertiary: #F5F5F5;
+    --bg-secondary: #f9fafb;
+    --bg-tertiary: #f3f4f6;
 
     /* Shadows */
     --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
@@ -164,18 +164,18 @@ main {
 /* ===== NAVIGATION ===== */
 .navbar {
     background: var(--white);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+    box-shadow: var(--shadow-md);
     position: sticky;
     top: 0;
     z-index: 1000;
-    border-bottom: none;
+    border-bottom: 1px solid var(--gray-lighter);
 }
 
 .navbar .container {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: var(--spacing-lg) var(--spacing-xl);
+    padding: var(--spacing-md) var(--spacing-lg);
 }
 
 .logo {
@@ -189,7 +189,7 @@ main {
 }
 
 .logo:hover {
-    transform: none;
+    transform: translateY(-2px);
 }
 
 .logo-img {
@@ -200,20 +200,20 @@ main {
 .nav-menu {
     display: flex;
     list-style: none;
-    gap: var(--spacing-2xl);
+    gap: var(--spacing-lg);
     align-items: center;
 }
 
 .nav-menu li a {
     font-weight: 500;
-    padding: 0;
-    border-radius: 0;
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-radius: var(--border-radius-md);
     transition: all var(--transition-fast);
     color: var(--dark);
 }
 
 .nav-menu li a:hover {
-    background: none;
+    background: var(--primary-lighter);
     color: var(--primary);
 }
 
@@ -246,22 +246,20 @@ main {
     display: inline-flex;
     align-items: center;
     gap: var(--spacing-xs);
-    padding: var(--spacing-sm) var(--spacing-xl);
+    padding: var(--spacing-sm) var(--spacing-lg);
     font-size: var(--font-size-base);
     font-weight: 600;
     border: none;
-    border-radius: 50px;
+    border-radius: var(--border-radius-md);
     cursor: pointer;
     transition: all var(--transition-fast);
     text-align: center;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-    background: var(--white);
-    color: var(--dark);
+    box-shadow: var(--shadow-sm);
 }
 
 .btn:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+    box-shadow: var(--shadow-md);
 }
 
 .btn:active {
@@ -278,14 +276,12 @@ main {
 }
 
 .btn-secondary {
-    background: var(--white);
+    background: var(--gray-lighter);
     color: var(--dark);
-    border: 2px solid var(--gray-lighter);
 }
 
 .btn-secondary:hover {
-    border-color: var(--primary);
-    color: var(--primary);
+    background: var(--gray-light);
 }
 
 .btn-success {
@@ -1133,30 +1129,3 @@ tbody td {
 /* ========================================
    HOME, DOCTORS, ABOUT PAGE STYLES
    ======================================== */
-/* ===== CIRCULAR ICON BUTTONS ===== */
-.icon-btn-circle {
-    width: 60px;
-    height: 60px;
-    border-radius: 50%;
-    background: var(--primary);
-    color: var(--white);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: var(--font-size-2xl);
-    border: none;
-    cursor: pointer;
-    transition: all var(--transition-base);
-    box-shadow: 0 4px 12px rgba(127, 222, 219, 0.3);
-}
-
-.icon-btn-circle:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 8px 20px rgba(127, 222, 219, 0.4);
-}
-
-.icon-buttons-group {
-    display: flex;
-    gap: var(--spacing-md);
-    margin-top: var(--spacing-xl);
-}

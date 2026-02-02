@@ -1716,14 +1716,44 @@ def admin_update_user(username):
         
         # Build update expression
         updates = {}
+        
+        # Basic fields
         if request.form.get("fullname"):
             updates["fullname"] = request.form.get("fullname").strip()
         if request.form.get("email"):
             updates["email"] = request.form.get("email").strip()
         if request.form.get("phone"):
             updates["phone"] = request.form.get("phone").strip()
+        if request.form.get("age"):
+            updates["age"] = int(request.form.get("age"))
+        if request.form.get("gender"):
+            updates["gender"] = request.form.get("gender").strip()
+        if request.form.get("address"):
+            updates["address"] = request.form.get("address").strip()
         if request.form.get("role"):
             updates["role"] = request.form.get("role").strip().lower()
+        
+        # Doctor-specific fields
+        if request.form.get("specialization"):
+            updates["specialization"] = request.form.get("specialization").strip()
+        if request.form.get("qualifications"):
+            updates["qualifications"] = request.form.get("qualifications").strip()
+        if request.form.get("experience"):
+            updates["experience"] = int(request.form.get("experience"))
+        if request.form.get("consultation_fee"):
+            updates["consultation_fee"] = float(request.form.get("consultation_fee"))
+        if request.form.get("available_days"):
+            updates["available_days"] = request.form.get("available_days").strip()
+        if request.form.get("available_time"):
+            updates["available_time"] = request.form.get("available_time").strip()
+        
+        # Patient-specific fields
+        if request.form.get("blood_group"):
+            updates["blood_group"] = request.form.get("blood_group").strip()
+        if request.form.get("medical_history"):
+            updates["medical_history"] = request.form.get("medical_history").strip()
+        if request.form.get("emergency_contact"):
+            updates["emergency_contact"] = request.form.get("emergency_contact").strip()
         
         # Update password if provided
         if request.form.get("password"):

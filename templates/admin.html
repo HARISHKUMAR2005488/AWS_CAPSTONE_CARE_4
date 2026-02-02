@@ -384,7 +384,7 @@
                 <form id="editUserForm">
                     <input type="hidden" id="edit_user_original_username" name="original_username">
                     <div class="form-section">
-                        <h4>User Information</h4>
+                        <h4>Basic Information</h4>
                         <div class="form-group">
                             <label for="edit_user_username_display">Username</label>
                             <input type="text" id="edit_user_username_display" name="username" readonly
@@ -404,6 +404,26 @@
                                 <input type="tel" id="edit_user_phone" name="phone">
                             </div>
                         </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="edit_user_age">Age</label>
+                                <input type="number" id="edit_user_age" name="age" min="0" max="150">
+                            </div>
+                            <div class="form-group">
+                                <label for="edit_user_gender">Gender</label>
+                                <select id="edit_user_gender" name="gender">
+                                    <option value="">Select Gender</option>
+                                    <option value="male">Male</option>
+                                    <option value="female">Female</option>
+                                    <option value="other">Other</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="edit_user_address">Address</label>
+                            <textarea id="edit_user_address" name="address" rows="2"
+                                placeholder="Enter address"></textarea>
+                        </div>
                         <div class="form-group">
                             <label for="edit_user_role">Role</label>
                             <select id="edit_user_role" name="role">
@@ -412,11 +432,91 @@
                                 <option value="admin">Admin</option>
                             </select>
                         </div>
+                    </div>
+
+                    <!-- Doctor-Specific Fields -->
+                    <div class="form-section" id="doctor_fields" style="display: none;">
+                        <h4>Doctor Information</h4>
+                        <div class="form-group">
+                            <label for="edit_user_specialization">Specialization</label>
+                            <input type="text" id="edit_user_specialization" name="specialization"
+                                placeholder="e.g., Cardiology">
+                        </div>
+                        <div class="form-group">
+                            <label for="edit_user_qualifications">Qualifications</label>
+                            <input type="text" id="edit_user_qualifications" name="qualifications"
+                                placeholder="e.g., MBBS, MD">
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="edit_user_experience">Experience (years)</label>
+                                <input type="number" id="edit_user_experience" name="experience" min="0">
+                            </div>
+                            <div class="form-group">
+                                <label for="edit_user_consultation_fee">Consultation Fee</label>
+                                <input type="number" id="edit_user_consultation_fee" name="consultation_fee" min="0"
+                                    step="0.01">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="edit_user_available_days">Available Days</label>
+                                <input type="text" id="edit_user_available_days" name="available_days"
+                                    placeholder="e.g., Mon-Fri">
+                            </div>
+                            <div class="form-group">
+                                <label for="edit_user_available_time">Available Time</label>
+                                <input type="text" id="edit_user_available_time" name="available_time"
+                                    placeholder="e.g., 9:00 AM - 5:00 PM">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Patient-Specific Fields -->
+                    <div class="form-section" id="patient_fields" style="display: none;">
+                        <h4>Medical Information</h4>
+                        <div class="form-group">
+                            <label for="edit_user_blood_group">Blood Group</label>
+                            <select id="edit_user_blood_group" name="blood_group">
+                                <option value="">Select Blood Group</option>
+                                <option value="A+">A+</option>
+                                <option value="A-">A-</option>
+                                <option value="B+">B+</option>
+                                <option value="B-">B-</option>
+                                <option value="AB+">AB+</option>
+                                <option value="AB-">AB-</option>
+                                <option value="O+">O+</option>
+                                <option value="O-">O-</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="edit_user_medical_history">Medical History</label>
+                            <textarea id="edit_user_medical_history" name="medical_history" rows="3"
+                                placeholder="Enter medical history, allergies, chronic conditions, etc."></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="edit_user_emergency_contact">Emergency Contact</label>
+                            <input type="tel" id="edit_user_emergency_contact" name="emergency_contact"
+                                placeholder="Emergency contact number">
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <h4>Security</h4>
                         <div class="form-group">
                             <label for="edit_user_password">New Password (leave blank to keep current)</label>
                             <input type="password" id="edit_user_password" name="password">
                         </div>
                     </div>
+
+                    <script>
+                        // Show/hide role-specific fields
+                        document.getElementById('edit_user_role').addEventListener('change', function () {
+                            const role = this.value;
+                            document.getElementById('doctor_fields').style.display = role === 'doctor' ? 'block' : 'none';
+                            document.getElementById('patient_fields').style.display = role === 'user' ? 'block' : 'none';
+                        });
+                    </script>
                     <div class="modal-actions">
                         <button type="button" class="btn btn-secondary close-modal">Cancel</button>
                         <button type="submit" class="btn btn-primary">
@@ -1067,13 +1167,36 @@
         if (!modal) return;
 
         const username = button.dataset.username || '';
+        const role = button.dataset.role || 'user';
+
+        // Basic fields
         document.getElementById('edit_user_original_username').value = username;
         document.getElementById('edit_user_username_display').value = username;
         document.getElementById('edit_user_fullname').value = button.dataset.fullname || '';
         document.getElementById('edit_user_email').value = button.dataset.email || '';
         document.getElementById('edit_user_phone').value = button.dataset.phone || '';
-        document.getElementById('edit_user_role').value = button.dataset.role || 'user';
+        document.getElementById('edit_user_age').value = button.dataset.age || '';
+        document.getElementById('edit_user_gender').value = button.dataset.gender || '';
+        document.getElementById('edit_user_address').value = button.dataset.address || '';
+        document.getElementById('edit_user_role').value = role;
         document.getElementById('edit_user_password').value = ''; // Clear password field
+
+        // Doctor-specific fields
+        document.getElementById('edit_user_specialization').value = button.dataset.specialization || '';
+        document.getElementById('edit_user_qualifications').value = button.dataset.qualifications || '';
+        document.getElementById('edit_user_experience').value = button.dataset.experience || '';
+        document.getElementById('edit_user_consultation_fee').value = button.dataset.consultation_fee || '';
+        document.getElementById('edit_user_available_days').value = button.dataset.available_days || '';
+        document.getElementById('edit_user_available_time').value = button.dataset.available_time || '';
+
+        // Patient-specific fields
+        document.getElementById('edit_user_blood_group').value = button.dataset.blood_group || '';
+        document.getElementById('edit_user_medical_history').value = button.dataset.medical_history || '';
+        document.getElementById('edit_user_emergency_contact').value = button.dataset.emergency_contact || '';
+
+        // Show/hide role-specific sections
+        document.getElementById('doctor_fields').style.display = role === 'doctor' ? 'block' : 'none';
+        document.getElementById('patient_fields').style.display = role === 'user' ? 'block' : 'none';
 
         modal.style.display = 'flex';
         modal.classList.add('active');

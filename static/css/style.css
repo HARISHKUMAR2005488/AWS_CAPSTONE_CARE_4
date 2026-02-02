@@ -246,7 +246,7 @@ main {
     padding: var(--spacing-sm) var(--spacing-lg) !important;
     border-radius: var(--border-radius-full);
     /* Pill shape */
-    font-weight: 600;
+    font-weight: var(--font-weight-medium);
     box-shadow: var(--shadow-sm);
 }
 
@@ -414,7 +414,7 @@ main {
 
 .stat-info h3 {
     font-size: var(--font-size-3xl);
-    font-weight: 700;
+    font-weight: var(--font-weight-bold);
     color: var(--dark);
     margin-bottom: 0.25rem;
 }
@@ -423,7 +423,7 @@ main {
     font-size: var(--font-size-sm);
     color: var(--gray);
     margin: 0;
-    font-weight: 500;
+    font-weight: var(--font-weight-medium);
 }
 
 /* ===== FORMS ===== */
@@ -434,7 +434,7 @@ main {
 .form-group label {
     display: block;
     margin-bottom: var(--spacing-xs);
-    font-weight: 600;
+    font-weight: var(--font-weight-medium);
     color: var(--dark);
     font-size: var(--font-size-sm);
 }
@@ -519,7 +519,7 @@ thead {
 thead th {
     padding: var(--spacing-md) var(--spacing-lg);
     text-align: left;
-    font-weight: 600;
+    font-weight: var(--font-weight-medium);
     font-size: var(--font-size-sm);
     text-transform: uppercase;
     letter-spacing: 0.5px;
@@ -550,7 +550,7 @@ tbody td {
     padding: 0.375rem 0.75rem;
     border-radius: var(--border-radius-md);
     font-size: var(--font-size-xs);
-    font-weight: 600;
+    font-weight: var(--font-weight-medium);
     text-transform: capitalize;
 }
 
@@ -731,6 +731,24 @@ tbody td {
     display: flex;
     align-items: center;
     gap: var(--spacing-sm);
+    font-weight: var(--font-weight-bold);
+}
+
+.section-header h2 i {
+    color: var(--primary);
+}
+
+.section-header h3 {
+    margin: 0;
+    color: var(--dark);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    font-weight: var(--font-weight-bold);
+}
+
+.section-header h3 i {
+    color: var(--primary);
 }
 
 /* ===== QUICK ACTIONS ===== */
@@ -781,10 +799,15 @@ tbody td {
 .action-btn i {
     font-size: var(--font-size-3xl);
     color: var(--primary);
+    transition: all var(--transition-base);
+}
+
+.action-btn:hover i {
+    transform: scale(1.1);
 }
 
 .action-btn span {
-    font-weight: 600;
+    font-weight: var(--font-weight-medium);
     color: var(--dark);
 }
 
@@ -867,7 +890,7 @@ tbody td {
     padding: 0.25rem 0.75rem;
     border-radius: var(--border-radius-md);
     font-size: var(--font-size-xs);
-    font-weight: 600;
+    font-weight: var(--font-weight-medium);
     margin-top: var(--spacing-xs);
 }
 

@@ -274,7 +274,7 @@
 }
 
 .appointment-id {
-    font-weight: 700;
+    font-weight: var(--font-weight-bold);
     color: var(--dark);
     font-size: var(--font-size-sm);
 }
@@ -298,7 +298,7 @@
 }
 
 .patient-name {
-    font-weight: 600;
+    font-weight: var(--font-weight-medium);
     color: var(--dark);
     margin: 0 0 0.25rem 0;
 }
@@ -353,7 +353,6 @@
 }
 
 /* ===== STAT ICON VARIANTS ===== */
-/* ===== STAT ICON VARIANTS ===== */
 .stat-icon {
     width: 60px;
     height: 60px;
@@ -377,11 +376,13 @@
 }
 
 .stat-icon.completed {
-    background: #8b5cf6;
+    background: var(--accent-pink);
+    color: var(--dark);
 }
 
 .stat-icon.pending {
-    background: var(--warning);
+    background: var(--accent-yellow);
+    color: var(--dark);
 }
 
 /* ===== ACTION BUTTONS IN TABLES ===== */

@@ -166,36 +166,36 @@
         {% endif %}
     </div>
 
-    <!-- Users List -->
+    <!-- Users List (Categorized by Role) -->
     <div class="recent-section">
         <div class="section-header">
-            <h2><i class="fas fa-users"></i> Manage Patients/Users</h2>
+            <h2><i class="fas fa-users"></i> Manage Users</h2>
             <button class="btn btn-primary" data-action="add-user">
                 <i class="fas fa-user-plus"></i> Add User
             </button>
         </div>
 
         {% if users %}
+        <!-- Admins Section -->
+        {% set admins = users|selectattr('role', 'equalto', 'admin')|list %}
+        {% if admins %}
+        <h3 style="margin-top: 20px; color: #e74c3c;"><i class="fas fa-user-shield"></i> Administrators</h3>
         <div class="appointments-table">
             <table>
                 <thead>
                     <tr>
                         <th>Username</th>
-                        <th>Role</th>
                         <th>Contact</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {% for user in users %}
+                    {% for user in admins %}
                     <tr>
                         <td>
                             <div class="patient-cell">
                                 <strong>{{ user.username }}</strong>
                             </div>
-                        </td>
-                        <td>
-                            <span class="status-badge {{ user.role }}">{{ user.role|title }}</span>
                         </td>
                         <td>
                             <div class="patient-cell">
@@ -220,6 +220,99 @@
                 </tbody>
             </table>
         </div>
+        {% endif %}
+
+        <!-- Doctors Section -->
+        {% set doctors_users = users|selectattr('role', 'equalto', 'doctor')|list %}
+        {% if doctors_users %}
+        <h3 style="margin-top: 20px; color: #3498db;"><i class="fas fa-user-md"></i> Doctors</h3>
+        <div class="appointments-table">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Username</th>
+                        <th>Contact</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in doctors_users %}
+                    <tr>
+                        <td>
+                            <div class="patient-cell">
+                                <strong>{{ user.username }}</strong>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="patient-cell">
+                                <small>{{ user.email or 'N/A' }}</small>
+                                <small>{{ user.phone or 'N/A' }}</small>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="action-buttons">
+                                <button class="btn-sm btn-primary" onclick="openEditUser(this)"
+                                    data-username="{{ user.username }}" data-email="{{ user.email }}"
+                                    data-phone="{{ user.phone }}" data-role="{{ user.role }}">
+                                    Edit
+                                </button>
+                                <button class="btn-sm btn-danger" onclick="deleteUser('{{ user.username }}')">
+                                    Remove
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+
+        <!-- Patients Section -->
+        {% set patients = users|selectattr('role', 'equalto', 'user')|list %}
+        {% if patients %}
+        <h3 style="margin-top: 20px; color: #27ae60;"><i class="fas fa-user"></i> Patients</h3>
+        <div class="appointments-table">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Username</th>
+                        <th>Contact</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in patients %}
+                    <tr>
+                        <td>
+                            <div class="patient-cell">
+                                <strong>{{ user.username }}</strong>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="patient-cell">
+                                <small>{{ user.email or 'N/A' }}</small>
+                                <small>{{ user.phone or 'N/A' }}</small>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="action-buttons">
+                                <button class="btn-sm btn-primary" onclick="openEditUser(this)"
+                                    data-username="{{ user.username }}" data-email="{{ user.email }}"
+                                    data-phone="{{ user.phone }}" data-role="{{ user.role }}">
+                                    Edit
+                                </button>
+                                <button class="btn-sm btn-danger" onclick="deleteUser('{{ user.username }}')">
+                                    Remove
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
         {% else %}
         <div class="no-data">
             <i class="fas fa-users"></i>
@@ -1030,6 +1123,44 @@
             console.error('Appointment not found:', appointmentId);
             alert('Could not find appointment details');
         }
+    }
+
+    // ===== USER MANAGEMENT FUNCTIONS =====
+    function openEditUser(button) {
+        const modal = document.getElementById('editUserModal');
+        if (!modal) return;
+
+        document.getElementById('edit_user_username').value = button.dataset.username || '';
+        document.getElementById('edit_user_email').value = button.dataset.email || '';
+        document.getElementById('edit_user_phone').value = button.dataset.phone || '';
+        document.getElementById('edit_user_role').value = button.dataset.role || 'user';
+        document.getElementById('edit_user_password').value = ''; // Clear password field
+
+        modal.style.display = 'flex';
+        modal.classList.add('active');
+    }
+
+    function deleteUser(username) {
+        if (!confirm(`Are you sure you want to delete user "${username}"? This action cannot be undone.`)) {
+            return;
+        }
+
+        fetch(`/admin/delete-user/${username}`, {
+            method: 'POST'
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(data.message || 'User deleted successfully');
+                    location.reload();
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred. Please try again.');
+            });
     }
 </script>
 {% endblock %}

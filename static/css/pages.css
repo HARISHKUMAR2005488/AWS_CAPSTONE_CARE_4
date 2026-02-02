@@ -24,7 +24,7 @@
 
 .hero-content h1 {
     font-size: 3.5rem;
-    font-weight: 700;
+    font-weight: var(--font-weight-bold);
     line-height: 1.2;
     color: var(--dark);
     margin-bottom: var(--spacing-lg);
@@ -37,7 +37,7 @@
     letter-spacing: 2px;
     color: var(--gray);
     margin-bottom: var(--spacing-2xl);
-    font-weight: 600;
+    font-weight: var(--font-weight-medium);
 }
 
 .hero-icons {
@@ -111,13 +111,13 @@
 
 .info-card h3 {
     font-size: 2rem;
-    font-weight: 300;
+    font-weight: var(--font-weight-light);
     margin-bottom: var(--spacing-xs);
 }
 
 .info-card h4 {
     font-size: var(--font-size-sm);
-    font-weight: 700;
+    font-weight: var(--font-weight-bold);
     text-transform: uppercase;
     letter-spacing: 1px;
     margin-bottom: var(--spacing-lg);
@@ -137,8 +137,7 @@
 }
 
 .mint-card h3 {
-    color: #4fd2bf;
-    /* Specific vibrant mint for numbers */
+    color: var(--primary);
 }
 
 .white-card {
@@ -163,7 +162,7 @@
     background-color: var(--white);
     color: var(--dark);
     border-radius: 30px;
-    font-weight: 600;
+    font-weight: var(--font-weight-medium);
     font-size: 0.8rem;
     text-transform: uppercase;
     letter-spacing: 1px;
@@ -197,7 +196,7 @@
 }
 
 .opening-hours-list li span:last-child {
-    font-weight: 600;
+    font-weight: var(--font-weight-medium);
 }
 
 /* ===== STATS SECTION (REDESIGNED) ===== */
@@ -227,13 +226,13 @@
 
 .stat-item h3 {
     font-size: 3rem;
-    font-weight: 700;
+    font-weight: var(--font-weight-bold);
     color: var(--primary);
     margin-bottom: var(--spacing-xs);
 }
 
 .stat-item p {
-    font-weight: 600;
+    font-weight: var(--font-weight-medium);
     text-transform: uppercase;
     color: var(--gray);
     letter-spacing: 1px;
@@ -251,11 +250,11 @@
     font-size: 2.5rem;
     margin-bottom: var(--spacing-3xl);
     color: var(--dark);
-    font-weight: 300;
+    font-weight: var(--font-weight-light);
 }
 
 .section-title span {
-    font-weight: 700;
+    font-weight: var(--font-weight-bold);
     color: var(--primary);
 }
 

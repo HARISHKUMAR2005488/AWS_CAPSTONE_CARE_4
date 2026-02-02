@@ -50,7 +50,7 @@
     align-items: center;
     gap: var(--spacing-xs);
     margin-bottom: var(--spacing-xs);
-    font-weight: 600;
+    font-weight: var(--font-weight-medium);
     color: var(--dark);
     font-size: var(--font-size-sm);
 }
@@ -62,7 +62,7 @@
 
 .form-required {
     color: var(--danger);
-    font-weight: 700;
+    font-weight: var(--font-weight-bold);
 }
 
 .form-input {
@@ -166,7 +166,7 @@
 .form-link {
     font-size: var(--font-size-sm);
     color: var(--primary);
-    font-weight: 500;
+    font-weight: var(--font-weight-medium);
     transition: color var(--transition-fast);
 }
 
@@ -189,7 +189,7 @@
     align-items: center;
     gap: var(--spacing-sm);
     color: var(--primary);
-    font-weight: 700;
+    font-weight: var(--font-weight-bold);
     font-size: var(--font-size-lg);
     margin-bottom: var(--spacing-md);
     padding-bottom: var(--spacing-sm);

@@ -48,7 +48,7 @@
     background: var(--primary-light);
     color: var(--primary-dark);
     border-radius: var(--border-radius-md);
-    font-weight: 600;
+    font-weight: var(--font-weight-medium);
     font-size: var(--font-size-sm);
     margin-top: var(--spacing-sm);
     transition: all var(--transition-fast);
@@ -92,7 +92,7 @@
     font-size: var(--font-size-sm);
     color: var(--gray);
     margin: 0;
-    font-weight: 500;
+    font-weight: var(--font-weight-medium);
 }
 
 /* ===== HEALTH INFORMATION SECTION ===== */
@@ -141,7 +141,7 @@
 
 .health-item label {
     display: block;
-    font-weight: 600;
+    font-weight: var(--font-weight-medium);
     color: var(--primary);
     font-size: var(--font-size-sm);
     margin-bottom: 0.25rem;
@@ -183,7 +183,7 @@
 
 .doctor-profile-card .specialization {
     color: var(--primary);
-    font-weight: 600;
+    font-weight: var(--font-weight-medium);
     font-size: var(--font-size-lg);
     margin: 0.25rem 0;
 }

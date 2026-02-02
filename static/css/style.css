@@ -5,16 +5,16 @@
 
 /* ===== CSS VARIABLES ===== */
 :root {
-    /* Primary Healthcare Colors - Mint/Turquoise Theme */
-    --primary: #7dd3c0;
-    --primary-dark: #5bb9a6;
-    --primary-light: #d4f4ed;
-    --primary-lighter: #e0f7f4;
+    /* Primary Healthcare Colors - New Design System */
+    --primary: #5FEABE;
+    --primary-dark: #4AD4A8;
+    --primary-light: #D4F9EC;
+    --primary-lighter: #E8FCF5;
 
     /* Success/Confirmation Green */
-    --success: #48bb78;
-    --success-dark: #38a169;
-    --success-light: #c6f6d5;
+    --success: #5FEABE;
+    --success-dark: #4AD4A8;
+    --success-light: #D4F9EC;
 
     /* Warning/Alert Colors */
     --warning: #f59e0b;
@@ -25,19 +25,23 @@
     --danger-dark: #dc2626;
     --danger-light: #fee2e2;
 
+    /* Accent Colors */
+    --accent-pink: #FECADA;
+    --accent-yellow: #E4FECA;
+
     /* Neutral Grays */
-    --dark: #2d3748;
+    --dark: #1D1B1B;
     --gray: #718096;
     --gray-light: #cbd5e0;
     --gray-lighter: #edf2f7;
     --gray-lightest: #f7fafc;
-    --white: #ffffff;
+    --white: #FFFFFF;
 
     /* Background Layers */
-    --bg-primary: #ffffff;
+    --bg-primary: #FFFFFF;
     --bg-secondary: #f7fafc;
     --bg-tertiary: #edf2f7;
-    --bg-accent: #e0f7f4;
+    --bg-accent: #E8FCF5;
 
     /* Shadows - Softer */
     --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
@@ -61,8 +65,13 @@
     --spacing-2xl: 3rem;
     --spacing-3xl: 4rem;
 
-    /* Typography */
-    --font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    /* Typography - SF Pro Display */
+    --font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    --font-weight-thin: 100;
+    --font-weight-light: 300;
+    --font-weight-regular: 400;
+    --font-weight-medium: 500;
+    --font-weight-bold: 700;
     --font-size-xs: 0.75rem;
     --font-size-sm: 0.875rem;
     --font-size-base: 1rem;
@@ -107,7 +116,7 @@ h3,
 h4,
 h5,
 h6 {
-    font-weight: 700;
+    font-weight: var(--font-weight-bold);
     line-height: 1.2;
     color: var(--dark);
     margin-bottom: var(--spacing-md);
@@ -131,10 +140,12 @@ h4 {
 
 h5 {
     font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-medium);
 }
 
 h6 {
     font-size: var(--font-size-base);
+    font-weight: var(--font-weight-medium);
 }
 
 p {
@@ -188,7 +199,7 @@ main {
     align-items: center;
     gap: var(--spacing-sm);
     font-size: var(--font-size-xl);
-    font-weight: 700;
+    font-weight: var(--font-weight-bold);
     color: var(--primary);
     transition: transform var(--transition-fast);
 }
@@ -210,7 +221,7 @@ main {
 }
 
 .nav-menu li a {
-    font-weight: 500;
+    font-weight: var(--font-weight-medium);
     padding: var(--spacing-sm) var(--spacing-md);
     /* border-radius: var(--border-radius-md); */
     /* Remove bg radius */
@@ -261,7 +272,7 @@ main {
     gap: var(--spacing-xs);
     padding: var(--spacing-sm) var(--spacing-lg);
     font-size: var(--font-size-base);
-    font-weight: 600;
+    font-weight: var(--font-weight-medium);
     border: none;
     border-radius: var(--border-radius-full);
     /* Pill shape buttons */
@@ -388,15 +399,17 @@ main {
 }
 
 .stat-icon.doctors {
-    background: linear-gradient(135deg, var(--success) 0%, var(--success-dark) 100%);
+    background: linear-gradient(135deg, #5FEABE 0%, #4AD4A8 100%);
 }
 
 .stat-icon.appointments {
-    background: linear-gradient(135deg, var(--warning) 0%, #ea580c 100%);
+    background: var(--accent-pink);
+    color: var(--dark);
 }
 
 .stat-icon.pending {
-    background: linear-gradient(135deg, var(--danger) 0%, var(--danger-dark) 100%);
+    background: var(--accent-yellow);
+    color: var(--dark);
 }
 
 .stat-info h3 {
@@ -1029,6 +1042,56 @@ tbody td {
 
 .text-left {
     text-align: left;
+}
+
+/* ===== ACCENT COLOR UTILITIES ===== */
+.accent-pink {
+    background-color: var(--accent-pink);
+}
+
+.accent-yellow {
+    background-color: var(--accent-yellow);
+}
+
+.text-primary {
+    color: var(--primary);
+}
+
+.bg-primary-light {
+    background-color: var(--primary-light);
+}
+
+.border-primary {
+    border-color: var(--primary);
+}
+
+/* ===== ENHANCED ACCENT CARD STYLES ===== */
+.card.accent-pink-card {
+    border-top: 4px solid var(--accent-pink);
+    background: linear-gradient(to bottom, var(--accent-pink) 0%, var(--white) 10%);
+}
+
+.card.accent-yellow-card {
+    border-top: 4px solid var(--accent-yellow);
+    background: linear-gradient(to bottom, var(--accent-yellow) 0%, var(--white) 10%);
+}
+
+.badge-pink {
+    background-color: var(--accent-pink);
+    color: var(--dark);
+    padding: 0.25rem 0.75rem;
+    border-radius: var(--border-radius-full);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-medium);
+}
+
+.badge-yellow {
+    background-color: var(--accent-yellow);
+    color: var(--dark);
+    padding: 0.25rem 0.75rem;
+    border-radius: var(--border-radius-full);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-medium);
 }
 
 .mt-1 {

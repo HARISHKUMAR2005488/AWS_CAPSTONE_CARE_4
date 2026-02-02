@@ -1649,10 +1649,135 @@ def admin_update_appointment(appointment_id: str):
 
     except ClientError as exc:
         logger.error(f"ClientError updating appointment {appointment_id}: {exc}")
-        return jsonify({"success": False, "message": "Database error"}), 500
+        return jsonify({" success": False, "message": "Database error"}), 500
     except Exception as exc:
         logger.error(f"Exception updating appointment {appointment_id}: {exc}", exc_info=True)
         return jsonify({"success": False, "message": "An error occurred"}), 500
+
+
+# ===== ADMIN USER MANAGEMENT ROUTES =====
+
+@app.route("/admin/add-user", methods=["POST"])
+def admin_add_user():
+    """Admin route to add a new user"""
+    if "username" not in session or session.get("role") != "admin":
+        return jsonify({"success": False, "message": "Admin access required"}), 403
+    
+    try:
+        username = request.form.get("username", "").strip()
+        password = request.form.get("password", "").strip()
+        role = request.form.get("role", "user").strip().lower()
+        email = request.form.get("email", "").strip()
+        phone = request.form.get("phone", "").strip()
+        
+        if not username or not password:
+            return jsonify({"success": False, "message": "Username and password required"}), 400
+        
+        # Check if user exists
+        existing = users_table.get_item(Key={"username": username})
+        if "Item" in existing:
+            return jsonify({"success": False, "message": "User already exists"}), 400
+        
+        # Create user
+        user_item = {
+            "username": username,
+            "password_hash": generate_password_hash(password),
+            "role": role,
+            "email": email,
+            "phone": phone
+        }
+        
+        users_table.put_item(Item=user_item)
+        logger.info(f"Admin {session['username']} created user {username}")
+        
+        send_notification(
+            subject=f"New User Created by Admin",
+            message=f"Admin {session['username']} created user: {username} (Role: {role})"
+        )
+        
+        return jsonify({"success": True, "message": "User created successfully"})
+    
+    except Exception as e:
+        logger.error(f"Error creating user: {e}")
+        return jsonify({"success": False, "message": "Failed to create user"}), 500
+
+
+@app.route("/admin/update-user/<username>", methods=["POST"])
+def admin_update_user(username):
+    """Admin route to update user details"""
+    if "username" not in session or session.get("role") != "admin":
+        return jsonify({"success": False, "message": "Admin access required"}), 403
+    
+    try:
+        # Check if user exists
+        user = users_table.get_item(Key={"username": username})
+        if "Item" not in user:
+            return jsonify({"success": False, "message": "User not found"}), 404
+        
+        # Build update expression
+        updates = {}
+        if request.form.get("email"):
+            updates["email"] = request.form.get("email").strip()
+        if request.form.get("phone"):
+            updates["phone"] = request.form.get("phone").strip()
+        if request.form.get("role"):
+            updates["role"] = request.form.get("role").strip().lower()
+        
+        # Update password if provided
+        if request.form.get("password"):
+            updates["password_hash"] = generate_password_hash(request.form.get("password"))
+        
+        if not updates:
+            return jsonify({"success": False, "message": "No fields to update"}), 400
+        
+        # Perform update
+        update_expr = "SET " + ", ".join([f"{k} = :{k}" for k in updates.keys()])
+        expr_values = {f":{k}": v for k, v in updates.items()}
+        
+        users_table.update_item(
+            Key={"username": username},
+            UpdateExpression=update_expr,
+            ExpressionAttributeValues=expr_values
+        )
+        
+        logger.info(f"Admin {session['username']} updated user {username}")
+        return jsonify({"success": True, "message": "User updated successfully"})
+    
+    except Exception as e:
+        logger.error(f"Error updating user {username}: {e}")
+        return jsonify({"success": False, "message": "Failed to update user"}), 500
+
+
+@app.route("/admin/delete-user/<username>", methods=["POST"])
+def admin_delete_user(username):
+    """Admin route to delete a user"""
+    if "username" not in session or session.get("role") != "admin":
+        return jsonify({"success": False, "message": "Admin access required"}), 403
+    
+    try:
+        # Prevent admin from deleting themselves
+        if username == session["username"]:
+            return jsonify({"success": False, "message": "Cannot delete your own account"}), 400
+        
+        # Check if user exists
+        user = users_table.get_item(Key={"username": username})
+        if "Item" not in user:
+            return jsonify({"success": False, "message": "User not found"}), 404
+        
+        # Delete user
+        users_table.delete_item(Key={"username": username})
+        
+        logger.info(f"Admin {session['username']} deleted user {username}")
+        send_notification(
+            subject=f"User Deleted by Admin",
+            message=f"Admin {session['username']} deleted user: {username}"
+        )
+        
+        return jsonify({"success": True, "message": "User deleted successfully"})
+    
+    except Exception as e:
+        logger.error(f"Error deleting user {username}: {e}")
+        return jsonify({"success": False, "message": "Failed to delete user"}), 500
 
 
 if __name__ == "__main__":

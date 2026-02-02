@@ -16,6 +16,7 @@
     --gray-lightest: #f7fafc;
     --white: #FFFFFF;
     --blue-light: #E0F2FE;
+    --bg-secondary: #f8f9fc;
     --font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
@@ -1476,6 +1477,229 @@ body {
 
 .chat-input-sidebar .btn-send i {
     pointer-events: none;
+}
+
+/* ===== RECORDS SECTION IN SIDEBAR ===== */
+.records-section-sidebar {
+    padding: 1.5rem;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.sidebar-section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid var(--gray-lighter);
+}
+
+.sidebar-section-header h3 {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--dark);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.sidebar-section-header h3 i {
+    color: var(--primary);
+    font-size: 1.25rem;
+}
+
+.btn-primary-sm {
+    background: var(--primary);
+    color: var(--white);
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+    font-family: var(--font-family);
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.btn-primary-sm:hover {
+    background: var(--primary-dark);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(95, 234, 190, 0.3);
+}
+
+.records-grid-sidebar {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.875rem;
+    overflow-y: auto;
+    flex: 1;
+    padding-right: 0.5rem;
+}
+
+.record-card-sidebar {
+    background: var(--bg-secondary);
+    border-radius: 10px;
+    padding: 0.875rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.record-card-sidebar:hover {
+    background: var(--primary-lighter);
+    transform: translateX(4px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.record-icon-sidebar {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: var(--primary);
+    color: var(--white);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.125rem;
+    flex-shrink: 0;
+}
+
+.record-info-sidebar h5 {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--dark);
+    margin: 0 0 0.25rem 0;
+}
+
+.record-info-sidebar p {
+    font-size: 0.75rem;
+    color: var(--gray);
+    margin: 0;
+}
+
+/* ===== CALENDAR SECTION IN SIDEBAR ===== */
+.calendar-section-sidebar {
+    padding: 1.5rem;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.calendar-controls-sidebar {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.calendar-controls-sidebar span {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--dark);
+}
+
+.calendar-grid-sidebar {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    margin-top: 1rem;
+    overflow-y: auto;
+}
+
+.upcoming-appointments-sidebar {
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+    border-top: 2px solid var(--gray-lighter);
+}
+
+.upcoming-appointments-sidebar h4 {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--dark);
+    margin-bottom: 1rem;
+}
+
+.appointments-list-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.appointment-item-sidebar {
+    background: var(--bg-secondary);
+    padding: 0.875rem;
+    border-radius: 10px;
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+    transition: all 0.2s;
+}
+
+.appointment-item-sidebar:hover {
+    background: var(--primary-lighter);
+    transform: translateX(4px);
+}
+
+.appointment-date-sidebar {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: var(--primary);
+    color: var(--white);
+    padding: 0.5rem 0.75rem;
+    border-radius: 10px;
+    min-width: 50px;
+}
+
+.appointment-date-sidebar .day {
+    font-size: 1.25rem;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.appointment-date-sidebar .month {
+    font-size: 0.7rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    margin-top: 0.25rem;
+}
+
+.appointment-info-sidebar {
+    flex: 1;
+    min-width: 0;
+}
+
+.appointment-info-sidebar h5 {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--dark);
+    margin: 0 0 0.25rem 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.appointment-info-sidebar p {
+    font-size: 0.75rem;
+    color: var(--gray);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.appointment-info-sidebar i {
+    font-size: 0.7rem;
 }
 
 /* ===== ACCOUNT SECTION ===== */

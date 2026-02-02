@@ -224,11 +224,17 @@
             </div>
         </main>
 
-        <!-- Right Sidebar - Reminders & Chat -->
+        <!-- Right Sidebar - Records, Calendar, Reminders & Chat -->
         <aside class="right-sidebar">
             <!-- Tab Navigation -->
             <div class="sidebar-tabs">
-                <button class="tab-btn active" onclick="switchRightTab('reminders')">
+                <button class="tab-btn active" onclick="switchRightTab('records')">
+                    <i class="fas fa-file-medical"></i> Records
+                </button>
+                <button class="tab-btn" onclick="switchRightTab('calendar')">
+                    <i class="fas fa-calendar-alt"></i> Calendar
+                </button>
+                <button class="tab-btn" onclick="switchRightTab('reminders')">
                     <i class="fas fa-bell"></i> Reminders
                 </button>
                 <button class="tab-btn" onclick="switchRightTab('chat')">
@@ -236,8 +242,62 @@
                 </button>
             </div>
 
+            <!-- Records Tab -->
+            <div id="records-tab" class="tab-content active">
+                <div class="records-section-sidebar">
+                    <div class="sidebar-section-header">
+                        <h3><i class="fas fa-file-medical"></i> Medical Records</h3>
+                        <button class="btn btn-primary-sm" onclick="showUploadModal()">
+                            <i class="fas fa-upload"></i> Upload
+                        </button>
+                    </div>
+                    <div id="recordsContainer" class="records-grid-sidebar">
+                        <div class="loading">Loading records...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Calendar Tab -->
+            <div id="calendar-tab" class="tab-content">
+                <div class="calendar-section-sidebar">
+                    <div class="sidebar-section-header">
+                        <h3><i class="fas fa-calendar-alt"></i> Appointments</h3>
+                        <div class="calendar-controls-sidebar">
+                            <button class="btn-icon-sm" onclick="previousMonth()">
+                                <i class="fas fa-chevron-left"></i>
+                            </button>
+                            <span id="currentMonthYear"></span>
+                            <button class="btn-icon-sm" onclick="nextMonth()">
+                                <i class="fas fa-chevron-right"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div id="calendar" class="calendar-grid-sidebar"></div>
+                    
+                    <div class="upcoming-appointments-sidebar">
+                        <h4>Upcoming Appointments</h4>
+                        <div id="calendarAppointments" class="appointments-list-sidebar">
+                            {% for appointment in appointments[:5] %}
+                            <div class="appointment-item-sidebar">
+                                <div class="appointment-date-sidebar">
+                                    <span class="day">{{ appointment.appointment_date.strftime('%d') }}</span>
+                                    <span class="month">{{ appointment.appointment_date.strftime('%b') }}</span>
+                                </div>
+                                <div class="appointment-info-sidebar">
+                                    <h5>{{ appointment.symptoms[:30] }}{% if appointment.symptoms|length > 30 %}...{% endif %}</h5>
+                                    <p><i class="fas fa-clock"></i> {% if appointment.appointment_time %}{{ appointment.appointment_time }}{% else %}Not set{% endif %}</p>
+                                </div>
+                                <span class="status-badge-sm status-{{ appointment.status }}">{{ appointment.status|title }}</span>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Reminders Tab -->
-            <div id="reminders-tab" class="tab-content active">
+            <div id="reminders-tab" class="tab-content">
                 <div class="reminders-section">
                     <div class="week-selector">
                         <span>Show:</span>

@@ -82,10 +82,6 @@
     <div class="quick-actions">
         <h2><i class="fas fa-bolt"></i> Quick Actions</h2>
         <div class="action-buttons">
-            <button class="action-btn" data-action="add-doctor">
-                <i class="fas fa-user-plus"></i>
-                <span>Add New Doctor</span>
-            </button>
             <button class="action-btn" data-action="view-reports">
                 <i class="fas fa-chart-bar"></i>
                 <span>View Reports</span>
@@ -386,9 +382,18 @@
             </div>
             <div class="modal-body">
                 <form id="editUserForm">
-                    <input type="hidden" id="edit_user_username" name="username">
+                    <input type="hidden" id="edit_user_original_username" name="original_username">
                     <div class="form-section">
                         <h4>User Information</h4>
+                        <div class="form-group">
+                            <label for="edit_user_username_display">Username</label>
+                            <input type="text" id="edit_user_username_display" name="username" readonly
+                                style="background-color: #f0f0f0; cursor: not-allowed;">
+                        </div>
+                        <div class="form-group">
+                            <label for="edit_user_fullname">Full Name</label>
+                            <input type="text" id="edit_user_fullname" name="fullname" placeholder="Enter full name">
+                        </div>
                         <div class="form-row">
                             <div class="form-group">
                                 <label for="edit_user_email">Email</label>
@@ -896,7 +901,7 @@
         if (editUserForm) {
             editUserForm.addEventListener('submit', function (e) {
                 e.preventDefault();
-                const username = document.getElementById('edit_user_username').value;
+                const username = document.getElementById('edit_user_original_username').value;
                 const formData = new FormData(this);
 
                 fetch(`/admin/update-user/${username}`, {
@@ -1061,7 +1066,10 @@
         const modal = document.getElementById('editUserModal');
         if (!modal) return;
 
-        document.getElementById('edit_user_username').value = button.dataset.username || '';
+        const username = button.dataset.username || '';
+        document.getElementById('edit_user_original_username').value = username;
+        document.getElementById('edit_user_username_display').value = username;
+        document.getElementById('edit_user_fullname').value = button.dataset.fullname || '';
         document.getElementById('edit_user_email').value = button.dataset.email || '';
         document.getElementById('edit_user_phone').value = button.dataset.phone || '';
         document.getElementById('edit_user_role').value = button.dataset.role || 'user';

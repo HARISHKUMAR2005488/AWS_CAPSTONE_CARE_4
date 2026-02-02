@@ -1716,6 +1716,8 @@ def admin_update_user(username):
         
         # Build update expression
         updates = {}
+        if request.form.get("fullname"):
+            updates["fullname"] = request.form.get("fullname").strip()
         if request.form.get("email"):
             updates["email"] = request.form.get("email").strip()
         if request.form.get("phone"):

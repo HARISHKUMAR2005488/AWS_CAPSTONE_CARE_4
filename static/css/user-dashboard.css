@@ -1906,6 +1906,8 @@ body {
     grid-template-columns: 1fr 1fr;
     gap: 2rem;
     height: calc(100vh - 180px);
+    align-items: start;
+    align-content: start;
 }
 
 .records-panel,
@@ -1917,6 +1919,7 @@ body {
     display: flex;
     flex-direction: column;
     overflow: hidden;
+    align-self: start;
 }
 
 .panel-header {

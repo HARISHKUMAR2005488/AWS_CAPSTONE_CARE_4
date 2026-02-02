@@ -226,54 +226,55 @@
                 </div>
             </div>
         </main>
+    </div>
 
-        <!-- Right Sidebar - Reminders (Collapsible) -->
-        <aside class="right-sidebar collapsed" id="rightSidebar">
-            <!-- Tab Navigation -->
-            <div class="sidebar-tabs">
-                <button class="tab-btn active" onclick="toggleRightSidebar()" title="Reminders">
-                    <i class="fas fa-bell"></i>
-                </button>
+    <!-- Floating Reminder Button -->
+    <button class="floating-reminder-btn" onclick="toggleReminderBox()" title="Reminders">
+        <i class="fas fa-bell"></i>
+    </button>
+
+    <!-- Floating Reminder Box -->
+    <div class="floating-reminder-box" id="floatingReminderBox" style="display: none;">
+        <div class="reminder-header-floating">
+            <h4><i class="fas fa-bell"></i> Reminders</h4>
+            <button class="btn-icon-reminder" onclick="toggleReminderBox()" title="Close">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="reminder-content-floating">
+            <div class="week-selector">
+                <span>Show:</span>
+                <select id="weekSelector">
+                    <option>This week</option>
+                    <option>This month</option>
+                    <option>All</option>
+                </select>
             </div>
 
-            <!-- Reminders Content -->
-            <div id="reminders-content" class="sidebar-content">
-                <div class="reminders-section">
-                    <div class="week-selector">
-                        <span>Show:</span>
-                        <select id="weekSelector">
-                            <option>This week</option>
-                            <option>This month</option>
-                            <option>All</option>
-                        </select>
-                    </div>
-
-                    <div class="progress-info">
-                        <p>{{ completed_tasks }} task completed out of {{ total_tasks }}</p>
-                        <div class="progress-bar">
-                            <div class="progress-fill" style="width: {% if total_tasks > 0 %}{{ (completed_tasks / total_tasks * 100)|int }}%{% else %}0%{% endif %}"></div>
-                        </div>
-                    </div>
-
-                    <div class="reminders-list">
-                        {% for appointment in appointments[:7] %}
-                        <div class="reminder-item {% if appointment.status == 'completed' %}completed{% endif %}">
-                            <div class="reminder-icon">
-                                <i class="fas fa-{% if 'drug' in appointment.symptoms.lower() %}pills{% elif 'test' in appointment.symptoms.lower() %}vial{% elif 'consultation' in appointment.symptoms.lower() %}user-md{% else %}calendar-check{% endif %}"></i>
-                            </div>
-                            <div class="reminder-content">
-                                <h4>{{ appointment.symptoms[:30] }}...</h4>
-                                <p>{% if appointment.appointment_time %}{{ appointment.appointment_time }}, {% endif %}{{ appointment.appointment_date.strftime('%d.%m.%Y') }}</p>
-                            </div>
-                            <a href="{{ url_for('my_appointments') }}" class="change-btn-sm">
-                                <i class="fas fa-pen"></i> Change
-                            </a>
-                        </div>
-                        {% endfor %}
-                    </div>
+            <div class="progress-info">
+                <p>{{ completed_tasks }} task completed out of {{ total_tasks }}</p>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: {% if total_tasks > 0 %}{{ (completed_tasks / total_tasks * 100)|int }}%{% else %}0%{% endif %}"></div>
                 </div>
             </div>
-        </aside>
+
+            <div class="reminders-list">
+                {% for appointment in appointments[:7] %}
+                <div class="reminder-item {% if appointment.status == 'completed' %}completed{% endif %}">
+                    <div class="reminder-icon">
+                        <i class="fas fa-{% if 'drug' in appointment.symptoms.lower() %}pills{% elif 'test' in appointment.symptoms.lower() %}vial{% elif 'consultation' in appointment.symptoms.lower() %}user-md{% else %}calendar-check{% endif %}"></i>
+                    </div>
+                    <div class="reminder-content">
+                        <h4>{{ appointment.symptoms[:30] }}...</h4>
+                        <p>{% if appointment.appointment_time %}{{ appointment.appointment_time }}, {% endif %}{{ appointment.appointment_date.strftime('%d.%m.%Y') }}</p>
+                    </div>
+                    <a href="{{ url_for('my_appointments') }}" class="change-btn-sm">
+                        <i class="fas fa-pen"></i> Change
+                    </a>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
     </div>
 
     <!-- Floating Chat Button -->

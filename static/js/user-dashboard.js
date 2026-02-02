@@ -7,10 +7,14 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeCalendarDashboard();
 });
 
-// Toggle Right Sidebar (Reminders)
-function toggleRightSidebar() {
-    const sidebar = document.getElementById('rightSidebar');
-    sidebar.classList.toggle('collapsed');
+// Toggle Floating Reminder Box
+function toggleReminderBox() {
+    const reminderBox = document.getElementById('floatingReminderBox');
+    if (reminderBox.style.display === 'none' || reminderBox.style.display === '') {
+        reminderBox.style.display = 'block';
+    } else {
+        reminderBox.style.display = 'none';
+    }
 }
 
 // Toggle Floating Chat Box

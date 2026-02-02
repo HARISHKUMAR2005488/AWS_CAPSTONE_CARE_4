@@ -206,10 +206,20 @@
 document.addEventListener('DOMContentLoaded', function() {
     const dateInput = document.getElementById('appointment_date');
     const timeSelect = document.getElementById('appointment_time');
+    const symptomsInput = document.getElementById('symptoms');
+    const selectedDateSpan = document.getElementById('selectedDate');
+    const selectedTimeSpan = document.getElementById('selectedTime');
+    const charCountSpan = document.getElementById('charCount');
     
-    // Fetch available slots when date changes
+    // Update summary date in real-time
     dateInput.addEventListener('change', function() {
         if (this.value) {
+            const date = new Date(this.value);
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            selectedDateSpan.textContent = date.toLocaleDateString('en-US', options);
+            selectedDateSpan.style.color = 'var(--dark)';
+            selectedDateSpan.style.fontWeight = '600';
+            
             const doctorId = {{ doctor.id }};
             fetch(`/api/available-slots/${doctorId}?date=${this.value}`)
                 .then(response => response.json())
@@ -228,6 +238,40 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 })
                 .catch(error => console.error('Error:', error));
+        } else {
+            selectedDateSpan.textContent = 'Not selected';
+            selectedDateSpan.style.color = 'var(--gray)';
+            selectedDateSpan.style.fontWeight = '400';
+        }
+    });
+    
+    // Update summary time in real-time
+    timeSelect.addEventListener('change', function() {
+        if (this.value) {
+            selectedTimeSpan.textContent = this.value;
+            selectedTimeSpan.style.color = 'var(--dark)';
+            selectedTimeSpan.style.fontWeight = '600';
+        } else {
+            selectedTimeSpan.textContent = 'Not selected';
+            selectedTimeSpan.style.color = 'var(--gray)';
+            selectedTimeSpan.style.fontWeight = '400';
+        }
+    });
+    
+    // Update character count for symptoms
+    symptomsInput.addEventListener('input', function() {
+        const count = this.value.length;
+        charCountSpan.textContent = count;
+        
+        if (count > 500) {
+            this.value = this.value.substring(0, 500);
+            charCountSpan.textContent = 500;
+        }
+        
+        if (count > 450) {
+            charCountSpan.parentElement.style.color = '#EF4444';
+        } else {
+            charCountSpan.parentElement.style.color = 'var(--gray)';
         }
     });
     

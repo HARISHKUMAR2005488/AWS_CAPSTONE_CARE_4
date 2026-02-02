@@ -443,6 +443,102 @@
     </div>
 </div>
 
+<!-- Edit Profile Modal -->
+<div id="editProfileModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3><i class="fas fa-user"></i> Edit Profile</h3>
+            <button class="close-modal" onclick="closeModal('editProfileModal')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form id="editProfileForm">
+                <div class="form-group">
+                    <label for="edit_name">Full Name</label>
+                    <input type="text" id="edit_name" name="name" value="{{ doctor.name }}" required>
+                </div>
+                <div class="form-group">
+                    <label for="edit_specialization">Specialization</label>
+                    <input type="text" id="edit_specialization" name="specialization" value="{{ doctor.specialization }}" required>
+                </div>
+                <div class="form-group">
+                    <label for="edit_qualifications">Qualifications</label>
+                    <textarea id="edit_qualifications" name="qualifications" rows="3" required>{{ doctor.qualifications }}</textarea>
+                </div>
+                <div class="form-group">
+                    <label for="edit_experience">Years of Experience</label>
+                    <input type="number" id="edit_experience" name="experience" value="{{ doctor.experience }}" required>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-outline" onclick="closeModal('editProfileModal')">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Save Changes
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Contact Modal -->
+<div id="editContactModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3><i class="fas fa-phone"></i> Edit Contact Information</h3>
+            <button class="close-modal" onclick="closeModal('editContactModal')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form id="editContactForm">
+                <div class="form-group">
+                    <label for="edit_email">Email Address</label>
+                    <input type="email" id="edit_email" name="email" value="{{ doctor.email }}" required>
+                </div>
+                <div class="form-group">
+                    <label for="edit_phone">Phone Number</label>
+                    <input type="tel" id="edit_phone" name="phone" value="{{ doctor.phone }}" required>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-outline" onclick="closeModal('editContactModal')">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Save Changes
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Change Password Modal -->
+<div id="changePasswordModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3><i class="fas fa-key"></i> Change Password</h3>
+            <button class="close-modal" onclick="closeModal('changePasswordModal')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form id="changePasswordForm">
+                <div class="form-group">
+                    <label for="current_password">Current Password</label>
+                    <input type="password" id="current_password" name="current_password" required>
+                </div>
+                <div class="form-group">
+                    <label for="new_password">New Password</label>
+                    <input type="password" id="new_password" name="new_password" minlength="6" required>
+                </div>
+                <div class="form-group">
+                    <label for="confirm_password">Confirm New Password</label>
+                    <input type="password" id="confirm_password" name="confirm_password" minlength="6" required>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-outline" onclick="closeModal('changePasswordModal')">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-key"></i> Change Password
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <script>
 function showDashboardView(event) {
     event.preventDefault();
@@ -486,19 +582,128 @@ function setActiveNav(element) {
 }
 
 function showEditScheduleModal() {
-    alert('Edit Schedule feature - UI representation only');
+    document.getElementById('editScheduleModal').style.display = 'flex';
 }
 
 function showEditProfileModal() {
-    alert('Edit Profile feature - UI representation only');
+    document.getElementById('editProfileModal').style.display = 'flex';
 }
 
 function showEditContactModal() {
-    alert('Edit Contact feature - UI representation only');
+    document.getElementById('editContactModal').style.display = 'flex';
 }
 
 function showChangePasswordModal() {
-    alert('Change Password feature - UI representation only');
+    document.getElementById('changePasswordModal').style.display = 'flex';
 }
+
+function closeModal(modalId) {
+    document.getElementById(modalId).style.display = 'none';
+}
+
+// Close modal when clicking outside
+window.onclick = function(event) {
+    if (event.target.classList.contains('modal')) {
+        event.target.style.display = 'none';
+    }
+}
+
+// Handle Edit Profile Form
+document.addEventListener('DOMContentLoaded', function() {
+    const editProfileForm = document.getElementById('editProfileForm');
+    if (editProfileForm) {
+        editProfileForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            
+            fetch('/doctor/update-profile', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Profile updated successfully!');
+                    closeModal('editProfileModal');
+                    location.reload();
+                } else {
+                    alert('Error: ' + (data.message || 'Failed to update profile'));
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred. Please try again.');
+            });
+        });
+    }
+
+    // Handle Edit Contact Form
+    const editContactForm = document.getElementById('editContactForm');
+    if (editContactForm) {
+        editContactForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            
+            fetch('/doctor/update-contact', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Contact information updated successfully!');
+                    closeModal('editContactModal');
+                    location.reload();
+                } else {
+                    alert('Error: ' + (data.message || 'Failed to update contact information'));
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred. Please try again.');
+            });
+        });
+    }
+
+    // Handle Change Password Form
+    const changePasswordForm = document.getElementById('changePasswordForm');
+    if (changePasswordForm) {
+        changePasswordForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const newPassword = document.getElementById('new_password').value;
+            const confirmPassword = document.getElementById('confirm_password').value;
+            
+            if (newPassword !== confirmPassword) {
+                alert('New passwords do not match!');
+                return;
+            }
+            
+            const formData = new FormData(this);
+            
+            fetch('/doctor/change-password', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Password changed successfully!');
+                    closeModal('changePasswordModal');
+                    this.reset();
+                } else {
+                    alert('Error: ' + (data.message || 'Failed to change password'));
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred. Please try again.');
+            });
+        });
+    }
+});
+
 </script>
 {% endblock %}

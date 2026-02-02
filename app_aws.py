@@ -1685,6 +1685,192 @@ def admin_update_appointment(appointment_id: str):
         return jsonify({"success": False, "message": "An error occurred"}), 500
 
 
+# ===== DOCTOR PROFILE MANAGEMENT ROUTES =====
+
+@app.route("/doctor/update-profile", methods=["POST"])
+def doctor_update_profile():
+    """Update doctor profile information (name, specialization, qualifications, experience)"""
+    if "username" not in session or session.get("role") != "doctor":
+        return jsonify({"success": False, "message": "Unauthorized"}), 401
+    
+    try:
+        doctor_username = session["username"]
+        
+        # Get form data
+        name = request.form.get("name", "").strip()
+        specialization = request.form.get("specialization", "").strip()
+        qualifications = request.form.get("qualifications", "").strip()
+        experience = request.form.get("experience", "").strip()
+        
+        # Validate required fields
+        if not name or not specialization:
+            return jsonify({"success": False, "message": "Name and specialization are required"}), 400
+        
+        # Build update expression
+        update_expr = "SET #name = :name, #spec = :spec"
+        expr_names = {
+            "#name": "name",
+            "#spec": "specialization"
+        }
+        expr_values = {
+            ":name": name,
+            ":spec": specialization
+        }
+        
+        # Add optional fields if provided
+        if qualifications:
+            update_expr += ", qualifications = :qual"
+            expr_values[":qual"] = qualifications
+        
+        if experience:
+            update_expr += ", experience = :exp"
+            expr_values[":exp"] = experience
+        
+        # Update doctor record in database
+        doctors_table.update_item(
+            Key={"id": doctor_username},
+            UpdateExpression=update_expr,
+            ExpressionAttributeNames=expr_names,
+            ExpressionAttributeValues=expr_values
+        )
+        
+        logger.info(f"Doctor {doctor_username} updated profile successfully")
+        
+        return jsonify({
+            "success": True,
+            "message": "Profile updated successfully"
+        })
+    
+    except ClientError as exc:
+        logger.error(f"ClientError updating doctor profile: {exc}")
+        return jsonify({"success": False, "message": "Database error"}), 500
+    except Exception as exc:
+        logger.error(f"Exception updating doctor profile: {exc}", exc_info=True)
+        return jsonify({"success": False, "message": "An error occurred"}), 500
+
+
+@app.route("/doctor/update-contact", methods=["POST"])
+def doctor_update_contact():
+    """Update doctor contact information (email, phone)"""
+    if "username" not in session or session.get("role") != "doctor":
+        return jsonify({"success": False, "message": "Unauthorized"}), 401
+    
+    try:
+        doctor_username = session["username"]
+        
+        # Get form data
+        email = request.form.get("email", "").strip()
+        phone = request.form.get("phone", "").strip()
+        
+        # Validate at least one field is provided
+        if not email and not phone:
+            return jsonify({"success": False, "message": "At least one contact field is required"}), 400
+        
+        # Build update expression
+        update_parts = []
+        expr_values = {}
+        
+        if email:
+            update_parts.append("email = :email")
+            expr_values[":email"] = email
+        
+        if phone:
+            update_parts.append("phone = :phone")
+            expr_values[":phone"] = phone
+        
+        update_expr = "SET " + ", ".join(update_parts)
+        
+        # Update doctor record in database
+        doctors_table.update_item(
+            Key={"id": doctor_username},
+            UpdateExpression=update_expr,
+            ExpressionAttributeValues=expr_values
+        )
+        
+        # Update session if email was changed
+        if email:
+            session["email"] = email
+        if phone:
+            session["phone"] = phone
+        
+        logger.info(f"Doctor {doctor_username} updated contact info successfully")
+        
+        return jsonify({
+            "success": True,
+            "message": "Contact information updated successfully"
+        })
+    
+    except ClientError as exc:
+        logger.error(f"ClientError updating doctor contact: {exc}")
+        return jsonify({"success": False, "message": "Database error"}), 500
+    except Exception as exc:
+        logger.error(f"Exception updating doctor contact: {exc}", exc_info=True)
+        return jsonify({"success": False, "message": "An error occurred"}), 500
+
+
+@app.route("/doctor/change-password", methods=["POST"])
+def doctor_change_password():
+    """Change doctor password"""
+    if "username" not in session or session.get("role") != "doctor":
+        return jsonify({"success": False, "message": "Unauthorized"}), 401
+    
+    try:
+        doctor_username = session["username"]
+        
+        # Get form data
+        current_password = request.form.get("currentPassword", "").strip()
+        new_password = request.form.get("newPassword", "").strip()
+        confirm_password = request.form.get("confirmPassword", "").strip()
+        
+        # Validate required fields
+        if not current_password or not new_password or not confirm_password:
+            return jsonify({"success": False, "message": "All password fields are required"}), 400
+        
+        # Validate new password matches confirmation
+        if new_password != confirm_password:
+            return jsonify({"success": False, "message": "New passwords do not match"}), 400
+        
+        # Validate password length
+        if len(new_password) < 6:
+            return jsonify({"success": False, "message": "Password must be at least 6 characters long"}), 400
+        
+        # Get current doctor record
+        doctor_resp = doctors_table.get_item(Key={"id": doctor_username})
+        doctor = doctor_resp.get("Item")
+        
+        if not doctor:
+            return jsonify({"success": False, "message": "Doctor not found"}), 404
+        
+        # Verify current password
+        stored_password = doctor.get("password", "")
+        if not check_password_hash(stored_password, current_password):
+            return jsonify({"success": False, "message": "Current password is incorrect"}), 400
+        
+        # Hash new password
+        new_password_hash = generate_password_hash(new_password)
+        
+        # Update password in database
+        doctors_table.update_item(
+            Key={"id": doctor_username},
+            UpdateExpression="SET password = :password",
+            ExpressionAttributeValues={":password": new_password_hash}
+        )
+        
+        logger.info(f"Doctor {doctor_username} changed password successfully")
+        
+        return jsonify({
+            "success": True,
+            "message": "Password changed successfully"
+        })
+    
+    except ClientError as exc:
+        logger.error(f"ClientError changing doctor password: {exc}")
+        return jsonify({"success": False, "message": "Database error"}), 500
+    except Exception as exc:
+        logger.error(f"Exception changing doctor password: {exc}", exc_info=True)
+        return jsonify({"success": False, "message": "An error occurred"}), 500
+
+
 # ===== ADMIN USER MANAGEMENT ROUTES =====
 
 @app.route("/admin/add-user", methods=["POST"])

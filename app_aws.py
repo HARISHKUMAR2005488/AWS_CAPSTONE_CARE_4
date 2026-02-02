@@ -177,7 +177,7 @@ def dashboard():
     appts = aws.get_appointments_for_patient(username)
     return render_template("user.html", username=username, appointments=appts, feedback_dict={})
 
-@app.route("/doctors")
+@app.route("/doctors", endpoint="doctors")
 def doctors_list():
     if "username" not in session: return redirect(url_for("login"))
     docs = aws.get_all_doctors()

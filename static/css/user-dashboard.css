@@ -478,6 +478,167 @@ body {
     background: var(--white);
 }
 
+/* ===== RECORDS CARD IN DASHBOARD ===== */
+.records-card-dashboard {
+    grid-column: 1 / -1;
+}
+
+.records-grid-dashboard {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 1rem;
+    max-height: 300px;
+    overflow-y: auto;
+    padding-right: 0.5rem;
+}
+
+.record-card-dashboard {
+    background: var(--bg-secondary);
+    border-radius: 10px;
+    padding: 1rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.record-card-dashboard:hover {
+    background: var(--primary-lighter);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.record-icon-dashboard {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: var(--primary);
+    color: var(--white);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.125rem;
+    flex-shrink: 0;
+}
+
+.record-info-dashboard h5 {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--dark);
+    margin: 0 0 0.25rem 0;
+}
+
+.record-info-dashboard p {
+    font-size: 0.75rem;
+    color: var(--gray);
+    margin: 0;
+}
+
+/* ===== CALENDAR CARD IN DASHBOARD ===== */
+.calendar-card-dashboard {
+    grid-column: 1 / -1;
+}
+
+.calendar-controls-dashboard {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.calendar-controls-dashboard span {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--dark);
+}
+
+.calendar-grid-dashboard {
+    margin: 1rem 0;
+    min-height: 250px;
+}
+
+.upcoming-appointments-dashboard {
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+    border-top: 2px solid var(--gray-lighter);
+}
+
+.upcoming-appointments-dashboard h4 {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--dark);
+    margin-bottom: 1rem;
+}
+
+.appointments-list-dashboard {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.appointment-item-dashboard {
+    background: var(--bg-secondary);
+    padding: 0.875rem;
+    border-radius: 10px;
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+    transition: all 0.2s;
+}
+
+.appointment-item-dashboard:hover {
+    background: var(--primary-lighter);
+    transform: translateX(4px);
+}
+
+.appointment-date-dashboard {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: var(--primary);
+    color: var(--white);
+    padding: 0.5rem 0.75rem;
+    border-radius: 10px;
+    min-width: 50px;
+}
+
+.appointment-date-dashboard .day {
+    font-size: 1.25rem;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.appointment-date-dashboard .month {
+    font-size: 0.7rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    margin-top: 0.25rem;
+}
+
+.appointment-info-dashboard {
+    flex: 1;
+    min-width: 0;
+}
+
+.appointment-info-dashboard h5 {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--dark);
+    margin: 0 0 0.25rem 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.appointment-info-dashboard p {
+    font-size: 0.75rem;
+    color: var(--gray);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
 /* ===== RIGHT SIDEBAR - REMINDERS ===== */
 .right-sidebar {
     background: #F8F9FC;

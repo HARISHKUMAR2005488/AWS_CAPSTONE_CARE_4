@@ -180,44 +180,50 @@
                     </div>
                 </div>
 
-                <!-- Medical Services Section -->
-                <div class="card medical-services">
-                    <div class="services-grid">
-                        <div class="service-item" onclick="showDiagnostic()">
-                            <div class="service-icon">
-                                <i class="fas fa-clipboard-list"></i>
-                            </div>
-                            <div class="service-content">
-                                <h4>Diagnostic</h4>
-                                <p>List of diseases</p>
-                            </div>
-                            <button class="add-btn">
-                                <i class="fas fa-plus"></i>
+                <!-- Medical Records Section -->
+                <div class="card records-card-dashboard">
+                    <div class="card-header">
+                        <h3><i class="fas fa-file-medical"></i> Medical Records</h3>
+                        <button class="change-btn" onclick="showUploadModal()">
+                            <i class="fas fa-upload"></i> Upload
+                        </button>
+                    </div>
+                    <div id="recordsContainerDashboard" class="records-grid-dashboard">
+                        <div class="loading">Loading records...</div>
+                    </div>
+                </div>
+
+                <!-- Calendar Section -->
+                <div class="card calendar-card-dashboard">
+                    <div class="card-header">
+                        <h3><i class="fas fa-calendar-alt"></i> Appointments Calendar</h3>
+                        <div class="calendar-controls-dashboard">
+                            <button class="btn-icon-sm" onclick="previousMonth()">
+                                <i class="fas fa-chevron-left"></i>
+                            </button>
+                            <span id="currentMonthYearDashboard"></span>
+                            <button class="btn-icon-sm" onclick="nextMonth()">
+                                <i class="fas fa-chevron-right"></i>
                             </button>
                         </div>
-                        <div class="service-item" onclick="showDrugs()">
-                            <div class="service-icon">
-                                <i class="fas fa-pills"></i>
+                    </div>
+                    <div id="calendarDashboard" class="calendar-grid-dashboard"></div>
+                    <div class="upcoming-appointments-dashboard">
+                        <h4>Upcoming Appointments</h4>
+                        <div class="appointments-list-dashboard">
+                            {% for appointment in appointments[:3] %}
+                            <div class="appointment-item-dashboard">
+                                <div class="appointment-date-dashboard">
+                                    <span class="day">{{ appointment.appointment_date.strftime('%d') }}</span>
+                                    <span class="month">{{ appointment.appointment_date.strftime('%b') }}</span>
+                                </div>
+                                <div class="appointment-info-dashboard">
+                                    <h5>{{ appointment.symptoms[:30] }}{% if appointment.symptoms|length > 30 %}...{% endif %}</h5>
+                                    <p><i class="fas fa-clock"></i> {% if appointment.appointment_time %}{{ appointment.appointment_time }}{% else %}Not set{% endif %}</p>
+                                </div>
+                                <span class="status-badge-sm status-{{ appointment.status }}">{{ appointment.status|title }}</span>
                             </div>
-                            <div class="service-content">
-                                <h4>Drugs</h4>
-                                <p>Archive of tests</p>
-                            </div>
-                            <button class="add-btn">
-                                <i class="fas fa-plus"></i>
-                            </button>
-                        </div>
-                        <div class="service-item" onclick="showTests()">
-                            <div class="service-icon">
-                                <i class="fas fa-file-medical-alt"></i>
-                            </div>
-                            <div class="service-content">
-                                <h4>Tests</h4>
-                                <p>Prescribed medicine</p>
-                            </div>
-                            <button class="add-btn">
-                                <i class="fas fa-plus"></i>
-                            </button>
+                            {% endfor %}
                         </div>
                     </div>
                 </div>
@@ -302,65 +308,6 @@
                 </div>
             </div>
         </aside>
-    </div>
-
-    <!-- Records & Calendar Combined Section (Hidden by default) -->
-    <div id="recordsCalendarSection" class="content-section" style="display: none;">
-        <div class="section-header">
-            <h2><i class="fas fa-file-medical"></i> Medical Records & Calendar</h2>
-        </div>
-        
-        <div class="records-calendar-container">
-            <!-- Left Side - Medical Records -->
-            <div class="records-panel">
-                <div class="panel-header">
-                    <h3><i class="fas fa-file-medical"></i> Medical Records</h3>
-                    <button class="btn btn-primary" onclick="showUploadModal()">
-                        <i class="fas fa-upload"></i> Upload
-                    </button>
-                </div>
-                <div id="recordsContainerMain" class="records-grid-compact">
-                    <div class="loading">Loading records...</div>
-                </div>
-            </div>
-            
-            <!-- Right Side - Calendar -->
-            <div class="calendar-panel">
-                <div class="panel-header">
-                    <h3><i class="fas fa-calendar-alt"></i> Appointments Calendar</h3>
-                    <div class="calendar-controls-compact">
-                        <button class="btn-icon-sm" onclick="previousMonth()">
-                            <i class="fas fa-chevron-left"></i>
-                        </button>
-                        <span id="currentMonthYear"></span>
-                        <button class="btn-icon-sm" onclick="nextMonth()">
-                            <i class="fas fa-chevron-right"></i>
-                        </button>
-                    </div>
-                </div>
-                
-                <div id="calendar" class="calendar-grid-compact"></div>
-                
-                <div class="upcoming-appointments-compact">
-                    <h4>Upcoming Appointments</h4>
-                    <div id="calendarAppointments" class="appointments-list-compact">
-                        {% for appointment in appointments[:5] %}
-                        <div class="appointment-item-compact">
-                            <div class="appointment-date-compact">
-                                <span class="day">{{ appointment.appointment_date.strftime('%d') }}</span>
-                                <span class="month">{{ appointment.appointment_date.strftime('%b') }}</span>
-                            </div>
-                            <div class="appointment-info-compact">
-                                <h5>{{ appointment.symptoms[:35] }}{% if appointment.symptoms|length > 35 %}...{% endif %}</h5>
-                                <p><i class="fas fa-clock"></i> {% if appointment.appointment_time %}{{ appointment.appointment_time }}{% else %}Not set{% endif %}</p>
-                            </div>
-                            <span class="status-badge-sm status-{{ appointment.status }}">{{ appointment.status|title }}</span>
-                        </div>
-                        {% endfor %}
-                    </div>
-                </div>
-            </div>
-        </div>
     </div>
 
     <!-- Account Section (Hidden by default) -->

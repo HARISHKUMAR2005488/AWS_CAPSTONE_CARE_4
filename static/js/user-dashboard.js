@@ -3,6 +3,8 @@
 // Load health data on page load
 document.addEventListener('DOMContentLoaded', function() {
     loadHealthData();
+    loadMedicalRecordsDashboard();
+    initializeCalendarDashboard();
 });
 
 // Right Sidebar Tab Switching
@@ -27,29 +29,29 @@ function showDashboardSection(event) {
 
 function showRecordsSection(event) {
     if (event) event.preventDefault();
+    // Just stay on dashboard, records are already visible
     hideAllSections();
-    document.getElementById('recordsCalendarSection').style.display = 'block';
+    document.querySelector('.dashboard-layout main').style.display = 'block';
+    document.querySelector('.right-sidebar').style.display = 'block';
     setActiveNav('nav-records-calendar');
-    loadMedicalRecords();
-    initializeCalendar();
 }
 
 function showRecordsCalendarSection(event) {
     if (event) event.preventDefault();
+    // Just stay on dashboard, records and calendar are already visible
     hideAllSections();
-    document.getElementById('recordsCalendarSection').style.display = 'block';
+    document.querySelector('.dashboard-layout main').style.display = 'block';
+    document.querySelector('.right-sidebar').style.display = 'block';
     setActiveNav('nav-records-calendar');
-    loadMedicalRecords();
-    initializeCalendar();
 }
 
 function showCalendarSection(event) {
     if (event) event.preventDefault();
+    // Just stay on dashboard, calendar is already visible
     hideAllSections();
-    document.getElementById('recordsCalendarSection').style.display = 'block';
+    document.querySelector('.dashboard-layout main').style.display = 'block';
+    document.querySelector('.right-sidebar').style.display = 'block';
     setActiveNav('nav-records-calendar');
-    loadMedicalRecords();
-    initializeCalendar();
 }
 
 function showAccountSection(event) {
@@ -69,7 +71,6 @@ function showHelpCenter(event) {
 function hideAllSections() {
     document.querySelector('.dashboard-layout main').style.display = 'none';
     document.querySelector('.right-sidebar').style.display = 'none';
-    document.getElementById('recordsCalendarSection').style.display = 'none';
     document.getElementById('accountSection').style.display = 'none';
     document.getElementById('helpSection').style.display = 'none';
 }
@@ -148,9 +149,9 @@ document.getElementById('healthInfoForm')?.addEventListener('submit', function(e
 });
 
 // Medical Records Functions
-function loadMedicalRecords() {
-    const container = document.getElementById('recordsContainerMain');
-    if (!container) return; // Exit if container not found
+function loadMedicalRecordsDashboard() {
+    const container = document.getElementById('recordsContainerDashboard');
+    if (!container) return;
     
     container.innerHTML = '<div class="loading">Loading records...</div>';
     
@@ -159,17 +160,14 @@ function loadMedicalRecords() {
         .then(data => {
             if (data.success && data.records && data.records.length > 0) {
                 container.innerHTML = data.records.map(record => `
-                    <div class="record-card-compact">
-                        <div class="record-icon-compact">
+                    <div class="record-card-dashboard">
+                        <div class="record-icon-dashboard">
                             <i class="fas fa-file-${record.file_type === 'pdf' ? 'pdf' : 'image'}"></i>
                         </div>
-                        <div class="record-info-compact">
+                        <div class="record-info-dashboard">
                             <h5>${record.description || 'Medical Document'}</h5>
                             <p><i class="fas fa-calendar"></i> ${new Date(record.upload_date).toLocaleDateString()}</p>
                         </div>
-                        <button class="btn-icon-sm" onclick="viewRecord('${record.id}')" title="View">
-                            <i class="fas fa-eye"></i>
-                        </button>
                     </div>
                 `).join('');
             } else {
@@ -211,7 +209,7 @@ document.getElementById('uploadForm')?.addEventListener('submit', function(e) {
         if (data.success) {
             alert('Document uploaded successfully!');
             closeUploadModal();
-            loadMedicalRecords();
+            loadMedicalRecordsDashboard();
         } else {
             alert('Error uploading document: ' + data.message);
         }
@@ -324,38 +322,40 @@ function clearChat() {
     }
 }
 
-// Calendar Functions
-let currentMonth = new Date().getMonth();
-let currentYear = new Date().getFullYear();
-let appointmentsData = [];
+// Dashboard Calendar Functions
+let currentMonthDashboard = new Date().getMonth();
+let currentYearDashboard = new Date().getFullYear();
+let appointmentsDataDashboard = [];
 
-function initializeCalendar() {
-    fetchAppointments();
+function initializeCalendarDashboard() {
+    fetchAppointmentsDashboard();
 }
 
-function fetchAppointments() {
+function fetchAppointmentsDashboard() {
     fetch('/api/appointments')
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                appointmentsData = data.appointments;
-                renderCalendar();
+                appointmentsDataDashboard = data.appointments;
+                renderCalendarDashboard();
             }
         })
         .catch(error => console.error('Error fetching appointments:', error));
 }
 
-function renderCalendar() {
-    const calendar = document.getElementById('calendar');
-    const monthYear = document.getElementById('currentMonthYear');
+function renderCalendarDashboard() {
+    const calendar = document.getElementById('calendarDashboard');
+    const monthYear = document.getElementById('currentMonthYearDashboard');
+    
+    if (!calendar || !monthYear) return;
     
     const months = ['January', 'February', 'March', 'April', 'May', 'June',
                     'July', 'August', 'September', 'October', 'November', 'December'];
     
-    monthYear.textContent = `${months[currentMonth]} ${currentYear}`;
+    monthYear.textContent = `${months[currentMonthDashboard]} ${currentYearDashboard}`;
     
-    const firstDay = new Date(currentYear, currentMonth, 1).getDay();
-    const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+    const firstDay = new Date(currentYearDashboard, currentMonthDashboard, 1).getDay();
+    const daysInMonth = new Date(currentYearDashboard, currentMonthDashboard + 1, 0).getDate();
     
     let html = '<div class="calendar-header-days">';
     ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].forEach(day => {
@@ -371,11 +371,11 @@ function renderCalendar() {
     // Days of the month
     const today = new Date();
     for (let day = 1; day <= daysInMonth; day++) {
-        const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-        const appointmentsOnDay = appointmentsData.filter(apt => apt.appointment_date === dateStr);
+        const dateStr = `${currentYearDashboard}-${String(currentMonthDashboard + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        const appointmentsOnDay = appointmentsDataDashboard.filter(apt => apt.appointment_date === dateStr);
         const hasAppointment = appointmentsOnDay.length > 0;
-        const isToday = today.getFullYear() === currentYear && 
-                       today.getMonth() === currentMonth && 
+        const isToday = today.getFullYear() === currentYearDashboard && 
+                       today.getMonth() === currentMonthDashboard && 
                        today.getDate() === day;
         
         let classes = 'calendar-day';
@@ -390,36 +390,6 @@ function renderCalendar() {
     
     html += '</div>';
     calendar.innerHTML = html;
-}
-
-function previousMonth() {
-    currentMonth--;
-    if (currentMonth < 0) {
-        currentMonth = 11;
-        currentYear--;
-    }
-    renderCalendar();
-}
-
-function nextMonth() {
-    currentMonth++;
-    if (currentMonth > 11) {
-        currentMonth = 0;
-        currentYear++;
-    }
-    renderCalendar();
-}
-
-function showDayAppointments(dateStr) {
-    const dayAppointments = appointmentsData.filter(apt => apt.appointment_date === dateStr);
-    
-    if (dayAppointments.length > 0) {
-        let message = `Appointments on ${dateStr}:\n\n`;
-        dayAppointments.forEach(apt => {
-            message += `• ${apt.symptoms} at ${apt.appointment_time || 'N/A'}\n`;
-        });
-        alert(message);
-    }
 }
 
 // Service functions

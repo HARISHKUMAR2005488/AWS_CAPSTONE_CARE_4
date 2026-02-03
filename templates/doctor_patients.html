@@ -543,81 +543,10 @@ function renderPatientDetails(container, data) {
                 </div>
             {% endif %}
         </div>
-    {% else %}
-        <!-- Patients List -->
-        <div class="appointments-section">
-            <div class="section-header">
-                <h2><i class="fas fa-list"></i> Patient List</h2>
-                <div class="patient-count-badge">
-                    <i class="fas fa-user-injured"></i>
-                    <span>{{ patient_data|length }} Patient{% if patient_data|length != 1 %}s{% endif %}</span>
-                </div>
-            </div>
-            
-            {% if patient_data %}
-                <div class="appointments-table">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Patient Name</th>
-                                <th>Email</th>
-                                <th>Phone</th>
-                                <th>Total Appointments</th>
-                                <th>Last Appointment</th>
-                                <th>Medical Records</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for data in patient_data %}
-                                <tr>
-                                    <td>
-                                        <div class="patient-cell">
-                                            <i class="fas fa-user-circle"></i>
-                                            <strong>{{ data.patient.username }}</strong>
-                                        </div>
-                                    </td>
-                                    <td>{{ data.patient.email }}</td>
-                                    <td>{{ data.patient.phone or 'N/A' }}</td>
-                                    <td>
-                                        <span class="badge">{{ data.total_appointments }}</span>
-                                    </td>
-                                    <td>
-                                        {% if data.last_appointment %}
-                                            {{ data.last_appointment.strftime('%b %d, %Y') }}
-                                        {% else %}
-                                            N/A
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        <span class="badge {% if data.medical_records_count > 0 %}badge-success{% else %}badge-secondary{% endif %}">
-                                            {{ data.medical_records_count }} 
-                                            {% if data.medical_records_count == 1 %}
-                                                document
-                                            {% else %}
-                                                documents
-                                            {% endif %}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <a href="{{ url_for('doctor_view_patient_records', patient_id=data.patient.id) }}" 
-                                           class="btn btn-primary btn-sm">
-                                            <i class="fas fa-folder-open"></i> View Records
-                                        </a>
-                                    </td>
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            {% else %}
-                <div class="no-data">
-                    <i class="fas fa-users-slash"></i>
-                    <p>No patients found. Patients will appear here once they book appointments with you.</p>
-                </div>
-            {% endif %}
-        </div>
-    {% endif %}
-</div>
+    `;
+    
+    container.innerHTML = html;
+}
+</script>
 
 {% endblock %}

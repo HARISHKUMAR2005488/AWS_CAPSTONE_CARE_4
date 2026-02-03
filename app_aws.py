@@ -1383,14 +1383,24 @@ def doctors():
     # Ensure defaults for template fields and build ratings wrapper
     doctors_with_ratings = []
     seen_ids = set()  # Track unique doctor IDs to prevent duplicates
+    seen_names = set()  # Track unique doctor names to prevent duplicates
     
     for d in filtered_doctors:
         doctor_id = d.get("id")
+        doctor_name = d.get("name", "").lower()
         
-        # Skip if we've already added this doctor
-        if doctor_id in seen_ids:
+        # Skip if we've already added this doctor (by ID or name)
+        if doctor_id and doctor_id in seen_ids:
             continue
+        if doctor_name and doctor_name in seen_names:
+            continue
+        
+        # Skip entries without proper ID or name
+        if not doctor_id or not doctor_name:
+            continue
+            
         seen_ids.add(doctor_id)
+        seen_names.add(doctor_name)
         
         d.setdefault("qualifications", "")
         d.setdefault("experience", 0)

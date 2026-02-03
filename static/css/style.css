@@ -110,6 +110,7 @@ body {
     background: var(--white);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    overflow-x: hidden;
 }
 
 /* ===== TYPOGRAPHY ===== */
@@ -389,6 +390,7 @@ main {
     grid-template-columns: repeat(4, 1fr);
     gap: var(--spacing-xl);
     margin-bottom: var(--spacing-3xl);
+    width: 100%;
 }
 
 .stat-card {
@@ -960,6 +962,8 @@ tbody tr:nth-child(even) {
     max-width: 1600px;
     margin: 0 auto;
     padding: var(--spacing-lg);
+    width: 100%;
+    overflow-x: hidden;
 }
 
 .recent-section {

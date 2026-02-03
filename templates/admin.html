@@ -12,67 +12,69 @@
 
     <!-- Admin Profile Card -->
     <div class="admin-profile-card">
-        <div class="profile-section">
-            <div class="profile-avatar">
-                {% if current_user.profile_picture %}
-                <img src="{{ url_for('serve_profile_picture', filename=current_user.profile_picture.split('/')[-1]) }}"
-                    alt="{{ current_user.username }}">
-                {% else %}
-                <i class="fas fa-user-shield"></i>
-                {% endif %}
-                <button class="btn-upload-profile" onclick="document.getElementById('adminProfilePictureInput').click()"
-                    title="Upload Profile Picture">
-                    <i class="fas fa-camera"></i>
-                </button>
-            </div>
-            <input type="file" id="adminProfilePictureInput" accept="image/*" style="display: none;"
-                onchange="uploadAdminProfilePicture()">
-            <div class="profile-info">
-                <h3>{{ current_user.username }}</h3>
-                <p>{{ current_user.email }}</p>
-                <p class="admin-role">Administrator</p>
-            </div>
-        </div>
-        
-        <!-- Stats Cards inside Profile -->
-        <div class="stats-cards">
-            <div class="stat-card">
-                <div class="stat-icon patients">
-                    <i class="fas fa-users"></i>
+        <div class="admin-profile-wrapper">
+            <div class="profile-section">
+                <div class="profile-avatar">
+                    {% if current_user.profile_picture %}
+                    <img src="{{ url_for('serve_profile_picture', filename=current_user.profile_picture.split('/')[-1]) }}"
+                        alt="{{ current_user.username }}">
+                    {% else %}
+                    <i class="fas fa-user-shield"></i>
+                    {% endif %}
+                    <button class="btn-upload-profile" onclick="document.getElementById('adminProfilePictureInput').click()"
+                        title="Upload Profile Picture">
+                        <i class="fas fa-camera"></i>
+                    </button>
                 </div>
-                <div class="stat-info">
-                    <h3>{{ total_patients }}</h3>
-                    <p>Total Patients</p>
+                <input type="file" id="adminProfilePictureInput" accept="image/*" style="display: none;"
+                    onchange="uploadAdminProfilePicture()">
+                <div class="profile-info">
+                    <h3>{{ current_user.username }}</h3>
+                    <p>{{ current_user.email }}</p>
+                    <p class="admin-role">Administrator</p>
                 </div>
             </div>
+            
+            <!-- Stats Cards inside Profile -->
+            <div class="stats-cards">
+                <div class="stat-card">
+                    <div class="stat-icon patients">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3>{{ total_patients }}</h3>
+                        <p>Total Patients</p>
+                    </div>
+                </div>
 
-            <div class="stat-card">
-                <div class="stat-icon doctors">
-                    <i class="fas fa-user-md"></i>
+                <div class="stat-card">
+                    <div class="stat-icon doctors">
+                        <i class="fas fa-user-md"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3>{{ total_doctors }}</h3>
+                        <p>Active Doctors</p>
+                    </div>
                 </div>
-                <div class="stat-info">
-                    <h3>{{ total_doctors }}</h3>
-                    <p>Active Doctors</p>
-                </div>
-            </div>
 
-            <div class="stat-card">
-                <div class="stat-icon appointments">
-                    <i class="fas fa-calendar-check"></i>
+                <div class="stat-card">
+                    <div class="stat-icon appointments">
+                        <i class="fas fa-calendar-check"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3>{{ total_appointments }}</h3>
+                        <p>Total Appointments</p>
+                    </div>
                 </div>
-                <div class="stat-info">
-                    <h3>{{ total_appointments }}</h3>
-                    <p>Total Appointments</p>
-                </div>
-            </div>
 
-            <div class="stat-card">
-                <div class="stat-icon pending">
-                    <i class="fas fa-clock"></i>
-                </div>
-                <div class="stat-info">
-                    <h3>{{ pending_appointments }}</h3>
-                    <p>Pending Approvals</p>
+                <div class="stat-card">
+                    <div class="stat-icon pending">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3>{{ pending_appointments }}</h3>
+                        <p>Pending Approvals</p>
+                    </div>
                 </div>
             </div>
         </div>

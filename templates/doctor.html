@@ -452,30 +452,70 @@
         </div>
         <div class="modal-body">
             <form id="editScheduleForm">
+                <!-- Available Days Section -->
                 <div class="form-group">
-                    <label for="available_days">Available Days (comma-separated)</label>
-                    <input type="text" id="available_days" name="available_days" 
-                           value="{{ doctor.available_days }}" 
-                           placeholder="e.g., Monday, Tuesday, Wednesday, Thursday, Friday, Saturday"
-                           required>
-                    <small>Enter days separated by commas (e.g., Monday,Tuesday,Wednesday)</small>
+                    <label class="form-label-bold"><i class="fas fa-calendar-check"></i> Available Days</label>
+                    <div class="days-checkbox-grid">
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="day_monday" name="days" value="Monday">
+                            <label for="day_monday">Monday</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="day_tuesday" name="days" value="Tuesday">
+                            <label for="day_tuesday">Tuesday</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="day_wednesday" name="days" value="Wednesday">
+                            <label for="day_wednesday">Wednesday</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="day_thursday" name="days" value="Thursday">
+                            <label for="day_thursday">Thursday</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="day_friday" name="days" value="Friday">
+                            <label for="day_friday">Friday</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="day_saturday" name="days" value="Saturday">
+                            <label for="day_saturday">Saturday</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="day_sunday" name="days" value="Sunday">
+                            <label for="day_sunday">Sunday</label>
+                        </div>
+                    </div>
+                    <small>Select the days you are available</small>
                 </div>
+
+                <!-- Available Time Section -->
                 <div class="form-group">
-                    <label for="available_time">Available Time (Hours)</label>
-                    <input type="text" id="available_time" name="available_time" 
-                           value="{{ doctor.available_time }}" 
-                           placeholder="e.g., 09:00-17:00"
-                           required>
-                    <small>Format: HH:MM-HH:MM (e.g., 09:00-17:00)</small>
+                    <label class="form-label-bold"><i class="fas fa-clock"></i> Available Hours</label>
+                    <div class="time-range-container">
+                        <div class="time-input-group">
+                            <label for="start_time">From</label>
+                            <input type="time" id="start_time" name="start_time" required>
+                        </div>
+                        <span class="time-separator">to</span>
+                        <div class="time-input-group">
+                            <label for="end_time">To</label>
+                            <input type="time" id="end_time" name="end_time" required>
+                        </div>
+                    </div>
+                    <small>Select your available time range</small>
                 </div>
+
+                <!-- Consultation Fee Section -->
                 <div class="form-group">
-                    <label for="consultation_fee">Consultation Fee ($)</label>
+                    <label for="consultation_fee"><i class="fas fa-dollar-sign"></i> Consultation Fee ($)</label>
                     <input type="number" id="consultation_fee" name="consultation_fee" 
                            value="{{ doctor.consultation_fee }}" 
                            step="0.01" min="0"
                            placeholder="e.g., 50.00"
                            required>
+                    <small>Enter the consultation fee per appointment</small>
                 </div>
+
                 <div class="modal-actions">
                     <button type="button" class="btn btn-outline" onclick="closeModal('editScheduleModal')">Cancel</button>
                     <button type="submit" class="btn btn-primary">
@@ -654,13 +694,88 @@ window.onclick = function(event) {
 
 // Handle Edit Schedule Form
 document.addEventListener('DOMContentLoaded', function() {
+    // Parse existing schedule to populate checkboxes and time inputs
+    const populateScheduleForm = function() {
+        const availableDaysStr = "{{ doctor.available_days }}";
+        const availableTimeStr = "{{ doctor.available_time }}";
+        
+        // Parse days and check corresponding checkboxes
+        if (availableDaysStr) {
+            const days = availableDaysStr.split(',').map(d => d.trim());
+            days.forEach(day => {
+                const checkbox = document.getElementById(`day_${day.toLowerCase()}`);
+                if (checkbox) {
+                    checkbox.checked = true;
+                }
+            });
+        }
+        
+        // Parse time range (HH:MM-HH:MM format) and populate time inputs
+        if (availableTimeStr && availableTimeStr.includes('-')) {
+            const [startTime, endTime] = availableTimeStr.split('-').map(t => t.trim());
+            const startInput = document.getElementById('start_time');
+            const endInput = document.getElementById('end_time');
+            
+            if (startTime && startInput) {
+                startInput.value = startTime;
+            }
+            if (endTime && endInput) {
+                endInput.value = endTime;
+            }
+        }
+    };
+    
+    // Call on page load
+    populateScheduleForm();
+    
+    // Handle form submission
     const editScheduleForm = document.getElementById('editScheduleForm');
     if (editScheduleForm) {
         editScheduleForm.addEventListener('submit', function(e) {
             e.preventDefault();
             
-            const formData = new FormData(this);
+            // Get checked days
+            const dayCheckboxes = document.querySelectorAll('input[name="days"]:checked');
+            if (dayCheckboxes.length === 0) {
+                alert('Please select at least one day');
+                return;
+            }
             
+            const availableDays = Array.from(dayCheckboxes)
+                .map(checkbox => checkbox.value)
+                .join(',');
+            
+            // Get time range
+            const startTime = document.getElementById('start_time').value;
+            const endTime = document.getElementById('end_time').value;
+            
+            if (!startTime || !endTime) {
+                alert('Please select both start and end time');
+                return;
+            }
+            
+            if (startTime >= endTime) {
+                alert('End time must be after start time');
+                return;
+            }
+            
+            const availableTime = `${startTime}-${endTime}`;
+            
+            // Get consultation fee
+            const consultationFee = document.getElementById('consultation_fee').value;
+            
+            if (!consultationFee || parseFloat(consultationFee) < 0) {
+                alert('Please enter a valid consultation fee');
+                return;
+            }
+            
+            // Create form data
+            const formData = new FormData();
+            formData.append('available_days', availableDays);
+            formData.append('available_time', availableTime);
+            formData.append('consultation_fee', consultationFee);
+            
+            // Send request
             fetch('/doctor/update-schedule', {
                 method: 'POST',
                 body: formData

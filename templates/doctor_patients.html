@@ -1,93 +1,215 @@
 {% extends "base.html" %}
 
-{% block title %}My Patients - Care_4_U Hospitals{% endblock %}
+{% block title %}{% if selected_patient %}Patient Records - {{ selected_patient.username }}{% else %}My Patients{% endif %} - Care_4_U Hospitals{% endblock %}
 
 {% block content %}
 <div class="doctor-container">
     <!-- Page Header -->
     <div class="dashboard-header">
         <div class="header-content">
-            <h1><i class="fas fa-users"></i> My Patients</h1>
-            <p class="welcome-message">View and manage your patients' medical records</p>
+            {% if selected_patient %}
+                <h1><i class="fas fa-folder-medical"></i> Patient Medical Records</h1>
+                <p class="welcome-message">Complete medical history and appointment records for {{ selected_patient.username }}</p>
+            {% else %}
+                <h1><i class="fas fa-users"></i> My Patients</h1>
+                <p class="welcome-message">View and manage your patients' medical records</p>
+            {% endif %}
         </div>
-        <a href="{{ url_for('doctor_dashboard') }}" class="btn btn-back">
-            <i class="fas fa-arrow-left"></i> Back to Dashboard
-        </a>
-    </div>
-    
-    <!-- Patients List -->
-    <div class="appointments-section">
-        <div class="section-header">
-            <h2><i class="fas fa-list"></i> Patient List</h2>
-            <div class="patient-count-badge">
-                <i class="fas fa-user-injured"></i>
-                <span>{{ patient_data|length }} Patient{% if patient_data|length != 1 %}s{% endif %}</span>
-            </div>
-        </div>
-        
-        {% if patient_data %}
-            <div class="appointments-table">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Patient Name</th>
-                            <th>Email</th>
-                            <th>Phone</th>
-                            <th>Total Appointments</th>
-                            <th>Last Appointment</th>
-                            <th>Medical Records</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for data in patient_data %}
-                            <tr>
-                                <td>
-                                    <div class="patient-cell">
-                                        <i class="fas fa-user-circle"></i>
-                                        <strong>{{ data.patient.username }}</strong>
-                                    </div>
-                                </td>
-                                <td>{{ data.patient.email }}</td>
-                                <td>{{ data.patient.phone or 'N/A' }}</td>
-                                <td>
-                                    <span class="badge">{{ data.total_appointments }}</span>
-                                </td>
-                                <td>
-                                    {% if data.last_appointment %}
-                                        {{ data.last_appointment.strftime('%b %d, %Y') }}
-                                    {% else %}
-                                        N/A
-                                    {% endif %}
-                                </td>
-                                <td>
-                                    <span class="badge {% if data.medical_records_count > 0 %}badge-success{% else %}badge-secondary{% endif %}">
-                                        {{ data.medical_records_count }} 
-                                        {% if data.medical_records_count == 1 %}
-                                            document
-                                        {% else %}
-                                            documents
-                                        {% endif %}
-                                    </span>
-                                </td>
-                                <td>
-                                    <a href="{{ url_for('doctor_view_patient_records', patient_id=data.patient.id) }}" 
-                                       class="btn btn-primary btn-sm">
-                                        <i class="fas fa-folder-open"></i> View Records
-                                    </a>
-                                </td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
+        {% if selected_patient %}
+            <a href="{{ url_for('doctor_patients') }}" class="btn btn-back">
+                <i class="fas fa-arrow-left"></i> Back to All Patients
+            </a>
         {% else %}
-            <div class="no-data">
-                <i class="fas fa-users-slash"></i>
-                <p>No patients found. Patients will appear here once they book appointments with you.</p>
-            </div>
+            <a href="{{ url_for('doctor_dashboard') }}" class="btn btn-back">
+                <i class="fas fa-arrow-left"></i> Back to Dashboard
+            </a>
         {% endif %}
     </div>
+    
+    {% if selected_patient %}
+        <!-- Patient Information Card -->
+        <div class="patient-info-card">
+            <div class="info-header">
+                <div class="patient-avatar">
+                    <i class="fas fa-user-circle"></i>
+                </div>
+                <div class="patient-details">
+                    <h2>{{ selected_patient.username }}</h2>
+                    <div class="detail-grid">
+                        <div class="detail-item">
+                            <i class="fas fa-envelope"></i>
+                            <span>{{ selected_patient.email }}</span>
+                        </div>
+                        {% if selected_patient.phone %}
+                        <div class="detail-item">
+                            <i class="fas fa-phone"></i>
+                            <span>{{ selected_patient.phone }}</span>
+                        </div>
+                        {% endif %}
+                        {% if selected_patient.date_of_birth %}
+                        <div class="detail-item">
+                            <i class="fas fa-birthday-cake"></i>
+                            <span>DOB: {{ selected_patient.date_of_birth.strftime('%B %d, %Y') }}</span>
+                        </div>
+                        {% endif %}
+                        {% if selected_patient.address %}
+                        <div class="detail-item">
+                            <i class="fas fa-map-marker-alt"></i>
+                            <span>{{ selected_patient.address }}</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            <div class="info-stats">
+                <div class="stat-box">
+                    <div class="stat-icon">
+                        <i class="fas fa-calendar-check"></i>
+                    </div>
+                    <h3>{{ patient_appointments|length if patient_appointments else 0 }}</h3>
+                    <p>Total Appointments</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Appointment History Section -->
+        <div class="appointments-section">
+            <div class="section-header">
+                <h2><i class="fas fa-history"></i> Appointment History</h2>
+                <div class="appointment-count-badge">
+                    <i class="fas fa-calendar-alt"></i>
+                    <span>{{ patient_appointments|length if patient_appointments else 0 }} Appointment{% if patient_appointments and patient_appointments|length != 1 %}s{% endif %}</span>
+                </div>
+            </div>
+
+            {% if patient_appointments %}
+                <div class="appointments-table">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Date & Time</th>
+                                <th>Symptoms</th>
+                                <th>Status</th>
+                                <th>Notes/Prescription</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for appointment in patient_appointments %}
+                                <tr>
+                                    <td>#{{ appointment.id[:8] }}</td>
+                                    <td>
+                                        <div class="datetime-cell">
+                                            <span class="date">{{ appointment.appointment_date.strftime('%b %d, %Y') if appointment.appointment_date else 'N/A' }}</span>
+                                            <span class="time">{{ appointment.appointment_time }}</span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        {% if appointment.symptoms %}
+                                            <span class="symptoms-text">{{ appointment.symptoms[:100] }}{% if appointment.symptoms|length > 100 %}...{% endif %}</span>
+                                        {% else %}
+                                            <em class="text-muted">None</em>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="status-badge {{ appointment.status }}">
+                                            {{ 'Approved' if appointment.status == 'confirmed' else appointment.status|title }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% if appointment.notes %}
+                                            <div class="notes-preview">{{ appointment.notes[:100] }}{% if appointment.notes|length > 100 %}...{% endif %}</div>
+                                        {% else %}
+                                            <em class="text-muted">No notes</em>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="no-data">
+                    <i class="fas fa-calendar-times"></i>
+                    <p>No appointment history found.</p>
+                </div>
+            {% endif %}
+        </div>
+    {% else %}
+        <!-- Patients List -->
+        <div class="appointments-section">
+            <div class="section-header">
+                <h2><i class="fas fa-list"></i> Patient List</h2>
+                <div class="patient-count-badge">
+                    <i class="fas fa-user-injured"></i>
+                    <span>{{ patient_data|length }} Patient{% if patient_data|length != 1 %}s{% endif %}</span>
+                </div>
+            </div>
+            
+            {% if patient_data %}
+                <div class="appointments-table">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Patient Name</th>
+                                <th>Email</th>
+                                <th>Phone</th>
+                                <th>Total Appointments</th>
+                                <th>Last Appointment</th>
+                                <th>Medical Records</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for data in patient_data %}
+                                <tr>
+                                    <td>
+                                        <div class="patient-cell">
+                                            <i class="fas fa-user-circle"></i>
+                                            <strong>{{ data.patient.username }}</strong>
+                                        </div>
+                                    </td>
+                                    <td>{{ data.patient.email }}</td>
+                                    <td>{{ data.patient.phone or 'N/A' }}</td>
+                                    <td>
+                                        <span class="badge">{{ data.total_appointments }}</span>
+                                    </td>
+                                    <td>
+                                        {% if data.last_appointment %}
+                                            {{ data.last_appointment.strftime('%b %d, %Y') }}
+                                        {% else %}
+                                            N/A
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="badge {% if data.medical_records_count > 0 %}badge-success{% else %}badge-secondary{% endif %}">
+                                            {{ data.medical_records_count }} 
+                                            {% if data.medical_records_count == 1 %}
+                                                document
+                                            {% else %}
+                                                documents
+                                            {% endif %}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <a href="{{ url_for('doctor_view_patient_records', patient_id=data.patient.id) }}" 
+                                           class="btn btn-primary btn-sm">
+                                            <i class="fas fa-folder-open"></i> View Records
+                                        </a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="no-data">
+                    <i class="fas fa-users-slash"></i>
+                    <p>No patients found. Patients will appear here once they book appointments with you.</p>
+                </div>
+            {% endif %}
+        </div>
+    {% endif %}
 </div>
 
 {% endblock %}

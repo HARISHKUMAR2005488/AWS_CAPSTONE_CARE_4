@@ -731,6 +731,23 @@ def dashboard():
         users_resp = users_table.scan()
         appts_resp = appointments_table.scan()
         
+        doctors_items = doctors_resp.get("Items", [])
+        users_items = users_resp.get("Items", [])
+        appts_items = appts_resp.get("Items", [])
+        
+        total_doctors = len(doctors_items)
+        total_appointments = len(appts_items)
+        pending_appointments = sum(
+            1
+            for appt in appts_items
+            if (appt.get("status") or "pending").lower() == "pending"
+        )
+        total_patients = sum(
+            1
+            for user in users_items
+            if (user.get("role") or user.get("user_type") or "user").lower() in {"user", "patient"}
+        )
+        
         # Get all appointments and normalize them
         from datetime import datetime as dt_class, date as date_class
         all_appointments = []
@@ -765,10 +782,14 @@ def dashboard():
         return render_template(
             "admin.html",
             username=username,
-            doctors=doctors_resp.get("Items", []),
-            users=users_resp.get("Items", []),
+            doctors=doctors_items,
+            users=users_items,
             recent_appointments=upcoming_appointments[:10],
             upcoming_appointments=upcoming_appointments,
+            total_patients=total_patients,
+            total_doctors=total_doctors,
+            total_appointments=total_appointments,
+            pending_appointments=pending_appointments,
         )
 
     if role == "doctor":

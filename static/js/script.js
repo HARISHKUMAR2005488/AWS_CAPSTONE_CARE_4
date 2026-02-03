@@ -419,8 +419,13 @@ async function fetchAvailableSlots(doctorId, date) {
 }
 
 async function updateAppointmentStatus(appointmentId, status) {
+    console.log(`[updateAppointmentStatus] Starting - ID: ${appointmentId}, Status: ${status}`);
+    
     try {
-        const response = await fetch(`/doctor/update-appointment/${appointmentId}`, {
+        const url = `/doctor/update-appointment/${appointmentId}`;
+        console.log(`[updateAppointmentStatus] Fetching: ${url}`);
+        
+        const response = await fetch(url, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
@@ -428,40 +433,55 @@ async function updateAppointmentStatus(appointmentId, status) {
             body: `status=${status}`
         });
         
+        console.log(`[updateAppointmentStatus] Response status: ${response.status}`);
+        
+        if (!response.ok) {
+            console.error(`[updateAppointmentStatus] HTTP error: ${response.status} ${response.statusText}`);
+        }
+        
         const result = await response.json();
+        console.log('[updateAppointmentStatus] Result:', result);
         
         if (result.success) {
-            // Show success message
+            console.log('[updateAppointmentStatus] Success!');
             alert(`Appointment ${status === 'confirmed' ? 'approved' : 'rejected'} successfully!`);
-            // Reload the page to update the display
             window.location.reload();
         } else {
+            console.error('[updateAppointmentStatus] Failed:', result.message);
             alert(`Error: ${result.message}`);
         }
         
         return result;
     } catch (error) {
-        console.error('Error updating appointment:', error);
-        alert('Network error occurred. Please try again.');
+        console.error('[updateAppointmentStatus] Exception:', error);
+        alert('Network error occurred. Please try again.\n\nCheck the browser console for details.');
         return { success: false, message: 'Network error' };
     }
 }
 
 // Appointment approval handler
 function approveAppointment(appointmentId, patientName, appointmentDate, appointmentTime) {
+    console.log(`[approveAppointment] Called - ID: ${appointmentId}, Patient: ${patientName}`);
     const confirmMsg = `Approve appointment for ${patientName} on ${appointmentDate} at ${appointmentTime}?`;
+    
     if (confirm(confirmMsg)) {
-        console.log(`Approving appointment ${appointmentId}`);
+        console.log(`[approveAppointment] User confirmed, calling updateAppointmentStatus`);
         updateAppointmentStatus(appointmentId, 'confirmed');
+    } else {
+        console.log('[approveAppointment] User cancelled');
     }
 }
 
 // Appointment rejection handler
 function rejectAppointment(appointmentId, patientName) {
+    console.log(`[rejectAppointment] Called - ID: ${appointmentId}, Patient: ${patientName}`);
     const confirmMsg = `Reject appointment request from ${patientName}?`;
+    
     if (confirm(confirmMsg)) {
-        console.log(`Rejecting appointment ${appointmentId}`);
+        console.log(`[rejectAppointment] User confirmed, calling updateAppointmentStatus`);
         updateAppointmentStatus(appointmentId, 'cancelled');
+    } else {
+        console.log('[rejectAppointment] User cancelled');
     }
 }
 

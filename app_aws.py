@@ -1586,11 +1586,20 @@ def cancel_appointment(appointment_id: str):
 def update_appointment_status(appointment_id: str):
     """Update appointment status (confirm, cancel, complete)"""
     if "username" not in session:
-        return jsonify({"success": False, "message": "Unauthorized"}), 401
+        return jsonify({"success": False, "message": "Unauthorized - Please login"}), 401
 
     try:
         doctor_username = session["username"]
         logger.info(f"Doctor {doctor_username} attempting to update appointment {appointment_id}")
+        
+        # Get the logged-in user's doctor_id
+        user_item = get_user(doctor_username)
+        if not user_item:
+            logger.error(f"User not found: {doctor_username}")
+            return jsonify({"success": False, "message": "User not found"}), 404
+            
+        logged_in_doctor_id = user_item.get("doctor_id")
+        logger.info(f"Logged-in doctor - username: {doctor_username}, doctor_id: {logged_in_doctor_id}")
         
         # Get appointment details
         appointment = appointments_table.get_item(Key={"id": appointment_id}).get("Item")
@@ -1599,29 +1608,25 @@ def update_appointment_status(appointment_id: str):
             return jsonify({"success": False, "message": "Appointment not found"}), 404
 
         appointment_doctor_id = appointment.get("doctor_id")
-        logger.info(f"Appointment found - doctor_id in appointment: {appointment_doctor_id}, session doctor: {doctor_username}")
+        appointment_doctor_username = appointment.get("doctor_username")
+        logger.info(f"Appointment - doctor_id: {appointment_doctor_id}, doctor_username: {appointment_doctor_username}")
         
-        # Check if the doctor_id is a UUID (old format) - if so, look up the doctor to get username
-        if appointment_doctor_id and len(appointment_doctor_id) == 36 and "-" in appointment_doctor_id:
-            logger.info(f"Found UUID doctor_id in appointment, looking up doctor...")
-            doctor_record = doctors_table.get_item(Key={"id": appointment_doctor_id}).get("Item")
-            if doctor_record:
-                doctor_username_from_id = doctor_record.get("username")
-                logger.info(f"Found doctor username from ID: {doctor_username_from_id}")
-                if doctor_username_from_id == doctor_username:
-                    # Update the appointment to use username instead of UUID for future queries
-                    appointments_table.update_item(
-                        Key={"id": appointment_id},
-                        UpdateExpression="SET doctor_id = :new_doctor_id",
-                        ExpressionAttributeValues={":new_doctor_id": doctor_username},
-                    )
-                    logger.info(f"Updated appointment doctor_id from UUID to username: {doctor_username}")
-                    appointment_doctor_id = doctor_username
+        # Verify this appointment is for this doctor (check both UUID and username)
+        is_authorized = False
         
-        # Verify this appointment is for this doctor
-        if appointment_doctor_id != doctor_username:
-            logger.error(f"Doctor {doctor_username} not authorized for appointment {appointment_id}. Appointment doctor_id: {appointment_doctor_id}")
-            return jsonify({"success": False, "message": "Unauthorized - this appointment is not for you"}), 403
+        # Check if appointment doctor_id matches logged-in doctor's doctor_id (UUID match)
+        if logged_in_doctor_id and appointment_doctor_id == logged_in_doctor_id:
+            is_authorized = True
+            logger.info("Authorization: UUID match")
+        # Check if appointment doctor_id or doctor_username matches logged-in username
+        elif appointment_doctor_id == doctor_username or appointment_doctor_username == doctor_username:
+            is_authorized = True
+            logger.info("Authorization: Username match")
+        
+        if not is_authorized:
+            logger.error(f"Doctor {doctor_username} (ID: {logged_in_doctor_id}) not authorized for appointment {appointment_id}")
+            logger.error(f"Appointment doctor_id: {appointment_doctor_id}, doctor_username: {appointment_doctor_username}")
+            return jsonify({"success": False, "message": "Unauthorized - This appointment is not assigned to you"}), 403
 
         # Get the new status from request
         status = request.form.get("status", "").strip()

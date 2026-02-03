@@ -665,8 +665,10 @@
             <!-- Appointment Requests View -->
             <div class="content-view requests-view" id="requestsView" style="display: none;">
                 <div class="section-header">
-                    <h2><i class="fas fa-clock"></i> Appointment Requests</h2>
-                    <p class="subtitle">Review and approve pending appointment requests</p>
+                    <div>
+                        <h2><i class="fas fa-clock"></i> Appointment Requests</h2>
+                        <p class="subtitle">Review and approve pending appointment requests</p>
+                    </div>
                 </div>
                 {% if pending_count > 0 %}
                     <div class="requests-container">
@@ -754,8 +756,10 @@
 
                 <!-- Completed Appointments Section -->
                 <div class="section-header" style="margin-top: 3rem;">
-                    <h2><i class="fas fa-check-circle"></i> Completed Appointments</h2>
-                    <p class="subtitle">View your completed consultations</p>
+                    <div>
+                        <h2><i class="fas fa-check-circle"></i> Completed Appointments</h2>
+                        <p class="subtitle">View your completed consultations</p>
+                    </div>
                 </div>
                 {% set completed_appointments = [] %}
                 {% for appt in appointments %}

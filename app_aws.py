@@ -975,7 +975,7 @@ app.add_url_rule("/user-dashboard", "user_dashboard", dashboard)
 app.add_url_rule("/admin-dashboard", "admin_dashboard", dashboard)
 app.add_url_rule("/doctor-dashboard", "doctor_dashboard", dashboard)
 
-@app.route("/doctor-patients")
+@app.route("/doctor-patients", endpoint="doctor_patients")
 def doctor_patients():
     """View all patients and their records for a doctor"""
     if "username" not in session or session.get("role") != "doctor":

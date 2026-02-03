@@ -466,7 +466,6 @@ main {
     position: relative;
     overflow: hidden;
 }
-}
 
 .stat-card::before {
     content: '';
@@ -879,13 +878,6 @@ tbody tr:nth-child(even) {
 .status-badge.admin {
     background: linear-gradient(135deg, var(--danger) 0%, var(--danger-dark) 100%);
     color: var(--white);
-}
-    border-radius: var(--border-radius-md);
-    font-size: var(--font-size-xs);
-    font-weight: var(--font-weight-medium);
-    background: var(--primary-light);
-    color: var(--primary-dark);
-    letter-spacing: -0.2px;
 }
 
 .badge-success {
@@ -1307,13 +1299,6 @@ tbody tr:nth-child(even) {
 .action-btn:hover i {
     transform: scale(1.1);
 }
-    color: var(--primary);
-    transition: all var(--transition-base);
-}
-
-.action-btn:hover i {
-    transform: scale(1.1);
-}
 
 .action-btn span {
     font-weight: var(--font-weight-medium);
@@ -1456,9 +1441,6 @@ tbody tr:nth-child(even) {
     font-weight: 600;
     letter-spacing: 0.5px;
     margin-top: 0.5rem;
-}
-    font-weight: var(--font-weight-medium);
-    margin-top: var(--spacing-xs);
 }
 
 /* ===== NO DATA STATE ===== */
@@ -1698,7 +1680,6 @@ main {
     .section-header h2 {
         font-size: var(--font-size-lg);
     }
-}
 
     /* Dashboard Header Responsive */
     .dashboard-header {
@@ -8757,7 +8738,7 @@ body {
 }
 
 .search-group select {
-    flex: 1;
+    flex: 1.5;
     min-width: 0;
     padding: var(--spacing-md) var(--spacing-lg);
     border: 2px solid var(--gray-lighter);

@@ -443,6 +443,9 @@ def upload_document():
         file_type = filename.rsplit(".", 1)[1].lower() if "." in filename else "unknown"
 
         record_id = str(uuid.uuid4())
+        # Store relative path from instance directory for portability
+        relative_path = os.path.join("uploads", username, safe_name)
+        
         medical_records_table.put_item(
             Item={
                 "id": record_id,
@@ -451,6 +454,7 @@ def upload_document():
                 "username": username,  # Keep for backwards compatibility
                 "filename": safe_name,
                 "original_filename": filename,
+                "file_path": relative_path,  # Add file path for downloads
                 "description": description,
                 "file_type": file_type,
                 "file_size": file_size,
@@ -1187,11 +1191,16 @@ def doctor_download_record(record_id: str):
             flash("You don't have access to this patient's records", "danger")
             return redirect(url_for("doctor_dashboard"))
         
-        # Get file path from record
+        # Get file path from record - try multiple sources
         file_path = record.get("file_path")
+        
+        # If file_path doesn't exist (old records), reconstruct from filename and username
         if not file_path:
-            flash("File path not found in record", "danger")
-            return redirect(url_for("doctor_dashboard"))
+            filename_in_db = record.get("filename")
+            if not filename_in_db:
+                flash("Cannot determine file location", "danger")
+                return redirect(url_for("doctor_dashboard"))
+            file_path = os.path.join("uploads", patient_username, filename_in_db)
         
         # Construct full path to file
         if file_path.startswith('/'):

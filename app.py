@@ -386,7 +386,7 @@ def admin_dashboard():
     ).limit(10).all()
     doctors = Doctor.query.order_by(Doctor.created_at.desc()).all()
     
-    return render_template('admin.html',
+    return render_template('admin_new.html',
                          total_patients=total_patients,
                          total_doctors=total_doctors,
                          total_appointments=total_appointments,

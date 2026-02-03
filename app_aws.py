@@ -763,7 +763,7 @@ def dashboard():
         upcoming_appointments.sort(key=lambda x: (x.get("appointment_date") or date.today(), x.get("appointment_time") or ""))
         
         return render_template(
-            "admin.html",
+            "admin_new.html",
             username=username,
             doctors=doctors_resp.get("Items", []),
             users=users_resp.get("Items", []),

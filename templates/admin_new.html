@@ -1,0 +1,741 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard - Care_4_U Hospitals{% endblock %}
+
+{% block styles %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin-dashboard.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="admin-dashboard">
+    <!-- Top Header Bar -->
+    <header class="admin-header">
+        <div class="header-left">
+            <div class="logo-section">
+                <i class="fas fa-hospital-user"></i>
+                <h1>Care_4_U Hospitals</h1>
+            </div>
+        </div>
+        <div class="header-right">
+            <div class="header-controls">
+                <button class="icon-btn" title="Notifications">
+                    <i class="fas fa-bell"></i>
+                    <span class="notification-badge">3</span>
+                </button>
+                <div class="profile-dropdown">
+                    <button class="icon-btn" onclick="toggleProfileMenu()">
+                        <i class="fas fa-user-circle"></i>
+                    </button>
+                    <div class="dropdown-menu" id="profileMenu">
+                        <div class="dropdown-header">
+                            <strong>{{ current_user.username }}</strong>
+                            <small>Administrator</small>
+                        </div>
+                        <hr>
+                        <a href="#" class="dropdown-item">
+                            <i class="fas fa-cog"></i> Profile Settings
+                        </a>
+                        <a href="{{ url_for('logout') }}" class="dropdown-item text-danger">
+                            <i class="fas fa-sign-out-alt"></i> Logout
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="admin-body">
+        <!-- Left Sidebar Navigation -->
+        <aside class="admin-sidebar">
+            <nav class="sidebar-nav">
+                <div class="nav-section">
+                    <h4 class="nav-title">Dashboard</h4>
+                    <a href="#overview" class="nav-item active" onclick="switchSection('overview', event)">
+                        <i class="fas fa-chart-line"></i>
+                        <span>Overview</span>
+                    </a>
+                </div>
+
+                <div class="nav-section">
+                    <h4 class="nav-title">Management</h4>
+                    <a href="#doctors" class="nav-item" onclick="switchSection('doctors', event)">
+                        <i class="fas fa-user-md"></i>
+                        <span>Doctors</span>
+                        <span class="badge">{{ total_doctors }}</span>
+                    </a>
+                    <a href="#patients" class="nav-item" onclick="switchSection('patients', event)">
+                        <i class="fas fa-users"></i>
+                        <span>Patients</span>
+                        <span class="badge">{{ total_patients }}</span>
+                    </a>
+                    <a href="#appointments" class="nav-item" onclick="switchSection('appointments', event)">
+                        <i class="fas fa-calendar-check"></i>
+                        <span>Appointments</span>
+                        <span class="badge-warning">{{ pending_appointments }}</span>
+                    </a>
+                </div>
+
+                <div class="nav-section">
+                    <h4 class="nav-title">Operations</h4>
+                    <a href="#departments" class="nav-item" onclick="switchSection('departments', event)">
+                        <i class="fas fa-building"></i>
+                        <span>Departments</span>
+                    </a>
+                    <a href="#schedules" class="nav-item" onclick="switchSection('schedules', event)">
+                        <i class="fas fa-clock"></i>
+                        <span>Schedules</span>
+                    </a>
+                </div>
+
+                <div class="nav-section">
+                    <h4 class="nav-title">Analytics</h4>
+                    <a href="#reports" class="nav-item" onclick="switchSection('reports', event)">
+                        <i class="fas fa-chart-bar"></i>
+                        <span>Reports</span>
+                    </a>
+                </div>
+
+                <div class="nav-section">
+                    <h4 class="nav-title">System</h4>
+                    <a href="#settings" class="nav-item" onclick="switchSection('settings', event)">
+                        <i class="fas fa-cog"></i>
+                        <span>Settings</span>
+                    </a>
+                </div>
+            </nav>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="admin-main">
+            <!-- Overview Section -->
+            <section class="content-section" id="overview-section" style="display: block;">
+                <div class="section-header">
+                    <h2>Dashboard Overview</h2>
+                    <p class="section-subtitle">System metrics and key performance indicators</p>
+                </div>
+
+                <!-- System Overview Cards -->
+                <div class="metrics-grid">
+                    <div class="metric-card metric-primary">
+                        <div class="metric-icon">
+                            <i class="fas fa-user-md"></i>
+                        </div>
+                        <div class="metric-content">
+                            <h4 class="metric-label">Total Doctors</h4>
+                            <p class="metric-value">{{ total_doctors }}</p>
+                            <small class="metric-subtitle">Active medical professionals</small>
+                        </div>
+                        <div class="metric-indicator positive">↑ 12%</div>
+                    </div>
+
+                    <div class="metric-card metric-secondary">
+                        <div class="metric-icon">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <div class="metric-content">
+                            <h4 class="metric-label">Total Patients</h4>
+                            <p class="metric-value">{{ total_patients }}</p>
+                            <small class="metric-subtitle">Registered patients</small>
+                        </div>
+                        <div class="metric-indicator positive">↑ 8%</div>
+                    </div>
+
+                    <div class="metric-card metric-accent">
+                        <div class="metric-icon">
+                            <i class="fas fa-calendar-check"></i>
+                        </div>
+                        <div class="metric-content">
+                            <h4 class="metric-label">Today's Appointments</h4>
+                            <p class="metric-value">{{ total_appointments }}</p>
+                            <small class="metric-subtitle">Scheduled for today</small>
+                        </div>
+                        <div class="metric-indicator">→ 0%</div>
+                    </div>
+
+                    <div class="metric-card metric-warning">
+                        <div class="metric-icon">
+                            <i class="fas fa-hourglass-half"></i>
+                        </div>
+                        <div class="metric-content">
+                            <h4 class="metric-label">Pending Approvals</h4>
+                            <p class="metric-value">{{ pending_appointments }}</p>
+                            <small class="metric-subtitle">Awaiting confirmation</small>
+                        </div>
+                        <div class="metric-indicator negative">Action needed</div>
+                    </div>
+
+                    <div class="metric-card metric-success">
+                        <div class="metric-icon">
+                            <i class="fas fa-heartbeat"></i>
+                        </div>
+                        <div class="metric-content">
+                            <h4 class="metric-label">System Status</h4>
+                            <p class="metric-value">Healthy</p>
+                            <small class="metric-subtitle">All systems operational</small>
+                        </div>
+                        <div class="metric-indicator positive">●</div>
+                    </div>
+
+                    <div class="metric-card metric-info">
+                        <div class="metric-icon">
+                            <i class="fas fa-server"></i>
+                        </div>
+                        <div class="metric-content">
+                            <h4 class="metric-label">API Status</h4>
+                            <p class="metric-value">99.9%</p>
+                            <small class="metric-subtitle">Uptime this month</small>
+                        </div>
+                        <div class="metric-indicator positive">↑ 0.1%</div>
+                    </div>
+                </div>
+
+                <!-- Quick Stats & Activities -->
+                <div class="dashboard-grid">
+                    <!-- Recent Activity -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-history"></i> Recent Activity</h3>
+                        </div>
+                        <div class="activity-feed">
+                            <div class="activity-item">
+                                <div class="activity-icon success">
+                                    <i class="fas fa-check"></i>
+                                </div>
+                                <div class="activity-content">
+                                    <p class="activity-title">New doctor profile approved</p>
+                                    <small>Dr. Sarah Johnson - Cardiology</small>
+                                </div>
+                                <small class="activity-time">2 hours ago</small>
+                            </div>
+                            <div class="activity-item">
+                                <div class="activity-icon primary">
+                                    <i class="fas fa-user-plus"></i>
+                                </div>
+                                <div class="activity-content">
+                                    <p class="activity-title">New patient registered</p>
+                                    <small>5 new patients joined</small>
+                                </div>
+                                <small class="activity-time">4 hours ago</small>
+                            </div>
+                            <div class="activity-item">
+                                <div class="activity-icon warning">
+                                    <i class="fas fa-alert-circle"></i>
+                                </div>
+                                <div class="activity-content">
+                                    <p class="activity-title">Appointment cancelled</p>
+                                    <small>Patient: John Doe - Dr. Michael Brown</small>
+                                </div>
+                                <small class="activity-time">6 hours ago</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Actions -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-lightning-bolt"></i> Quick Actions</h3>
+                        </div>
+                        <div class="action-grid">
+                            <button class="action-card" onclick="switchSection('doctors', event)">
+                                <i class="fas fa-user-plus"></i>
+                                <span>Add Doctor</span>
+                            </button>
+                            <button class="action-card" onclick="switchSection('patients', event)">
+                                <i class="fas fa-id-card"></i>
+                                <span>Register Patient</span>
+                            </button>
+                            <button class="action-card" onclick="switchSection('appointments', event)">
+                                <i class="fas fa-plus"></i>
+                                <span>Schedule Appointment</span>
+                            </button>
+                            <button class="action-card" onclick="switchSection('reports', event)">
+                                <i class="fas fa-download"></i>
+                                <span>Generate Report</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Doctors Section -->
+            <section class="content-section" id="doctors-section" style="display: none;">
+                <div class="section-header">
+                    <h2>Doctors Management</h2>
+                    <p class="section-subtitle">View, manage, and monitor doctor profiles</p>
+                    <button class="btn btn-primary" onclick="openModal('addDoctorModal')">
+                        <i class="fas fa-user-plus"></i> Add New Doctor
+                    </button>
+                </div>
+
+                <div class="card">
+                    <div class="table-header">
+                        <input type="text" class="search-input" placeholder="Search doctors...">
+                        <div class="filter-controls">
+                            <select class="filter-select">
+                                <option>All Departments</option>
+                                <option>Cardiology</option>
+                                <option>Neurology</option>
+                                <option>Orthopedics</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Doctor Name</th>
+                                    <th>Department</th>
+                                    <th>Specialization</th>
+                                    <th>Status</th>
+                                    <th>Patients</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for doctor in doctors %}
+                                <tr class="table-row">
+                                    <td>
+                                        <div class="cell-content">
+                                            <i class="fas fa-user-md"></i>
+                                            <strong>{{ doctor.name }}</strong>
+                                        </div>
+                                    </td>
+                                    <td><span class="badge-primary">{{ doctor.specialization }}</span></td>
+                                    <td>{{ doctor.qualifications }}</td>
+                                    <td>
+                                        <span class="status-badge active">
+                                            <span class="status-dot"></span> Active
+                                        </span>
+                                    </td>
+                                    <td><span class="metric-mini">{{ doctor.patients|length if doctor.patients else 0 }}</span></td>
+                                    <td>
+                                        <div class="action-menu">
+                                            <button class="btn-icon" title="View Details">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                            <button class="btn-icon" title="Edit">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <button class="btn-icon text-danger" title="Disable">
+                                                <i class="fas fa-lock"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Patients Section -->
+            <section class="content-section" id="patients-section" style="display: none;">
+                <div class="section-header">
+                    <h2>Patients Management</h2>
+                    <p class="section-subtitle">Manage patient profiles and records</p>
+                </div>
+
+                <div class="card">
+                    <div class="table-header">
+                        <input type="text" class="search-input" placeholder="Search patients by name or ID...">
+                        <div class="filter-controls">
+                            <select class="filter-select">
+                                <option>All Status</option>
+                                <option>Active</option>
+                                <option>Inactive</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Patient ID</th>
+                                    <th>Name</th>
+                                    <th>Contact</th>
+                                    <th>Last Visit</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% set patient_users = users|selectattr('role', 'equalto', 'user')|list %}
+                                {% for user in patient_users %}
+                                <tr class="table-row">
+                                    <td><code class="code-badge">#{{ user.id|default(loop.index) }}</code></td>
+                                    <td>
+                                        <div class="cell-content">
+                                            <i class="fas fa-user"></i>
+                                            <strong>{{ user.username }}</strong>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <small>{{ user.email }}<br>{{ user.phone or 'N/A' }}</small>
+                                    </td>
+                                    <td><small>Jan 15, 2026</small></td>
+                                    <td><span class="status-badge active"><span class="status-dot"></span> Active</span></td>
+                                    <td>
+                                        <div class="action-menu">
+                                            <button class="btn-icon" title="View Profile">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                            <button class="btn-icon" title="Edit">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <button class="btn-icon" title="View Records">
+                                                <i class="fas fa-file-medical"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Appointments Section -->
+            <section class="content-section" id="appointments-section" style="display: none;">
+                <div class="section-header">
+                    <h2>Appointments Management</h2>
+                    <p class="section-subtitle">Monitor and manage all appointments</p>
+                </div>
+
+                <!-- Appointment Filters -->
+                <div class="filter-bar">
+                    <button class="filter-btn active" data-filter="all">All</button>
+                    <button class="filter-btn" data-filter="pending">Pending</button>
+                    <button class="filter-btn" data-filter="confirmed">Confirmed</button>
+                    <button class="filter-btn" data-filter="completed">Completed</button>
+                    <button class="filter-btn" data-filter="cancelled">Cancelled</button>
+                </div>
+
+                <div class="card">
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Appointment ID</th>
+                                    <th>Patient</th>
+                                    <th>Doctor</th>
+                                    <th>Date & Time</th>
+                                    <th>Type</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for appointment in recent_appointments %}
+                                <tr class="table-row">
+                                    <td><code class="code-badge">#{{ appointment.id }}</code></td>
+                                    <td>
+                                        <div class="cell-content">
+                                            <i class="fas fa-user"></i>
+                                            <strong>{{ appointment.patient.username }}</strong>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="cell-content">
+                                            <i class="fas fa-user-md"></i>
+                                            <strong>{{ appointment.doctor.name }}</strong>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <small>{{ appointment.appointment_date.strftime('%b %d, %Y') }}<br>{{ appointment.appointment_time }}</small>
+                                    </td>
+                                    <td><span class="badge-info">Consultation</span></td>
+                                    <td>
+                                        <span class="status-badge {% if appointment.status == 'confirmed' %}success{% elif appointment.status == 'pending' %}warning{% else %}secondary{% endif %}">
+                                            <span class="status-dot"></span>
+                                            {{ 'Approved' if appointment.status == 'confirmed' else appointment.status|title }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="action-menu">
+                                            <button class="btn-icon" title="View Details">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                            {% if appointment.status == 'pending' %}
+                                            <button class="btn-icon text-success" title="Approve">
+                                                <i class="fas fa-check"></i>
+                                            </button>
+                                            <button class="btn-icon text-danger" title="Reject">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Departments Section -->
+            <section class="content-section" id="departments-section" style="display: none;">
+                <div class="section-header">
+                    <h2>Departments Overview</h2>
+                    <p class="section-subtitle">Department allocation and resource management</p>
+                </div>
+
+                <div class="departments-grid">
+                    <div class="dept-card">
+                        <div class="dept-icon cardiology">
+                            <i class="fas fa-heartbeat"></i>
+                        </div>
+                        <h3>Cardiology</h3>
+                        <p class="dept-count">8 Doctors</p>
+                        <small>45 Patients</small>
+                    </div>
+                    <div class="dept-card">
+                        <div class="dept-icon neurology">
+                            <i class="fas fa-brain"></i>
+                        </div>
+                        <h3>Neurology</h3>
+                        <p class="dept-count">6 Doctors</p>
+                        <small>32 Patients</small>
+                    </div>
+                    <div class="dept-card">
+                        <div class="dept-icon orthopedics">
+                            <i class="fas fa-bone"></i>
+                        </div>
+                        <h3>Orthopedics</h3>
+                        <p class="dept-count">5 Doctors</p>
+                        <small>28 Patients</small>
+                    </div>
+                    <div class="dept-card">
+                        <div class="dept-icon pediatrics">
+                            <i class="fas fa-child"></i>
+                        </div>
+                        <h3>Pediatrics</h3>
+                        <p class="dept-count">7 Doctors</p>
+                        <small>38 Patients</small>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Schedules Section -->
+            <section class="content-section" id="schedules-section" style="display: none;">
+                <div class="section-header">
+                    <h2>Doctor Schedules</h2>
+                    <p class="section-subtitle">Monitor doctor availability and shifts</p>
+                </div>
+
+                <div class="card">
+                    <div class="schedule-view">
+                        <div class="week-header">
+                            <button class="btn-icon">←</button>
+                            <h3>Week of Jan 20 - Jan 26, 2026</h3>
+                            <button class="btn-icon">→</button>
+                        </div>
+                        <div class="schedule-grid">
+                            <div class="schedule-day">
+                                <h4>Monday</h4>
+                                <div class="shifts">
+                                    <div class="shift available">
+                                        <small>Dr. Sarah Johnson</small>
+                                        <small>09:00 - 17:00</small>
+                                    </div>
+                                    <div class="shift available">
+                                        <small>Dr. Michael Brown</small>
+                                        <small>09:00 - 17:00</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="schedule-day">
+                                <h4>Tuesday</h4>
+                                <div class="shifts">
+                                    <div class="shift unavailable">
+                                        <small>No doctors</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="schedule-day">
+                                <h4>Wednesday</h4>
+                                <div class="shifts">
+                                    <div class="shift available">
+                                        <small>Dr. Sarah Johnson</small>
+                                        <small>09:00 - 17:00</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="schedule-day">
+                                <h4>Thursday</h4>
+                                <div class="shifts">
+                                    <div class="shift available">
+                                        <small>Dr. Emily Davis</small>
+                                        <small>10:00 - 18:00</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="schedule-day">
+                                <h4>Friday</h4>
+                                <div class="shifts">
+                                    <div class="shift available">
+                                        <small>Dr. Michael Brown</small>
+                                        <small>09:00 - 17:00</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Reports Section -->
+            <section class="content-section" id="reports-section" style="display: none;">
+                <div class="section-header">
+                    <h2>Analytics & Reports</h2>
+                    <p class="section-subtitle">System performance and usage analytics</p>
+                </div>
+
+                <div class="reports-grid">
+                    <div class="card chart-card">
+                        <div class="card-header">
+                            <h3>Daily Appointments Trend</h3>
+                            <small>Last 30 days</small>
+                        </div>
+                        <div class="chart-placeholder">
+                            <i class="fas fa-chart-line"></i>
+                            <p>Chart: Appointment trends over time</p>
+                        </div>
+                    </div>
+
+                    <div class="card chart-card">
+                        <div class="card-header">
+                            <h3>Doctor Utilization Rate</h3>
+                            <small>By specialization</small>
+                        </div>
+                        <div class="chart-placeholder">
+                            <i class="fas fa-chart-bar"></i>
+                            <p>Chart: Doctor availability by department</p>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>System Metrics</h3>
+                        </div>
+                        <div class="metrics-table">
+                            <div class="metric-row">
+                                <span class="metric-name">Appointments Completed</span>
+                                <span class="metric-bar"><div style="width: 85%"></div></span>
+                                <span class="metric-value">85%</span>
+                            </div>
+                            <div class="metric-row">
+                                <span class="metric-name">Doctor Satisfaction</span>
+                                <span class="metric-bar"><div style="width: 92%"></div></span>
+                                <span class="metric-value">92%</span>
+                            </div>
+                            <div class="metric-row">
+                                <span class="metric-name">Patient Retention</span>
+                                <span class="metric-bar"><div style="width: 78%"></div></span>
+                                <span class="metric-value">78%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Settings Section -->
+            <section class="content-section" id="settings-section" style="display: none;">
+                <div class="section-header">
+                    <h2>System Settings</h2>
+                    <p class="section-subtitle">Configure system parameters and preferences</p>
+                </div>
+
+                <div class="settings-grid">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>General Settings</h3>
+                        </div>
+                        <form class="settings-form">
+                            <div class="form-group">
+                                <label>Hospital Name</label>
+                                <input type="text" value="Care_4_U Hospitals" class="form-control">
+                            </div>
+                            <div class="form-group">
+                                <label>Support Email</label>
+                                <input type="email" value="support@care4u.hospital" class="form-control">
+                            </div>
+                            <button type="submit" class="btn btn-primary">Save Changes</button>
+                        </form>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>Notification Settings</h3>
+                        </div>
+                        <div class="settings-toggles">
+                            <div class="toggle-item">
+                                <div class="toggle-label">
+                                    <span>Email Notifications</span>
+                                    <small>Send email alerts for appointments</small>
+                                </div>
+                                <input type="checkbox" class="toggle-switch" checked>
+                            </div>
+                            <div class="toggle-item">
+                                <div class="toggle-label">
+                                    <span>System Alerts</span>
+                                    <small>Critical system notifications</small>
+                                </div>
+                                <input type="checkbox" class="toggle-switch" checked>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+</div>
+
+<!-- JavaScript -->
+<script>
+    function switchSection(sectionName, event) {
+        event.preventDefault();
+        
+        // Hide all sections
+        document.querySelectorAll('.content-section').forEach(section => {
+            section.style.display = 'none';
+        });
+        
+        // Show selected section
+        const sectionId = sectionName === 'overview' ? 'overview-section' : sectionName + '-section';
+        const section = document.getElementById(sectionId);
+        if (section) {
+            section.style.display = 'block';
+        }
+        
+        // Update nav item active state
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.classList.remove('active');
+        });
+        event.target.closest('.nav-item').classList.add('active');
+    }
+
+    function toggleProfileMenu() {
+        const menu = document.getElementById('profileMenu');
+        menu.classList.toggle('active');
+    }
+
+    // Close profile menu when clicking outside
+    document.addEventListener('click', function(event) {
+        const profileDropdown = document.querySelector('.profile-dropdown');
+        if (!profileDropdown.contains(event.target)) {
+            document.getElementById('profileMenu').classList.remove('active');
+        }
+    });
+
+    function openModal(modalId) {
+        // Placeholder for modal opening logic
+        console.log('Opening modal:', modalId);
+    }
+</script>
+
+{% endblock %}

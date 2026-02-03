@@ -90,7 +90,7 @@
                             <i class="fas fa-calendar-check"></i>
                         </div>
                         <div class="card-content">
-                            <h3>{{ total_appointments }}</h3>
+                            <h3>{{ today_appointments|length }}</h3>
                             <p>Appointments Today</p>
                         </div>
                     </div>
@@ -114,6 +114,16 @@
                             <p>Confirmed Slots</p>
                         </div>
                     </div>
+                    
+                    <div class="overview-card">
+                        <div class="card-icon total-icon">
+                            <i class="fas fa-calendar-alt"></i>
+                        </div>
+                        <div class="card-content">
+                            <h3>{{ total_appointments }}</h3>
+                            <p>Overall Total Appointments</p>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Main Dashboard Content Grid -->
@@ -126,24 +136,37 @@
                                 <h2><i class="fas fa-calendar-check"></i> Next Appointments</h2>
                                 <a href="#" class="view-all-link" onclick="showTodayView(event)">View All →</a>
                             </div>
-                            {% set confirmed_appointments = today_appointments|selectattr('status', 'equalto', 'confirmed')|list %}
-                            {% if confirmed_appointments %}
-                                <div class="appointments-list">
-                                    {% for appointment in confirmed_appointments[:3] %}
-                                        <div class="appointment-item">
-                                            <div class="appointment-time-badge">
-                                                <span class="time">{{ appointment.appointment_time }}</span>
+                            {% if appointments %}
+                                {% set confirmed_appointments = [] %}
+                                {% for appt in appointments %}
+                                    {% if appt.status and appt.status.lower() == 'confirmed' %}
+                                        {% set _ = confirmed_appointments.append(appt) %}
+                                    {% endif %}
+                                {% endfor %}
+                                {% if confirmed_appointments %}
+                                    <div class="appointments-list">
+                                        {% for appointment in confirmed_appointments[:3] %}
+                                            <div class="appointment-item">
+                                                <div class="appointment-time-badge">
+                                                    <span class="time">{{ appointment.appointment_time }}</span>
+                                                    <span class="date">{{ appointment.appointment_date.strftime('%b %d') if appointment.appointment_date else '' }}</span>
+                                                </div>
+                                                <div class="appointment-info">
+                                                    <h4>{{ appointment.patient.name or appointment.patient.username }}</h4>
+                                                    <p>{{ appointment.symptoms[:50] if appointment.symptoms else 'No symptoms noted' }}{% if appointment.symptoms and appointment.symptoms|length > 50 %}...{% endif %}</p>
+                                                </div>
+                                                <span class="status-badge-mini status-confirmed">
+                                                    Confirmed
+                                                </span>
                                             </div>
-                                            <div class="appointment-info">
-                                                <h4>{{ appointment.patient.name or appointment.patient.username }}</h4>
-                                                <p>{{ appointment.symptoms[:50] }}{% if appointment.symptoms|length > 50 %}...{% endif %}</p>
-                                            </div>
-                                            <span class="status-badge-mini status-confirmed">
-                                                Confirmed
-                                            </span>
-                                        </div>
-                                    {% endfor %}
-                                </div>
+                                        {% endfor %}
+                                    </div>
+                                {% else %}
+                                    <div class="empty-state">
+                                        <i class="fas fa-inbox"></i>
+                                        <p>No confirmed appointments</p>
+                                    </div>
+                                {% endif %}
                             {% else %}
                                 <div class="empty-state">
                                     <i class="fas fa-inbox"></i>
@@ -155,35 +178,7 @@
 
                     <!-- Right Column: Additional Info -->
                     <div class="dashboard-right-column">
-                        <!-- Quick Stats -->
-                        <div class="quick-stats-card">
-                            <div class="section-header">
-                                <h2><i class="fas fa-chart-line"></i> Quick Stats</h2>
-                            </div>
-                            <div class="stats-content">
-                                <div class="stat-item">
-                                    <i class="fas fa-calendar-check"></i>
-                                    <div class="stat-details">
-                                        <h3>{{ confirmed_count }}</h3>
-                                        <p>Confirmed Appointments</p>
-                                    </div>
-                                </div>
-                                <div class="stat-item">
-                                    <i class="fas fa-check-circle"></i>
-                                    <div class="stat-details">
-                                        <h3>{{ completed_count }}</h3>
-                                        <p>Completed Today</p>
-                                    </div>
-                                </div>
-                                <div class="stat-item">
-                                    <i class="fas fa-calendar-alt"></i>
-                                    <div class="stat-details">
-                                        <h3>{{ total_appointments }}</h3>
-                                        <p>Total Appointments</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                        <!-- Empty for future use -->
                     </div>
                 </div>
             </div>

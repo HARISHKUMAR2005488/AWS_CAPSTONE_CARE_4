@@ -1149,7 +1149,90 @@ def doctor_view_patient_records(patient_id: str):
 
 @app.route("/doctor/download-record/<record_id>", endpoint="doctor_download_record")
 def doctor_download_record(record_id: str):
-    """Download a medical record"""
+    """Download a medical record from local storage"""
+    if "username" not in session or session.get("role") != "doctor":
+        flash("Access denied", "danger")
+        return redirect(url_for("login"))
+    
+    try:
+        doctor_username = session["username"]
+        
+        # Get the record - try both 'id' and 'record_id' as key
+        record = None
+        try:
+            record = medical_records_table.get_item(Key={"id": record_id}).get("Item")
+        except:
+            try:
+                record = medical_records_table.get_item(Key={"record_id": record_id}).get("Item")
+            except Exception as e:
+                logger.error(f"Error fetching record {record_id}: {e}")
+        
+        if not record:
+            flash("Medical record not found", "danger")
+            return redirect(url_for("doctor_dashboard"))
+        
+        # Verify doctor has access to this patient's records
+        patient_username = record.get("patient_username") or record.get("username")
+        if not patient_username:
+            flash("Invalid record", "danger")
+            return redirect(url_for("doctor_dashboard"))
+        
+        # Check if doctor has appointments with this patient
+        appts_resp = appointments_table.scan()
+        doctor_appts = [a for a in appts_resp.get("Items", []) 
+                       if (a.get("doctor_id") == doctor_username or a.get("doctor_id") == session.get("doctor_id"))
+                       and a.get("username") == patient_username]
+        
+        if not doctor_appts:
+            flash("You don't have access to this patient's records", "danger")
+            return redirect(url_for("doctor_dashboard"))
+        
+        # Get file path from record
+        file_path = record.get("file_path")
+        if not file_path:
+            flash("File path not found in record", "danger")
+            return redirect(url_for("doctor_dashboard"))
+        
+        # Construct full path to file
+        if file_path.startswith('/'):
+            file_path = file_path[1:]
+        
+        if not os.path.isabs(file_path):
+            full_path = os.path.join(app.instance_path, file_path)
+        else:
+            full_path = file_path
+        
+        if not os.path.exists(full_path):
+            logger.error(f"File not found at path: {full_path}")
+            flash("File not found in storage", "danger")
+            return redirect(url_for("doctor_dashboard"))
+        
+        # Get original filename
+        filename = record.get("original_filename") or record.get("filename", "medical_record")
+        
+        # Get content type
+        content_type = record.get("content_type")
+        if not content_type:
+            import mimetypes
+            content_type, _ = mimetypes.guess_type(filename)
+            if not content_type:
+                content_type = 'application/octet-stream'
+        
+        directory = os.path.dirname(full_path)
+        file_name = os.path.basename(full_path)
+        
+        return send_from_directory(
+            directory,
+            file_name,
+            mimetype=content_type,
+            as_attachment=True,
+            download_name=filename
+        )
+            
+    except Exception as exc:
+        logger.error(f"Error in doctor_download_record: {exc}", exc_info=True)
+        flash("Error downloading medical record", "danger")
+        return redirect(url_for("doctor_dashboard"))
 
 @app.route("/api/doctor/patient/<patient_id>/details")
 def api_get_patient_details(patient_id: str):

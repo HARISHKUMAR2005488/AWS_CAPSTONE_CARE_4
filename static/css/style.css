@@ -11484,6 +11484,7 @@ body {
     cursor: pointer;
     user-select: none;
     position: relative;
+    padding-right: 2.5rem !important;
 }
 
 .sortable::after {
@@ -11496,6 +11497,10 @@ body {
 
 .sortable:hover {
     background: linear-gradient(135deg, #2c2c2c 0%, #3a3a3a 100%);
+}
+
+.sortable:hover::after {
+    opacity: 0.6;
 }
 
 .sorted-asc::after {

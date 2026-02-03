@@ -130,8 +130,8 @@
             <table>
                 <thead>
                     <tr>
-                        <th>Username</th>
-                        <th>Contact</th>
+                        <th class="sortable" onclick="sortTable(this, 0)">Username</th>
+                        <th class="sortable" onclick="sortTable(this, 1)">Contact</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -176,8 +176,8 @@
             <table>
                 <thead>
                     <tr>
-                        <th>Username</th>
-                        <th>Contact</th>
+                        <th class="sortable" onclick="sortTable(this, 0)">Username</th>
+                        <th class="sortable" onclick="sortTable(this, 1)">Contact</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -222,8 +222,8 @@
             <table>
                 <thead>
                     <tr>
-                        <th>Username</th>
-                        <th>Contact</th>
+                        <th class="sortable" onclick="sortTable(this, 0)">Username</th>
+                        <th class="sortable" onclick="sortTable(this, 1)">Contact</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -1507,6 +1507,37 @@
             hideLoading();
         });
     };
+
+    // Table Sorting Function
+    function sortTable(th, columnIndex) {
+        const table = th.closest('table');
+        const tbody = table.querySelector('tbody');
+        const rows = Array.from(tbody.querySelectorAll('tr'));
+        
+        // Determine sort direction
+        const isAscending = !th.classList.contains('sorted-asc');
+        
+        // Remove all sorting classes from headers
+        table.querySelectorAll('th').forEach(header => {
+            header.classList.remove('sorted-asc', 'sorted-desc');
+        });
+        
+        // Add appropriate class to clicked header
+        th.classList.add(isAscending ? 'sorted-asc' : 'sorted-desc');
+        
+        // Sort rows
+        rows.sort((rowA, rowB) => {
+            const cellA = rowA.cells[columnIndex].textContent.trim().toLowerCase();
+            const cellB = rowB.cells[columnIndex].textContent.trim().toLowerCase();
+            
+            if (cellA < cellB) return isAscending ? -1 : 1;
+            if (cellA > cellB) return isAscending ? 1 : -1;
+            return 0;
+        });
+        
+        // Re-append sorted rows
+        rows.forEach(row => tbody.appendChild(row));
+    }
 
 </script>
 {% endblock %}

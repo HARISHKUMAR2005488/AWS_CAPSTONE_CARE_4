@@ -12,7 +12,7 @@ from werkzeug.security import check_password_hash, generate_password_hash
 from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
-app.secret_key = os.getenv("FLASK_SECRET_KEY", "change_me")
+app.secret_key = os.getenv("FLASK_SECRET_KEY", "ncFW7IxB9QdiiVyJAVwRNRHgl9GkqO0QipSLcbgT")
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -2113,15 +2113,33 @@ def admin_update_user(username):
         if not updates:
             return jsonify({"success": False, "message": "No fields to update"}), 400
         
-        # Perform update
-        update_expr = "SET " + ", ".join([f"{k} = :{k}" for k in updates.keys()])
+        # Build update expression with attribute name mapping for reserved keywords
+        expr_attr_names = {}
+        update_parts = []
+        
+        for k in updates.keys():
+            # Handle reserved keywords by using expression attribute names
+            if k in ["role", "status", "name", "timestamp", "date", "time"]:
+                placeholder = f"#{k}"
+                expr_attr_names[placeholder] = k
+                update_parts.append(f"{placeholder} = :{k}")
+            else:
+                update_parts.append(f"{k} = :{k}")
+        
+        update_expr = "SET " + ", ".join(update_parts)
         expr_values = {f":{k}": v for k, v in updates.items()}
         
-        users_table.update_item(
-            Key={"username": username},
-            UpdateExpression=update_expr,
-            ExpressionAttributeValues=expr_values
-        )
+        # Perform update with ExpressionAttributeNames if needed
+        update_params = {
+            "Key": {"username": username},
+            "UpdateExpression": update_expr,
+            "ExpressionAttributeValues": expr_values
+        }
+        
+        if expr_attr_names:
+            update_params["ExpressionAttributeNames"] = expr_attr_names
+        
+        users_table.update_item(**update_params)
         
         logger.info(f"Admin {session['username']} updated user {username}")
         return jsonify({"success": True, "message": "User updated successfully"})

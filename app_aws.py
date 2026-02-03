@@ -1168,6 +1168,82 @@ def doctor_view_patient_records(patient_id: str):
 @app.route("/doctor/download-record/<record_id>", endpoint="doctor_download_record")
 def doctor_download_record(record_id: str):
     """Download a medical record"""
+
+@app.route("/api/doctor/patient/<patient_id>/details")
+def api_get_patient_details(patient_id: str):
+    """API endpoint to get patient details and appointments for expandable view"""
+    if "username" not in session or session.get("role") != "doctor":
+        return jsonify({"error": "Unauthorized"}), 401
+    
+    try:
+        doctor_username = session["username"]
+        
+        # Get patient info
+        patient_user = get_user(patient_id)
+        if not patient_user:
+            return jsonify({"error": "Patient not found"}), 404
+        
+        # Get doctor's appointments with this patient
+        appts_resp = appointments_table.scan()
+        doctor_appts = [a for a in appts_resp.get("Items", []) 
+                       if (a.get("doctor_id") == doctor_username or a.get("doctor_id") == session.get("doctor_id"))
+                       and a.get("username") == patient_id]
+        
+        if not doctor_appts:
+            return jsonify({"error": "No appointments found with this patient"}), 403
+        
+        # Normalize appointments for JSON response
+        from datetime import datetime as dt_class, date as date_class
+        normalized_appts = []
+        for appt in doctor_appts:
+            # Normalize field names
+            appt.setdefault("appointment_time", appt.get("time"))
+            appt.setdefault("status", "pending")
+            appt.setdefault("symptoms", appt.get("reason", ""))
+            appt.setdefault("notes", appt.get("medical_notes", ""))
+            
+            # Handle appointment_date
+            date_val = appt.get("date") or appt.get("appointment_date")
+            if isinstance(date_val, str):
+                try:
+                    appt["appointment_date"] = dt_class.strptime(date_val, "%Y-%m-%d").strftime("%b %d, %Y")
+                except (ValueError, TypeError):
+                    appt["appointment_date"] = date_class.today().strftime("%b %d, %Y")
+            elif isinstance(date_val, date_class):
+                appt["appointment_date"] = date_val.strftime("%b %d, %Y")
+            else:
+                appt["appointment_date"] = date_class.today().strftime("%b %d, %Y")
+            
+            normalized_appts.append({
+                "id": appt.get("id", ""),
+                "appointment_date": appt["appointment_date"],
+                "appointment_time": appt.get("appointment_time", ""),
+                "symptoms": appt.get("symptoms", ""),
+                "status": appt.get("status", "pending"),
+                "notes": appt.get("notes", "")
+            })
+        
+        # Sort by date (newest first)
+        normalized_appts.reverse()
+        
+        # Format patient data for JSON
+        patient_data = {
+            "username": patient_user.get("username", ""),
+            "email": patient_user.get("email", ""),
+            "phone": patient_user.get("phone", ""),
+            "date_of_birth": patient_user.get("date_of_birth", ""),
+            "address": patient_user.get("address", "")
+        }
+        
+        return jsonify({
+            "patient": patient_data,
+            "appointments": normalized_appts
+        })
+        
+    except Exception as exc:
+        logger.error(f"Error fetching patient details API: {exc}", exc_info=True)
+        return jsonify({"error": "Internal server error"}), 500
+
     if "username" not in session or session.get("role") != "doctor":
         return "Access denied", 403
     

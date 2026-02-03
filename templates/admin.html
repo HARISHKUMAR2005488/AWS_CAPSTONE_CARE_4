@@ -33,47 +33,47 @@
                 <p class="admin-role">Administrator</p>
             </div>
         </div>
-    </div>
+        
+        <!-- Stats Cards inside Profile -->
+        <div class="stats-cards">
+            <div class="stat-card">
+                <div class="stat-icon patients">
+                    <i class="fas fa-users"></i>
+                </div>
+                <div class="stat-info">
+                    <h3>{{ total_patients }}</h3>
+                    <p>Total Patients</p>
+                </div>
+            </div>
 
-    <!-- Stats Cards -->
-    <div class="stats-cards">
-        <div class="stat-card">
-            <div class="stat-icon patients">
-                <i class="fas fa-users"></i>
+            <div class="stat-card">
+                <div class="stat-icon doctors">
+                    <i class="fas fa-user-md"></i>
+                </div>
+                <div class="stat-info">
+                    <h3>{{ total_doctors }}</h3>
+                    <p>Active Doctors</p>
+                </div>
             </div>
-            <div class="stat-info">
-                <h3>{{ total_patients }}</h3>
-                <p>Total Patients</p>
-            </div>
-        </div>
 
-        <div class="stat-card">
-            <div class="stat-icon doctors">
-                <i class="fas fa-user-md"></i>
+            <div class="stat-card">
+                <div class="stat-icon appointments">
+                    <i class="fas fa-calendar-check"></i>
+                </div>
+                <div class="stat-info">
+                    <h3>{{ total_appointments }}</h3>
+                    <p>Total Appointments</p>
+                </div>
             </div>
-            <div class="stat-info">
-                <h3>{{ total_doctors }}</h3>
-                <p>Active Doctors</p>
-            </div>
-        </div>
 
-        <div class="stat-card">
-            <div class="stat-icon appointments">
-                <i class="fas fa-calendar-check"></i>
-            </div>
-            <div class="stat-info">
-                <h3>{{ total_appointments }}</h3>
-                <p>Total Appointments</p>
-            </div>
-        </div>
-
-        <div class="stat-card">
-            <div class="stat-icon pending">
-                <i class="fas fa-clock"></i>
-            </div>
-            <div class="stat-info">
-                <h3>{{ pending_appointments }}</h3>
-                <p>Pending Approvals</p>
+            <div class="stat-card">
+                <div class="stat-icon pending">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div class="stat-info">
+                    <h3>{{ pending_appointments }}</h3>
+                    <p>Pending Approvals</p>
+                </div>
             </div>
         </div>
     </div>

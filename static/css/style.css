@@ -1258,6 +1258,34 @@ tbody tr:nth-child(even) {
     display: flex;
     align-items: center;
     gap: var(--spacing-xl);
+    margin-bottom: var(--spacing-xl);
+    padding-bottom: var(--spacing-xl);
+    border-bottom: 1px solid var(--gray-lighter);
+}
+
+/* Stats Cards inside Admin Profile */
+.admin-profile-card .stats-cards {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--spacing-lg);
+    margin-top: 0;
+}
+
+@media (max-width: 1200px) {
+    .admin-profile-card .stats-cards {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .admin-profile-card .stats-cards {
+        grid-template-columns: 1fr;
+    }
+    
+    .profile-section {
+        flex-direction: column;
+        text-align: center;
+    }
 }
 
 .profile-avatar {
@@ -1420,7 +1448,8 @@ tbody tr:nth-child(even) {
     background: var(--dark);
     color: var(--white);
     padding: var(--spacing-2xl) 0 var(--spacing-lg);
-    margin-top: var(--spacing-2xl);
+    margin-top: auto;
+    width: 100%;
 }
 
 .footer-content {
@@ -10032,7 +10061,7 @@ body {
     flex: 1;
     overflow: hidden;
     margin-top: 72px;
-    height: calc(100vh - 72px);
+    min-height: calc(100vh - 72px);
 }
 
 /* ===== ADMIN SIDEBAR ===== */
@@ -10120,7 +10149,8 @@ body {
     overflow-y: auto;
     overflow-x: hidden;
     padding: 2rem;
-    height: 100%;
+    min-height: calc(100vh - 72px);
+    height: auto;
 }
 
 /* ===== SECTION HEADER ===== */

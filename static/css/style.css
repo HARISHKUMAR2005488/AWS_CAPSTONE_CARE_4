@@ -142,6 +142,8 @@
 html {
     scroll-behavior: smooth;
     background: var(--bg-primary);
+    margin: 0;
+    padding: 0;
 }
 
 body {
@@ -158,6 +160,8 @@ body {
     display: flex;
     flex-direction: column;
     min-height: 100vh;
+    margin: 0;
+    padding: 0;
 }
 
 /* ===== TYPOGRAPHY ===== */
@@ -6123,6 +6127,7 @@ body {
     background: white;
     border-right: 1px solid var(--gray-200);
     padding: 0;
+    margin: 0;
     box-shadow: inset -1px 0 0 var(--gray-100);
     overflow-y: auto;
     flex-shrink: 0;

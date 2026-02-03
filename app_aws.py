@@ -1718,6 +1718,44 @@ def book(doctor_id: str):
     )
 
 
+@app.route("/api/doctor-availability/<doctor_id>")
+def get_doctor_availability(doctor_id: str):
+    """Get doctor's available dates and times based on their schedule"""
+    try:
+        doctor = doctors_table.get_item(Key={"id": doctor_id}).get("Item")
+        if not doctor:
+            return jsonify({"error": "Doctor not found"}), 404
+        
+        available_days_str = doctor.get("available_days", "")
+        available_time_str = doctor.get("available_time", "")
+        
+        # Parse available days (format: "Monday, Tuesday, Wednesday")
+        available_days = []
+        if available_days_str:
+            available_days = [d.strip().lower() for d in available_days_str.split(",")]
+        
+        # Parse available time range (format: "09:00-17:00")
+        start_time = None
+        end_time = None
+        if available_time_str and "-" in available_time_str:
+            time_parts = available_time_str.split("-")
+            if len(time_parts) == 2:
+                start_time = time_parts[0].strip()
+                end_time = time_parts[1].strip()
+        
+        return jsonify({
+            "available_days": available_days,
+            "start_time": start_time,
+            "end_time": end_time,
+            "available_days_str": available_days_str,
+            "available_time_str": available_time_str
+        })
+    
+    except Exception as e:
+        logger.error(f"Error fetching doctor availability: {e}")
+        return jsonify({"error": "Failed to fetch availability"}), 500
+
+
 @app.route("/appointments")
 def my_appointments():
     if "username" not in session:

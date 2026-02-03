@@ -206,6 +206,44 @@
 
 {% block scripts %}
 <script>
+// Helper function to generate time slots from start and end time
+function generateTimeSlots(startTime, endTime) {
+    const slots = [];
+    if (!startTime || !endTime) return slots;
+    
+    // Parse times (format: "HH:MM")
+    const [startHour, startMin] = startTime.split(':').map(Number);
+    const [endHour, endMin] = endTime.split(':').map(Number);
+    
+    let currentHour = startHour;
+    let currentMin = startMin;
+    
+    while (currentHour < endHour || (currentHour === endHour && currentMin < endMin)) {
+        // Format as HH:MM for 24-hour format
+        const timeStr = `${String(currentHour).padStart(2, '0')}:${String(currentMin).padStart(2, '0')}`;
+        slots.push(timeStr);
+        
+        // Add 30 minutes
+        currentMin += 30;
+        if (currentMin >= 60) {
+            currentMin -= 60;
+            currentHour += 1;
+        }
+    }
+    
+    return slots;
+}
+
+// Helper function to check if date is available based on doctor's schedule
+function isDateAvailable(date, availableDays) {
+    if (!availableDays || availableDays.length === 0) return true;
+    
+    const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+    const dayOfWeek = dayNames[date.getDay()];
+    
+    return availableDays.includes(dayOfWeek);
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     const dateInput = document.getElementById('appointment_date');
     const timeSelect = document.getElementById('appointment_time');
@@ -214,44 +252,97 @@ document.addEventListener('DOMContentLoaded', function() {
     const selectedTimeSpan = document.getElementById('selectedTime');
     const charCountSpan = document.getElementById('charCount');
     
-    // Update summary date in real-time
+    // Fetch doctor availability
+    const doctorId = {{ doctor.id }};
+    let doctorAvailability = {
+        available_days: [],
+        start_time: '09:00',
+        end_time: '17:00'
+    };
+    
+    fetch(`/api/doctor-availability/${doctorId}`)
+        .then(response => response.json())
+        .then(data => {
+            doctorAvailability = data;
+            console.log('Doctor availability loaded:', doctorAvailability);
+            
+            // Set up date input constraints
+            if (data.available_days && data.available_days.length > 0) {
+                // If doctor has specific available days, we'll validate on change
+                dateInput.addEventListener('change', validateDateAvailability);
+            }
+        })
+        .catch(error => console.error('Error fetching doctor availability:', error));
+    
+    function validateDateAvailability() {
+        if (dateInput.value && doctorAvailability.available_days.length > 0) {
+            const selectedDate = new Date(dateInput.value);
+            if (!isDateAvailable(selectedDate, doctorAvailability.available_days)) {
+                dateInput.setCustomValidity('Doctor is not available on this day');
+                alert(`Doctor is not available on ${selectedDate.toLocaleDateString('en-US', { weekday: 'long' })}. Available days: ${doctorAvailability.available_days_str}`);
+                dateInput.value = '';
+                selectedDateSpan.textContent = 'Not selected';
+                selectedDateSpan.style.color = 'var(--gray)';
+            } else {
+                dateInput.setCustomValidity('');
+            }
+        }
+    }
+    
+    // Update summary date in real-time and populate time slots
     dateInput.addEventListener('change', function() {
         if (this.value) {
             const date = new Date(this.value);
+            
+            // Validate date is available
+            validateDateAvailability();
+            if (dateInput.validity.customError) {
+                return;
+            }
+            
             const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
             selectedDateSpan.textContent = date.toLocaleDateString('en-US', options);
             selectedDateSpan.style.color = 'var(--dark)';
             selectedDateSpan.style.fontWeight = '600';
             
-            const doctorId = {{ doctor.id }};
-            fetch(`/api/available-slots/${doctorId}?date=${this.value}`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.available_slots) {
-                        // Clear current options
-                        timeSelect.innerHTML = '<option value="">Select time slot</option>';
-                        
-                        // Add new options
-                        data.available_slots.forEach(slot => {
-                            const option = document.createElement('option');
-                            option.value = slot;
-                            option.textContent = slot;
-                            timeSelect.appendChild(option);
-                        });
-                    }
-                })
-                .catch(error => console.error('Error:', error));
+            // Generate time slots based on doctor's available time range
+            const timeSlots = generateTimeSlots(doctorAvailability.start_time, doctorAvailability.end_time);
+            
+            // Clear current options
+            timeSelect.innerHTML = '<option value="">Select time slot</option>';
+            
+            // Add new options (convert 24-hour format to 12-hour for display)
+            timeSlots.forEach(slot => {
+                const [hour, min] = slot.split(':').map(Number);
+                const period = hour >= 12 ? 'PM' : 'AM';
+                const displayHour = hour % 12 || 12;
+                const displayTime = `${displayHour}:${String(min).padStart(2, '0')} ${period}`;
+                
+                const option = document.createElement('option');
+                option.value = slot;
+                option.textContent = displayTime;
+                timeSelect.appendChild(option);
+            });
         } else {
             selectedDateSpan.textContent = 'Not selected';
             selectedDateSpan.style.color = 'var(--gray)';
             selectedDateSpan.style.fontWeight = '400';
+            
+            // Reset time select
+            timeSelect.innerHTML = '<option value="">Select time slot</option>';
         }
     });
     
     // Update summary time in real-time
     timeSelect.addEventListener('change', function() {
         if (this.value) {
-            selectedTimeSpan.textContent = this.value;
+            // Format time from 24-hour (HH:MM) to 12-hour format for display
+            const [hour, min] = this.value.split(':').map(Number);
+            const period = hour >= 12 ? 'PM' : 'AM';
+            const displayHour = hour % 12 || 12;
+            const displayTime = `${displayHour}:${String(min).padStart(2, '0')} ${period}`;
+            
+            selectedTimeSpan.textContent = displayTime;
             selectedTimeSpan.style.color = 'var(--dark)';
             selectedTimeSpan.style.fontWeight = '600';
         } else {

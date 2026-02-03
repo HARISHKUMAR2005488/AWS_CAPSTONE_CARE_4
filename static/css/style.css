@@ -8738,8 +8738,8 @@ body {
 }
 
 .search-group select {
-    flex: 100;
-    min-width: 0;
+    flex: 100%;
+    min-width: 500px;
     padding: var(--spacing-md) var(--spacing-lg);
     border: 2px solid var(--gray-lighter);
     border-radius: var(--radius-full);

@@ -1356,19 +1356,8 @@ def doctors():
     if "username" not in session:
         return redirect(url_for("login"))
 
-    # Get all doctors from doctors table
     doctors_resp = doctors_table.scan()
-    all_doctors = doctors_resp.get("Items", [])
-    
-    # Get all users to filter only registered doctors
-    users_resp = users_table.scan()
-    all_users = users_resp.get("Items", [])
-    
-    # Create set of usernames with doctor role
-    registered_doctor_usernames = {u["username"] for u in all_users if u.get("role") == "doctor"}
-    
-    # Filter doctors to only include those with registered user accounts
-    doctors_list = [d for d in all_doctors if d.get("username") in registered_doctor_usernames]
+    doctors_list = doctors_resp.get("Items", [])
     
     # Extract unique specializations
     specializations = list(set([d.get("specialization", "General") for d in doctors_list if d.get("specialization")]))

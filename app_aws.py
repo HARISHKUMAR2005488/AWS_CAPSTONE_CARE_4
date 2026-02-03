@@ -1359,13 +1359,39 @@ def doctors():
     doctors_resp = doctors_table.scan()
     doctors_list = doctors_resp.get("Items", [])
     
-    # Extract unique specializations
+    # Get search and filter parameters
+    search_query = request.args.get("search", "").strip().lower()
+    specialization_filter = request.args.get("specialization", "all").strip()
+    
+    # Filter doctors based on search and specialization
+    filtered_doctors = []
+    for d in doctors_list:
+        # Skip if search query doesn't match doctor name
+        if search_query and search_query not in d.get("name", "").lower():
+            continue
+        
+        # Skip if specialization filter doesn't match
+        if specialization_filter != "all" and d.get("specialization", "") != specialization_filter:
+            continue
+        
+        filtered_doctors.append(d)
+    
+    # Extract unique specializations from all doctors (for filter dropdown)
     specializations = list(set([d.get("specialization", "General") for d in doctors_list if d.get("specialization")]))
     specializations.sort()
     
     # Ensure defaults for template fields and build ratings wrapper
     doctors_with_ratings = []
-    for d in doctors_list:
+    seen_ids = set()  # Track unique doctor IDs to prevent duplicates
+    
+    for d in filtered_doctors:
+        doctor_id = d.get("id")
+        
+        # Skip if we've already added this doctor
+        if doctor_id in seen_ids:
+            continue
+        seen_ids.add(doctor_id)
+        
         d.setdefault("qualifications", "")
         d.setdefault("experience", 0)
         d.setdefault("available_days", "")
@@ -1383,7 +1409,7 @@ def doctors():
     
     return render_template(
         "doctors.html",
-        doctors=doctors_list,
+        doctors=filtered_doctors,
         doctors_with_ratings=doctors_with_ratings,
         specializations=specializations,
     )

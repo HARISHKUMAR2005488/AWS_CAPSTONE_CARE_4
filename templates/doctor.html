@@ -466,57 +466,6 @@
                     <span>Settings</span>
                 </a>
             </nav>
-            
-            <!-- Appointment Actions -->
-            <div class="sidebar-section">
-                <h3 class="sidebar-section-title">
-                    <i class="fas fa-tasks"></i> Appointment Actions
-                </h3>
-                <div class="appointments-preview-sidebar">
-                    {% if appointments %}
-                        {% set confirmed_appointments = [] %}
-                        {% for appt in appointments %}
-                            {% if appt.status and appt.status.lower() == 'confirmed' %}
-                                {% set _ = confirmed_appointments.append(appt) %}
-                            {% endif %}
-                        {% endfor %}
-                        {% if confirmed_appointments %}
-                            <div class="appointments-list-sidebar">
-                                {% for appointment in confirmed_appointments[:3] %}
-                                    <div class="appointment-item-sidebar">
-                                        <div class="appointment-time-badge-sidebar">
-                                            <span class="time">{{ appointment.appointment_time }}</span>
-                                            <span class="date">{{ appointment.appointment_date.strftime('%b %d') if appointment.appointment_date else '' }}</span>
-                                        </div>
-                                        <div class="appointment-info-sidebar">
-                                            <h4>{{ appointment.patient.name or appointment.patient.username }}</h4>
-                                            <p>{{ appointment.symptoms[:30] if appointment.symptoms else 'No symptoms' }}{% if appointment.symptoms and appointment.symptoms|length > 30 %}...{% endif %}</p>
-                                        </div>
-                                        <div class="appointment-actions-sidebar">
-                                            <button class="btn-action-sidebar btn-prescription" onclick="openPrescriptionModal('{{ appointment.id }}', '{{ appointment.patient.name or appointment.patient.username }}')" title="Add Prescription">
-                                                <i class="fas fa-prescription"></i>
-                                            </button>
-                                            <button class="btn-action-sidebar btn-complete" onclick="completeAppointment('{{ appointment.id }}', '{{ appointment.patient.name or appointment.patient.username }}')" title="Mark Complete">
-                                                <i class="fas fa-check-circle"></i>
-                                            </button>
-                                        </div>
-                                    </div>
-                                {% endfor %}
-                            </div>
-                        {% else %}
-                            <div class="empty-state-sidebar">
-                                <i class="fas fa-inbox"></i>
-                                <p>No confirmed appointments</p>
-                            </div>
-                        {% endif %}
-                    {% else %}
-                        <div class="empty-state-sidebar">
-                            <i class="fas fa-inbox"></i>
-                            <p>No confirmed appointments</p>
-                        </div>
-                    {% endif %}
-                </div>
-            </div>
         </aside>
 
         <!-- Main Content Area -->
@@ -568,7 +517,63 @@
 
                 <!-- Main Dashboard Content Grid -->
                 <div class="dashboard-content-grid">
-                    <!-- Dashboard content can be added here in the future -->
+                    <!-- Left Column: Appointments -->
+                    <div class="dashboard-left-column">
+                        <!-- Upcoming Confirmed Appointments Preview -->
+                        <div class="appointments-preview">
+                            <div class="section-header">
+                                <h2><i class="fas fa-calendar-check"></i> Next Appointments</h2>
+                                <a href="#" class="view-all-link" onclick="showTodayView(event)">View All →</a>
+                            </div>
+                            {% if appointments %}
+                                {% set confirmed_appointments = [] %}
+                                {% for appt in appointments %}
+                                    {% if appt.status and appt.status.lower() == 'confirmed' %}
+                                        {% set _ = confirmed_appointments.append(appt) %}
+                                    {% endif %}
+                                {% endfor %}
+                                {% if confirmed_appointments %}
+                                    <div class="appointments-list">
+                                        {% for appointment in confirmed_appointments[:3] %}
+                                            <div class="appointment-item">
+                                                <div class="appointment-time-badge">
+                                                    <span class="time">{{ appointment.appointment_time }}</span>
+                                                    <span class="date">{{ appointment.appointment_date.strftime('%b %d') if appointment.appointment_date else '' }}</span>
+                                                </div>
+                                                <div class="appointment-info">
+                                                    <h4>{{ appointment.patient.name or appointment.patient.username }}</h4>
+                                                    <p>{{ appointment.symptoms[:50] if appointment.symptoms else 'No symptoms noted' }}{% if appointment.symptoms and appointment.symptoms|length > 50 %}...{% endif %}</p>
+                                                </div>
+                                                <div class="appointment-actions">
+                                                    <button class="btn-action btn-prescription" onclick="openPrescriptionModal('{{ appointment.id }}', '{{ appointment.patient.name or appointment.patient.username }}')">
+                                                        <i class="fas fa-prescription"></i>
+                                                    </button>
+                                                    <button class="btn-action btn-complete" onclick="completeAppointment('{{ appointment.id }}', '{{ appointment.patient.name or appointment.patient.username }}')">
+                                                        <i class="fas fa-check-circle"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                {% else %}
+                                    <div class="empty-state">
+                                        <i class="fas fa-inbox"></i>
+                                        <p>No confirmed appointments</p>
+                                    </div>
+                                {% endif %}
+                            {% else %}
+                                <div class="empty-state">
+                                    <i class="fas fa-inbox"></i>
+                                    <p>No confirmed appointments</p>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Right Column: Additional Info -->
+                    <div class="dashboard-right-column">
+                        <!-- Empty for future use -->
+                    </div>
                 </div>
             </div>
 

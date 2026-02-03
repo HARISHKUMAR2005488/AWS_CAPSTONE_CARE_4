@@ -989,7 +989,7 @@ tbody tr:nth-child(even) {
 
 /* ===== DASHBOARD SECTIONS ===== */
 .dashboard-header {
-    background: linear-gradient(135deg, var(--dark) 0%, #1a1a1a 100%);
+    background: linear-gradient(135deg, var(--dark) 0%, #5feabe 100%);
     color: var(--white);
     padding: 1.75rem 2rem;
     border-radius: var(--border-radius-lg);

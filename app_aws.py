@@ -1208,6 +1208,44 @@ def api_get_patient_details(patient_id: str):
         # Sort by date (newest first)
         normalized_appts.reverse()
         
+        # Get medical records for this patient
+        try:
+            records_resp = medical_records_table.scan(
+                FilterExpression="patient_username = :username",
+                ExpressionAttributeValues={":username": patient_id}
+            )
+            medical_records = records_resp.get("Items", [])
+        except:
+            medical_records = []
+        
+        # Normalize medical records for JSON response
+        normalized_records = []
+        for record in medical_records:
+            upload_date = record.get("upload_date") or record.get("created_at") or record.get("date")
+            if upload_date:
+                try:
+                    if isinstance(upload_date, str):
+                        upload_date_obj = dt_class.fromisoformat(upload_date.replace("Z", "+00:00"))
+                        upload_date_formatted = upload_date_obj.strftime("%b %d, %Y")
+                    else:
+                        upload_date_formatted = upload_date.strftime("%b %d, %Y") if hasattr(upload_date, 'strftime') else str(upload_date)
+                except:
+                    upload_date_formatted = "N/A"
+            else:
+                upload_date_formatted = "N/A"
+            
+            normalized_records.append({
+                "id": record.get("id") or record.get("record_id", ""),
+                "filename": record.get("original_filename") or record.get("filename", "Document"),
+                "description": record.get("description", ""),
+                "file_type": record.get("file_type", "unknown"),
+                "file_size": record.get("file_size", 0),
+                "upload_date": upload_date_formatted
+            })
+        
+        # Sort records by upload date (newest first)
+        normalized_records.reverse()
+        
         # Format patient data for JSON
         patient_data = {
             "username": patient_user.get("username", ""),
@@ -1219,7 +1257,8 @@ def api_get_patient_details(patient_id: str):
         
         return jsonify({
             "patient": patient_data,
-            "appointments": normalized_appts
+            "appointments": normalized_appts,
+            "medical_records": normalized_records
         })
         
     except Exception as exc:

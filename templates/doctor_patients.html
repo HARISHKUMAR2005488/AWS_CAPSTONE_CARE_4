@@ -3,13 +3,14 @@
 {% block title %}My Patients - Care_4_U Hospitals{% endblock %}
 
 {% block content %}
-<div class="container">
-    <div class="doctor-container">
+<div class="doctor-container">
     <!-- Page Header -->
     <div class="dashboard-header">
-        <h1>My Patients</h1>
-        <p class="welcome-message">View and manage your patients' medical records</p>
-        <a href="{{ url_for('doctor_dashboard') }}" class="btn btn-secondary">
+        <div class="header-content">
+            <h1><i class="fas fa-users"></i> My Patients</h1>
+            <p class="welcome-message">View and manage your patients' medical records</p>
+        </div>
+        <a href="{{ url_for('doctor_dashboard') }}" class="btn btn-back">
             <i class="fas fa-arrow-left"></i> Back to Dashboard
         </a>
     </div>
@@ -17,7 +18,11 @@
     <!-- Patients List -->
     <div class="appointments-section">
         <div class="section-header">
-            <h2>Patient List ({{ patient_data|length }} Patients)</h2>
+            <h2><i class="fas fa-list"></i> Patient List</h2>
+            <div class="patient-count-badge">
+                <i class="fas fa-user-injured"></i>
+                <span>{{ patient_data|length }} Patient{% if patient_data|length != 1 %}s{% endif %}</span>
+            </div>
         </div>
         
         {% if patient_data %}
@@ -82,7 +87,6 @@
                 <p>No patients found. Patients will appear here once they book appointments with you.</p>
             </div>
         {% endif %}
-    </div>
     </div>
 </div>
 

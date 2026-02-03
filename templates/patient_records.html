@@ -3,16 +3,17 @@
 {% block title %}Patient Records - {{ patient.username }} - Care_4_U Hospitals{% endblock %}
 
 {% block content %}
-<div class="container">
-    <div class="doctor-container">
-        <!-- Page Header -->
-        <div class="dashboard-header">
-            <h1>Patient Medical Records</h1>
-            <p class="welcome-message">{{ patient.username }} - {{ patient.email }}</p>
-            <a href="{{ url_for('doctor_patients') }}" class="btn btn-secondary">
-                <i class="fas fa-arrow-left"></i> Back to Patients
-            </a>
+<div class="doctor-container">
+    <!-- Page Header -->
+    <div class="dashboard-header">
+        <div class="header-content">
+            <h1><i class="fas fa-folder-medical"></i> Patient Medical Records</h1>
+            <p class="welcome-message">Complete medical history and appointment records</p>
         </div>
+        <a href="{{ url_for('doctor_patients') }}" class="btn btn-back">
+            <i class="fas fa-arrow-left"></i> Back to Patients
+        </a>
+    </div>
 
         <!-- Patient Information Card -->
         <div class="patient-info-card">
@@ -50,6 +51,9 @@
             </div>
             <div class="info-stats">
                 <div class="stat-box">
+                    <div class="stat-icon">
+                        <i class="fas fa-calendar-check"></i>
+                    </div>
                     <h3>{{ appointments|length }}</h3>
                     <p>Total Appointments</p>
                 </div>
@@ -57,10 +61,13 @@
         </div>
 
         <!-- Appointment History Section -->
-        <!-- Appointment History Section -->
         <div class="appointments-section">
             <div class="section-header">
                 <h2><i class="fas fa-history"></i> Appointment History</h2>
+                <div class="appointment-count-badge">
+                    <i class="fas fa-calendar-alt"></i>
+                    <span>{{ appointments|length }} Appointment{% if appointments|length != 1 %}s{% endif %}</span>
+                </div>
             </div>
 
             {% if appointments %}
@@ -116,6 +123,5 @@
                 </div>
             {% endif %}
         </div>
-    </div>
 </div>
 {% endblock %}

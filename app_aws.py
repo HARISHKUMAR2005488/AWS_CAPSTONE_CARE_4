@@ -1832,10 +1832,10 @@ def doctor_update_schedule():
         
         # Validate consultation fee is a number
         try:
-            fee = float(consultation_fee)
+            fee = Decimal(str(consultation_fee))
             if fee < 0:
                 return jsonify({"success": False, "message": "Consultation fee must be positive"}), 400
-        except ValueError:
+        except (ValueError, InvalidOperation):
             return jsonify({"success": False, "message": "Invalid consultation fee"}), 400
         
         # Build update expression
@@ -1856,7 +1856,7 @@ def doctor_update_schedule():
         # Update session
         session["available_days"] = available_days
         session["available_time"] = available_time
-        session["consultation_fee"] = fee
+        session["consultation_fee"] = float(fee)
         
         logger.info(f"Doctor {doctor_username} updated schedule successfully")
         

@@ -282,21 +282,22 @@ document.addEventListener('DOMContentLoaded', function() {
     const selectedPatientGenderSpan = document.getElementById('selectedPatientGender');
     const charCountSpan = document.getElementById('charCount');
     
-    // Initialize patient info from page load
-    const initializePatientInfo = function() {
+    // Helper function to update summary from hidden fields
+    const updateSummaryFromHiddenFields = function() {
         const patientNameInput = document.querySelector('input[name="patient_name"]');
         const patientEmailInput = document.querySelector('input[name="patient_email"]');
         const patientPhoneInput = document.querySelector('input[name="patient_phone"]');
         const patientAgeInput = document.querySelector('input[name="patient_age"]');
         const patientGenderInput = document.querySelector('input[name="patient_gender"]');
         
+        // Update from hidden fields (actual data being sent)
         if (patientNameInput && patientNameInput.value) {
             selectedPatientNameSpan.textContent = patientNameInput.value;
             selectedPatientNameSpan.style.color = 'var(--dark)';
-        } else if (document.querySelector('.info-value') && document.querySelector('.info-value').textContent) {
-            // Fallback to username from display
+        } else {
+            // Fallback to display username
             const displayName = document.querySelector('.patient-info-display .info-value');
-            if (displayName) {
+            if (displayName && displayName.textContent) {
                 selectedPatientNameSpan.textContent = displayName.textContent;
                 selectedPatientNameSpan.style.color = 'var(--dark)';
             }
@@ -323,8 +324,197 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     };
     
-    // Call on page load
-    setTimeout(initializePatientInfo, 100);
+    // Initialize patient info on page load
+    updateSummaryFromHiddenFields();
+    
+    // Watch for changes to hidden fields and update summary
+    const patientNameInput = document.querySelector('input[name="patient_name"]');
+    const patientEmailInput = document.querySelector('input[name="patient_email"]');
+    const patientPhoneInput = document.querySelector('input[name="patient_phone"]');
+    const patientAgeInput = document.querySelector('input[name="patient_age"]');
+    const patientGenderInput = document.querySelector('input[name="patient_gender"]');
+    
+    if (patientNameInput) {
+        patientNameInput.addEventListener('change', updateSummaryFromHiddenFields);
+    }
+    if (patientEmailInput) {
+        patientEmailInput.addEventListener('change', updateSummaryFromHiddenFields);
+    }
+    if (patientPhoneInput) {
+        patientPhoneInput.addEventListener('change', updateSummaryFromHiddenFields);
+    }
+    if (patientAgeInput) {
+        patientAgeInput.addEventListener('change', updateSummaryFromHiddenFields);
+    }
+    if (patientGenderInput) {
+        patientGenderInput.addEventListener('change', updateSummaryFromHiddenFields);
+    }
+    
+    // Fetch doctor availability
+    const doctorId = {{ doctor.id }};
+    let doctorAvailability = {
+        available_days: [],
+        start_time: '09:00',
+        end_time: '17:00'
+    };
+    
+    fetch(`/api/doctor-availability/${doctorId}`)
+        .then(response => response.json())
+        .then(data => {
+            doctorAvailability = data;
+            console.log('Doctor availability loaded:', doctorAvailability);
+            
+            // Set up date input constraints
+            if (data.available_days && data.available_days.length > 0) {
+                // If doctor has specific available days, we'll validate on change
+                dateInput.addEventListener('change', validateDateAvailability);
+            }
+        })
+        .catch(error => console.error('Error fetching doctor availability:', error));
+    
+    function validateDateAvailability() {
+        if (dateInput.value && doctorAvailability.available_days.length > 0) {
+            const selectedDate = new Date(dateInput.value);
+            if (!isDateAvailable(selectedDate, doctorAvailability.available_days)) {
+                dateInput.setCustomValidity('Doctor is not available on this day');
+                alert(`Doctor is not available on ${selectedDate.toLocaleDateString('en-US', { weekday: 'long' })}. Available days: ${doctorAvailability.available_days_str}`);
+                dateInput.value = '';
+                selectedDateSpan.textContent = 'Not selected';
+                selectedDateSpan.style.color = 'var(--gray)';
+            } else {
+                dateInput.setCustomValidity('');
+            }
+        }
+    }
+    
+    // Update summary date in real-time and populate time slots
+    dateInput.addEventListener('change', function() {
+        if (this.value) {
+            const date = new Date(this.value);
+            
+            // Validate date is available
+            validateDateAvailability();
+            if (dateInput.validity.customError) {
+                return;
+            }
+            
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            selectedDateSpan.textContent = date.toLocaleDateString('en-US', options);
+            selectedDateSpan.style.color = 'var(--dark)';
+            selectedDateSpan.style.fontWeight = '600';
+            
+            // Generate time slots based on doctor's available time range
+            const timeSlots = generateTimeSlots(doctorAvailability.start_time, doctorAvailability.end_time);
+            
+            // Clear current options
+            timeSelect.innerHTML = '<option value="">Select time slot</option>';
+            
+            // Add new options (convert 24-hour format to 12-hour for display)
+            timeSlots.forEach(slot => {
+                const [hour, min] = slot.split(':').map(Number);
+                const period = hour >= 12 ? 'PM' : 'AM';
+                const displayHour = hour % 12 || 12;
+                const displayTime = `${displayHour}:${String(min).padStart(2, '0')} ${period}`;
+                
+                const option = document.createElement('option');
+                option.value = slot;
+                option.textContent = displayTime;
+                timeSelect.appendChild(option);
+            });
+        } else {
+            selectedDateSpan.textContent = 'Not selected';
+            selectedDateSpan.style.color = 'var(--gray)';
+            selectedDateSpan.style.fontWeight = '400';
+            
+            // Reset time select
+            timeSelect.innerHTML = '<option value="">Select time slot</option>';
+            selectedTimeSpan.textContent = 'Not selected';
+            selectedTimeSpan.style.color = 'var(--gray)';
+        }
+    });
+    
+    // Update summary time in real-time
+    timeSelect.addEventListener('change', function() {
+        if (this.value) {
+            // Format time from 24-hour (HH:MM) to 12-hour format for display
+            const [hour, min] = this.value.split(':').map(Number);
+            const period = hour >= 12 ? 'PM' : 'AM';
+            const displayHour = hour % 12 || 12;
+            const displayTime = `${displayHour}:${String(min).padStart(2, '0')} ${period}`;
+            
+            selectedTimeSpan.textContent = displayTime;
+            selectedTimeSpan.style.color = 'var(--dark)';
+            selectedTimeSpan.style.fontWeight = '600';
+        } else {
+            selectedTimeSpan.textContent = 'Not selected';
+            selectedTimeSpan.style.color = 'var(--gray)';
+            selectedTimeSpan.style.fontWeight = '400';
+        }
+    });
+    
+    // Update character count and summary for symptoms
+    symptomsInput.addEventListener('input', function() {
+        const count = this.value.length;
+        charCountSpan.textContent = count;
+        
+        // Update symptoms summary
+        if (this.value.trim()) {
+            selectedSymptomsSpan.textContent = this.value;
+            selectedSymptomsSpan.style.color = 'var(--dark)';
+        } else {
+            selectedSymptomsSpan.textContent = 'Not provided';
+            selectedSymptomsSpan.style.color = 'var(--gray)';
+        }
+        
+        if (count > 500) {
+            this.value = this.value.substring(0, 500);
+            charCountSpan.textContent = 500;
+            selectedSymptomsSpan.textContent = this.value;
+        }
+        
+        if (count > 450) {
+            charCountSpan.parentElement.style.color = '#EF4444';
+        } else {
+            charCountSpan.parentElement.style.color = 'var(--gray)';
+        }
+    });
+    
+    // Form validation
+    const form = document.querySelector('.booking-form');
+    form.addEventListener('submit', function(e) {
+        if (!dateInput.value) {
+            e.preventDefault();
+            alert('Please select a date');
+            dateInput.focus();
+            return false;
+        }
+        
+        if (!timeSelect.value) {
+            e.preventDefault();
+            alert('Please select a time slot');
+            timeSelect.focus();
+            return false;
+        }
+        
+        if (!symptomsInput.value.trim()) {
+            e.preventDefault();
+            alert('Please provide symptoms or reason for visit');
+            symptomsInput.focus();
+            return false;
+        }
+        
+        const selectedDate = new Date(dateInput.value);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        if (selectedDate < today) {
+            e.preventDefault();
+            alert('Please select a future date');
+            dateInput.focus();
+            return false;
+        }
+    });
+});
     
     // Fetch doctor availability
     const doctorId = {{ doctor.id }};

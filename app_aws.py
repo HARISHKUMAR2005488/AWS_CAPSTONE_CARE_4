@@ -824,7 +824,22 @@ def dashboard():
             appt.setdefault("status", "pending")
             appt.setdefault("symptoms", appt.get("reason", ""))
             appt.setdefault("notes", appt.get("medical_notes", ""))
-            appt.setdefault("patient", {"username": appt.get("username", "Unknown"), "email": ""})
+            
+            # Fetch full patient details
+            patient_username = appt.get("username", "Unknown")
+            patient_details = {"username": patient_username, "email": "", "phone": "", "age": "", "gender": ""}
+            if patient_username != "Unknown":
+                patient_user = get_user(patient_username)
+                if patient_user:
+                    patient_details = {
+                        "username": patient_username,
+                        "email": patient_user.get("email", ""),
+                        "phone": patient_user.get("phone", ""),
+                        "age": patient_user.get("age", ""),
+                        "gender": patient_user.get("gender", ""),
+                        "name": patient_user.get("name", patient_username)
+                    }
+            appt.setdefault("patient", patient_details)
             
             # Handle appointment_date
             date_val = appt.get("date") or appt.get("appointment_date")

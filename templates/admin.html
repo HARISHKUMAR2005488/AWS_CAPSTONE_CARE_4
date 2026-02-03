@@ -267,82 +267,6 @@
         {% endif %}
     </div>
 
-    <!-- Recent Appointments (Upcoming) -->
-    <div class="recent-section">
-        <div class="section-header">
-            <h2><i class="fas fa-calendar-alt"></i> Upcoming Appointments</h2>
-        </div>
-
-        {% if recent_appointments %}
-        <div class="appointments-table">
-            <table>
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Patient</th>
-                        <th>Doctor</th>
-                        <th>Date & Time</th>
-                        <th>Symptoms</th>
-                        <th>Status</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for appointment in recent_appointments %}
-                    <tr>
-                        <td>#{{ appointment.id }}</td>
-                        <td>
-                            <div class="patient-cell">
-                                <strong>{{ appointment.patient.username }}</strong>
-                                <small>{{ appointment.patient.email or 'N/A' }}</small>
-                            </div>
-                        </td>
-                        <td>{{ appointment.doctor.name }}</td>
-                        <td>
-                            <div class="datetime-cell">
-                                <span class="date">{{ appointment.appointment_date.strftime('%b %d, %Y') }}</span>
-                                <span class="time">{{ appointment.appointment_time }}</span>
-                            </div>
-                        </td>
-                        <td>
-                            <span class="symptoms-text">{{ appointment.symptoms[:50] }}{% if appointment.symptoms|length
-                                > 50 %}...{% endif %}</span>
-                        </td>
-                        <td>
-                            <span class="status-badge {{ appointment.status }}">
-                                {{ 'Approved' if appointment.status == 'confirmed' else appointment.status|title }}
-                            </span>
-                        </td>
-                        <td>
-                            <div class="action-buttons">
-                                {% if appointment.status == 'pending' %}
-                                <button class="btn-sm btn-success"
-                                    onclick="updateAppointment('{{ appointment.id }}', 'confirmed')">
-                                    Confirm
-                                </button>
-                                <button class="btn-sm btn-danger"
-                                    onclick="updateAppointment('{{ appointment.id }}', 'cancelled')">
-                                    Cancel
-                                </button>
-                                {% endif %}
-                                <button class="btn-sm btn-info" onclick="viewDetails('{{ appointment.id }}')">
-                                    Details
-                                </button>
-                            </div>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-                </< /table>
-        </div>
-        {% else %}
-        <div class="no-data">
-            <i class="fas fa-calendar-times"></i>
-            <p>No upcoming appointments</p>
-        </div>
-        {% endif %}
-    </div>
-
     <!-- Add User Modal -->
     <div id="addUserModal" class="modal">
         <div class="modal-content">
@@ -854,6 +778,82 @@
                 </div>
             </div>
         </div>
+    </div>
+
+    <!-- Recent Appointments (Upcoming) - Moved to bottom before footer -->
+    <div class="recent-section">
+        <div class="section-header">
+            <h2><i class="fas fa-calendar-alt"></i> Upcoming Appointments</h2>
+        </div>
+
+        {% if recent_appointments %}
+        <div class="appointments-table">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Patient</th>
+                        <th>Doctor</th>
+                        <th>Date & Time</th>
+                        <th>Symptoms</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for appointment in recent_appointments %}
+                    <tr>
+                        <td>#{{ appointment.id }}</td>
+                        <td>
+                            <div class="patient-cell">
+                                <strong>{{ appointment.patient.username }}</strong>
+                                <small>{{ appointment.patient.email or 'N/A' }}</small>
+                            </div>
+                        </td>
+                        <td>{{ appointment.doctor.name }}</td>
+                        <td>
+                            <div class="datetime-cell">
+                                <span class="date">{{ appointment.appointment_date.strftime('%b %d, %Y') }}</span>
+                                <span class="time">{{ appointment.appointment_time }}</span>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="symptoms-text">{{ appointment.symptoms[:50] }}{% if appointment.symptoms|length
+                                > 50 %}...{% endif %}</span>
+                        </td>
+                        <td>
+                            <span class="status-badge {{ appointment.status }}">
+                                {{ 'Approved' if appointment.status == 'confirmed' else appointment.status|title }}
+                            </span>
+                        </td>
+                        <td>
+                            <div class="action-buttons">
+                                {% if appointment.status == 'pending' %}
+                                <button class="btn-sm btn-success"
+                                    onclick="updateAppointment('{{ appointment.id }}', 'confirmed')">
+                                    Confirm
+                                </button>
+                                <button class="btn-sm btn-danger"
+                                    onclick="updateAppointment('{{ appointment.id }}', 'cancelled')">
+                                    Cancel
+                                </button>
+                                {% endif %}
+                                <button class="btn-sm btn-info" onclick="viewDetails('{{ appointment.id }}')">
+                                    Details
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="no-data">
+            <i class="fas fa-calendar-times"></i>
+            <p>No upcoming appointments</p>
+        </div>
+        {% endif %}
     </div>
 </div>
 {% endblock %}

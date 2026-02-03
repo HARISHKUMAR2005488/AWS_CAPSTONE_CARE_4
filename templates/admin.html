@@ -102,6 +102,23 @@
             </button>
         </div>
 
+        <!-- Search and Filter Controls -->
+        <div class="table-controls">
+            <div class="search-box">
+                <i class="fas fa-search"></i>
+                <input type="text" id="userSearch" placeholder="Search by name, email, or phone..." onkeyup="filterUsers()">
+            </div>
+            <div class="filter-group">
+                <button class="filter-btn active" onclick="filterByRole('all')">All</button>
+                <button class="filter-btn" onclick="filterByRole('admin')">Admins</button>
+                <button class="filter-btn" onclick="filterByRole('doctor')">Doctors</button>
+                <button class="filter-btn" onclick="filterByRole('user')">Patients</button>
+            </div>
+            <button class="export-btn" onclick="exportTableToCSV('users')">
+                <i class="fas fa-download"></i> Export
+            </button>
+        </div>
+
         {% if users %}
         <!-- Admins Section -->
         {% set admins = users|selectattr('role', 'equalto', 'admin')|list %}
@@ -1224,5 +1241,270 @@
                 alert('An error occurred. Please try again.');
             });
     }
+
+    // ===== ENHANCED UX FEATURES =====
+    
+    // Search/Filter Users
+    let currentRoleFilter = 'all';
+    
+    function filterUsers() {
+        const searchTerm = document.getElementById('userSearch').value.toLowerCase();
+        const tables = document.querySelectorAll('.appointments-table table');
+        
+        tables.forEach(table => {
+            const tbody = table.querySelector('tbody');
+            if (!tbody) return;
+            
+            const rows = tbody.querySelectorAll('tr');
+            let visibleCount = 0;
+            
+            rows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                const matchesSearch = text.includes(searchTerm);
+                const sectionRole = getSectionRole(table);
+                const matchesRole = currentRoleFilter === 'all' || sectionRole === currentRoleFilter;
+                
+                if (matchesSearch && matchesRole) {
+                    row.style.display = '';
+                    visibleCount++;
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+            
+            // Show/hide entire section if no matches
+            const section = table.closest('.appointments-table');
+            if (section) {
+                const header = section.previousElementSibling;
+                if (visibleCount === 0 && searchTerm) {
+                    section.style.display = 'none';
+                    if (header && header.tagName === 'H3') header.style.display = 'none';
+                } else {
+                    section.style.display = '';
+                    if (header && header.tagName === 'H3') header.style.display = '';
+                }
+            }
+        });
+    }
+    
+    function getSectionRole(table) {
+        const section = table.closest('.appointments-table');
+        const header = section ? section.previousElementSibling : null;
+        if (!header || header.tagName !== 'H3') return 'user';
+        
+        const headerText = header.textContent.toLowerCase();
+        if (headerText.includes('administrator')) return 'admin';
+        if (headerText.includes('doctor')) return 'doctor';
+        return 'user';
+    }
+    
+    function filterByRole(role) {
+        currentRoleFilter = role;
+        
+        // Update active button
+        document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+        event.target.classList.add('active');
+        
+        // Apply filter
+        filterUsers();
+    }
+    
+    // Sort Table
+    function sortTable(table, columnIndex, ascending = true) {
+        const tbody = table.querySelector('tbody');
+        const rows = Array.from(tbody.querySelectorAll('tr'));
+        
+        rows.sort((a, b) => {
+            const aText = a.cells[columnIndex].textContent.trim();
+            const bText = b.cells[columnIndex].textContent.trim();
+            
+            // Try numeric comparison first
+            const aNum = parseFloat(aText);
+            const bNum = parseFloat(bText);
+            
+            if (!isNaN(aNum) && !isNaN(bNum)) {
+                return ascending ? aNum - bNum : bNum - aNum;
+            }
+            
+            // Fall back to string comparison
+            return ascending ? aText.localeCompare(bText) : bText.localeCompare(aText);
+        });
+        
+        rows.forEach(row => tbody.appendChild(row));
+    }
+    
+    // Make table headers sortable
+    document.addEventListener('DOMContentLoaded', function() {
+        const tables = document.querySelectorAll('.appointments-table table');
+        
+        tables.forEach(table => {
+            const headers = table.querySelectorAll('thead th');
+            
+            headers.forEach((header, index) => {
+                // Skip action column
+                if (header.textContent.toLowerCase().includes('action')) return;
+                
+                header.classList.add('sortable');
+                let ascending = true;
+                
+                header.addEventListener('click', function() {
+                    // Reset other headers
+                    headers.forEach(h => {
+                        h.classList.remove('sorted-asc', 'sorted-desc');
+                    });
+                    
+                    // Sort table
+                    sortTable(table, index, ascending);
+                    
+                    // Update header state
+                    this.classList.add(ascending ? 'sorted-asc' : 'sorted-desc');
+                    ascending = !ascending;
+                });
+            });
+        });
+    });
+    
+    // Export Table to CSV
+    function exportTableToCSV(type) {
+        const tables = document.querySelectorAll('.appointments-table table');
+        let csvContent = '';
+        
+        tables.forEach((table, idx) => {
+            const rows = table.querySelectorAll('tr');
+            const sectionHeader = table.closest('.appointments-table').previousElementSibling;
+            
+            if (sectionHeader && sectionHeader.tagName === 'H3') {
+                csvContent += sectionHeader.textContent.trim() + '\n';
+            }
+            
+            rows.forEach(row => {
+                const cols = row.querySelectorAll('th, td');
+                const rowData = Array.from(cols).map(col => {
+                    return '"' + col.textContent.trim().replace(/"/g, '""') + '"';
+                });
+                csvContent += rowData.join(',') + '\n';
+            });
+            
+            csvContent += '\n';
+        });
+        
+        // Download CSV
+        const blob = new Blob([csvContent], { type: 'text/csv' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `care4u_${type}_${new Date().toISOString().split('T')[0]}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+        
+        showToast('Export successful!', 'success');
+    }
+    
+    // Toast Notifications
+    function showToast(message, type = 'success') {
+        const container = getOrCreateToastContainer();
+        
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+        toast.innerHTML = `
+            <i class="toast-icon fas ${type === 'success' ? 'fa-check-circle' : type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle'}"></i>
+            <span class="toast-message">${message}</span>
+            <button class="toast-close" onclick="this.parentElement.remove()">&times;</button>
+        `;
+        
+        container.appendChild(toast);
+        
+        // Auto remove after 5 seconds
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            setTimeout(() => toast.remove(), 300);
+        }, 5000);
+    }
+    
+    function getOrCreateToastContainer() {
+        let container = document.querySelector('.toast-container');
+        if (!container) {
+            container = document.createElement('div');
+            container.className = 'toast-container';
+            document.body.appendChild(container);
+        }
+        return container;
+    }
+    
+    // Loading Overlay
+    function showLoading() {
+        let overlay = document.querySelector('.loading-overlay');
+        if (!overlay) {
+            overlay = document.createElement('div');
+            overlay.className = 'loading-overlay';
+            overlay.innerHTML = '<div class="spinner"></div>';
+            document.body.appendChild(overlay);
+        }
+        overlay.classList.add('active');
+    }
+    
+    function hideLoading() {
+        const overlay = document.querySelector('.loading-overlay');
+        if (overlay) {
+            overlay.classList.remove('active');
+        }
+    }
+    
+    // Animate stat cards on load
+    document.addEventListener('DOMContentLoaded', function() {
+        const statCards = document.querySelectorAll('.stat-info h3');
+        
+        statCards.forEach(card => {
+            const targetValue = parseInt(card.textContent);
+            if (isNaN(targetValue)) return;
+            
+            let currentValue = 0;
+            const increment = Math.ceil(targetValue / 50);
+            const duration = 1500; // 1.5 seconds
+            const stepTime = duration / (targetValue / increment);
+            
+            card.textContent = '0';
+            
+            const counter = setInterval(() => {
+                currentValue += increment;
+                if (currentValue >= targetValue) {
+                    card.textContent = targetValue;
+                    clearInterval(counter);
+                } else {
+                    card.textContent = currentValue;
+                }
+            }, stepTime);
+        });
+    });
+    
+    // Keyboard shortcuts
+    document.addEventListener('keydown', function(e) {
+        // Ctrl/Cmd + K: Focus search
+        if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+            e.preventDefault();
+            const searchBox = document.getElementById('userSearch');
+            if (searchBox) searchBox.focus();
+        }
+        
+        // Esc: Close modals
+        if (e.key === 'Escape') {
+            document.querySelectorAll('.modal').forEach(modal => {
+                modal.style.display = 'none';
+                modal.classList.remove('active');
+            });
+        }
+    });
+    
+    // Enhanced form submissions with loading states
+    const originalFetch = window.fetch;
+    window.fetch = function(...args) {
+        showLoading();
+        return originalFetch.apply(this, args).finally(() => {
+            hideLoading();
+        });
+    };
+
 </script>
 {% endblock %}

@@ -407,6 +407,23 @@ main {
     text-align: center;
     min-height: 160px;
     justify-content: space-between;
+    position: relative;
+    overflow: hidden;
+}
+
+.stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(95, 234, 190, 0.1), transparent);
+    transition: left 0.5s;
+}
+
+.stat-card:hover::before {
+    left: 100%;
 }
 
 .stat-card:hover {
@@ -441,6 +458,16 @@ main {
 
 .stat-icon.pending {
     background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+    animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        box-shadow: 0 0 0 0 rgba(243, 156, 18, 0.7);
+    }
+    50% {
+        box-shadow: 0 0 0 10px rgba(243, 156, 18, 0);
+    }
 }
 
 .stat-info {
@@ -11116,3 +11143,265 @@ body {
 ::-webkit-scrollbar-thumb:hover {
     background: var(--admin-gray);
 }
+
+/* ===== ENHANCED ADMIN DASHBOARD UX ===== */
+
+/* Search and Filter Controls */
+.table-controls {
+    display: flex;
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-lg);
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.search-box {
+    position: relative;
+    flex: 1;
+    min-width: 250px;
+    max-width: 400px;
+}
+
+.search-box input {
+    width: 100%;
+    padding: var(--spacing-sm) var(--spacing-md) var(--spacing-sm) 2.5rem;
+    border: 2px solid var(--gray-lighter);
+    border-radius: var(--border-radius-full);
+    font-size: var(--font-size-sm);
+    transition: all var(--transition-fast);
+}
+
+.search-box input:focus {
+    outline: none;
+    border-color: #5FEABE;
+    box-shadow: 0 0 0 3px rgba(95, 234, 190, 0.1);
+}
+
+.search-box i {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--gray);
+    pointer-events: none;
+}
+
+.filter-group {
+    display: flex;
+    gap: var(--spacing-sm);
+    align-items: center;
+}
+
+.filter-btn {
+    padding: var(--spacing-sm) var(--spacing-md);
+    border: 2px solid var(--gray-lighter);
+    background: var(--white);
+    border-radius: var(--border-radius-md);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    color: var(--gray);
+}
+
+.filter-btn:hover {
+    border-color: #5FEABE;
+    color: #5FEABE;
+}
+
+.filter-btn.active {
+    background: linear-gradient(135deg, #5FEABE 0%, #4AD4A8 100%);
+    border-color: #5FEABE;
+    color: var(--dark);
+    font-weight: var(--font-weight-bold);
+}
+
+.export-btn {
+    padding: var(--spacing-sm) var(--spacing-lg);
+    background: var(--white);
+    border: 2px solid #5FEABE;
+    color: #5FEABE;
+    border-radius: var(--border-radius-md);
+    font-weight: var(--font-weight-medium);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+}
+
+.export-btn:hover {
+    background: linear-gradient(135deg, #5FEABE 0%, #4AD4A8 100%);
+    color: var(--dark);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(95, 234, 190, 0.3);
+}
+
+/* Sortable Table Headers */
+.sortable {
+    cursor: pointer;
+    user-select: none;
+    position: relative;
+}
+
+.sortable::after {
+    content: '\u21c5';
+    position: absolute;
+    right: 1rem;
+    opacity: 0.3;
+    font-size: var(--font-size-sm);
+}
+
+.sortable:hover {
+    background: linear-gradient(135deg, #2c2c2c 0%, #3a3a3a 100%);
+}
+
+.sorted-asc::after {
+    content: '\u2191';
+    opacity: 1;
+    color: #5FEABE;
+}
+
+.sorted-desc::after {
+    content: '\u2193';
+    opacity: 1;
+    color: #5FEABE;
+}
+
+/* Loading Spinner */
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+}
+
+.loading-overlay.active {
+    display: flex;
+}
+
+.spinner {
+    width: 50px;
+    height: 50px;
+    border: 4px solid rgba(95, 234, 190, 0.3);
+    border-top-color: #5FEABE;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Toast Notifications */
+.toast-container {
+    position: fixed;
+    top: 100px;
+    right: 20px;
+    z-index: 10000;
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+}
+
+.toast {
+    background: var(--white);
+    padding: var(--spacing-md) var(--spacing-lg);
+    border-radius: var(--border-radius-lg);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    min-width: 300px;
+    max-width: 400px;
+    animation: slideIn 0.3s ease-out;
+    border-left: 4px solid #5FEABE;
+}
+
+.toast.success {
+    border-left-color: #5FEABE;
+}
+
+.toast.error {
+    border-left-color: #e74c3c;
+}
+
+.toast.warning {
+    border-left-color: #f39c12;
+}
+
+.toast .toast-icon {
+    font-size: var(--font-size-xl);
+    flex-shrink: 0;
+}
+
+.toast.success .toast-icon {
+    color: #5FEABE;
+}
+
+.toast.error .toast-icon {
+    color: #e74c3c;
+}
+
+.toast.warning .toast-icon {
+    color: #f39c12;
+}
+
+.toast .toast-message {
+    flex: 1;
+    color: var(--dark);
+    font-weight: var(--font-weight-medium);
+}
+
+.toast .toast-close {
+    background: none;
+    border: none;
+    color: var(--gray);
+    font-size: var(--font-size-lg);
+    cursor: pointer;
+    padding: 0;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all var(--transition-fast);
+}
+
+.toast .toast-close:hover {
+    background: var(--gray-lighter);
+    color: var(--dark);
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(400px);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* Pulse Animation for Pending Stats */
+@keyframes pulse {
+    0%, 100% {
+        box-shadow: 0 0 0 0 rgba(243, 156, 18, 0.7);
+    }
+    50% {
+        box-shadow: 0 0 0 10px rgba(243, 156, 18, 0);
+    }
+}
+
+.stat-icon.pending {
+    animation: pulse 2s ease-in-out infinite;
+}
+

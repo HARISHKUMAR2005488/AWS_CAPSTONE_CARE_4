@@ -447,6 +447,24 @@ async function updateAppointmentStatus(appointmentId, status) {
     }
 }
 
+// Appointment approval handler
+function approveAppointment(appointmentId, patientName, appointmentDate, appointmentTime) {
+    const confirmMsg = `Approve appointment for ${patientName} on ${appointmentDate} at ${appointmentTime}?`;
+    if (confirm(confirmMsg)) {
+        console.log(`Approving appointment ${appointmentId}`);
+        updateAppointmentStatus(appointmentId, 'confirmed');
+    }
+}
+
+// Appointment rejection handler
+function rejectAppointment(appointmentId, patientName) {
+    const confirmMsg = `Reject appointment request from ${patientName}?`;
+    if (confirm(confirmMsg)) {
+        console.log(`Rejecting appointment ${appointmentId}`);
+        updateAppointmentStatus(appointmentId, 'cancelled');
+    }
+}
+
 // Local Storage Helpers
 function saveToLocalStorage(key, data) {
     try {
@@ -527,6 +545,8 @@ window.AppUtils = {
     debounce,
     fetchAvailableSlots,
     updateAppointmentStatus,
+    approveAppointment,
+    rejectAppointment,
     saveToLocalStorage,
     getFromLocalStorage
 };

@@ -350,10 +350,10 @@
                                         {% endif %}
                                     </div>
                                     <div class="request-actions">
-                                        <button class="btn btn-success" onclick="if(confirm('Approve appointment for {{ appointment.patient.name or appointment.patient.username }} on {{ appointment.appointment_date.strftime('%b %d') }} at {{ appointment.appointment_time }}?')) updateAppointmentStatus('{{ appointment.id }}', 'confirmed')">
+                                        <button class="btn btn-success" onclick="approveAppointment('{{ appointment.id }}', '{{ appointment.patient.name or appointment.patient.username }}', '{{ appointment.appointment_date.strftime('%b %d, %Y') }}', '{{ appointment.appointment_time }}')">
                                             <i class="fas fa-check-circle"></i> Approve
                                         </button>
-                                        <button class="btn btn-danger" onclick="if(confirm('Reject appointment request from {{ appointment.patient.name or appointment.patient.username }}?')) updateAppointmentStatus('{{ appointment.id }}', 'cancelled')">
+                                        <button class="btn btn-danger" onclick="rejectAppointment('{{ appointment.id }}', '{{ appointment.patient.name or appointment.patient.username }}')">
                                             <i class="fas fa-times-circle"></i> Reject
                                         </button>
                                     </div>

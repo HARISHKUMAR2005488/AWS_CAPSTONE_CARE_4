@@ -855,9 +855,13 @@ def dashboard():
         today_appointments = [a for a in doctor_appts if a.get("appointment_date") == today]
         upcoming_appointments = [a for a in doctor_appts if a.get("appointment_date") and a.get("appointment_date") > today]
         
+        # Get all pending appointments (not just today's)
+        pending_appointments = [a for a in doctor_appts if a.get("status") == "pending"]
+        
         # Sort appointments by time (handle None values)
         today_appointments.sort(key=lambda x: (x.get("appointment_time") or "", x.get("id", "")))
         upcoming_appointments.sort(key=lambda x: (x.get("appointment_date") or date.today(), x.get("appointment_time") or "", x.get("id", "")))
+        pending_appointments.sort(key=lambda x: (x.get("appointment_date") or date.today(), x.get("appointment_time") or "", x.get("id", "")))
 
         return render_template(
             "doctor.html",
@@ -866,6 +870,7 @@ def dashboard():
             appointments=doctor_appts,
             today_appointments=today_appointments,
             upcoming_appointments=upcoming_appointments,
+            pending_appointments=pending_appointments,
             today=today,
             total_appointments=total_appointments,
             pending_count=pending_count,

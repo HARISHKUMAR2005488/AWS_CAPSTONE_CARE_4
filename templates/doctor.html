@@ -286,8 +286,7 @@
                 </div>
                 {% if pending_count > 0 %}
                     <div class="requests-container">
-                        {% for appointment in today_appointments %}
-                            {% if appointment.status == 'pending' %}
+                        {% for appointment in pending_appointments %}
                                 <div class="request-card">
                                     <div class="request-header">
                                         <h3>{{ appointment.patient.username }}</h3>
@@ -306,15 +305,14 @@
                                         {% endif %}
                                     </div>
                                     <div class="request-actions">
-                                        <button class="btn btn-success">
+                                        <button class="btn btn-success" onclick="updateAppointmentStatus('{{ appointment.id }}', 'confirmed')">
                                             <i class="fas fa-check-circle"></i> Approve
                                         </button>
-                                        <button class="btn btn-danger">
+                                        <button class="btn btn-danger" onclick="updateAppointmentStatus('{{ appointment.id }}', 'cancelled')">
                                             <i class="fas fa-times-circle"></i> Reject
                                         </button>
                                     </div>
                                 </div>
-                            {% endif %}
                         {% endfor %}
                     </div>
                 {% else %}

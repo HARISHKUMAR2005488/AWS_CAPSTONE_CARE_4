@@ -420,16 +420,29 @@ async function fetchAvailableSlots(doctorId, date) {
 
 async function updateAppointmentStatus(appointmentId, status) {
     try {
-        const response = await fetch(`/admin/update-appointment/${appointmentId}`, {
+        const response = await fetch(`/doctor/update-appointment/${appointmentId}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
             },
             body: `status=${status}`
         });
-        return await response.json();
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            // Show success message
+            alert(`Appointment ${status === 'confirmed' ? 'approved' : 'rejected'} successfully!`);
+            // Reload the page to update the display
+            window.location.reload();
+        } else {
+            alert(`Error: ${result.message}`);
+        }
+        
+        return result;
     } catch (error) {
         console.error('Error updating appointment:', error);
+        alert('Network error occurred. Please try again.');
         return { success: false, message: 'Network error' };
     }
 }

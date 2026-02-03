@@ -8721,8 +8721,8 @@ body {
 }
 
 .search-group input[type="text"] {
-    flex: 2;
-    min-width: 0;
+    flex: 100%;
+    min-width: 500px;
     padding: var(--spacing-md) var(--spacing-xl);
     border: 2px solid var(--gray-lighter);
     border-radius: var(--radius-full);

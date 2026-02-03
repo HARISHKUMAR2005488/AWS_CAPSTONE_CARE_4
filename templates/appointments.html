@@ -71,15 +71,12 @@
                             <i class="fas fa-clock"></i>
                             Preferred Time <span class="form-required">*</span>
                         </label>
-                        <select id="appointment_time" name="appointment_time" class="form-input form-select" required
-                                aria-label="Preferred Time"
-                                aria-required="true">
-                            <option value="">Select time slot</option>
-                            {% for slot in available_slots %}
-                                <option value="{{ slot }}">{{ slot }}</option>
-                            {% endfor %}
-                        </select>
+                        <input type="time" id="appointment_time" name="appointment_time" class="form-input" required
+                               min="09:00" max="17:00" step="1800"
+                               aria-label="Preferred Time"
+                               aria-required="true">
                         <span class="form-feedback"></span>
+                        <span class="form-help">Select a time between 9:00 AM and 5:00 PM</span>
                     </div>
                 </div>
                 

@@ -28,6 +28,9 @@ class CurrentUser:
         self.email = session.get("email", "")
         self.phone = session.get("phone", "")
         self.profile_picture = session.get("profile_picture", "")
+        self.full_name = session.get("full_name", "")
+        self.age = session.get("age", "")
+        self.gender = session.get("gender", "")
     
     @property
     def is_anonymous(self):
@@ -672,6 +675,10 @@ def login():
                 session["email"] = item.get("email", "")
                 session["phone"] = item.get("phone", "")
                 session["profile_picture"] = item.get("profile_picture", "")
+                # Store additional profile data for form auto-fill
+                session["full_name"] = item.get("name", "")
+                session["age"] = item.get("age", "")
+                session["gender"] = item.get("gender", "")
                 
                 # Send notification for successful login
                 role_display = item.get("role", "user").capitalize()
@@ -2714,6 +2721,9 @@ def update_profile():
         username = session["username"]
         email = request.form.get("email", "").strip()
         phone = request.form.get("phone", "").strip()
+        full_name = request.form.get("full_name", "").strip()
+        age = request.form.get("age", "").strip()
+        gender = request.form.get("gender", "").strip()
         
         # Handle profile picture upload
         profile_picture_path = None
@@ -2744,6 +2754,21 @@ def update_profile():
             expr_values[":phone"] = phone
             session["phone"] = phone  # Update session
         
+        if full_name:
+            update_parts.append("#name = :name")
+            expr_values[":name"] = full_name
+            session["full_name"] = full_name  # Update session
+        
+        if age:
+            update_parts.append("age = :age")
+            expr_values[":age"] = age
+            session["age"] = age  # Update session
+        
+        if gender:
+            update_parts.append("gender = :gender")
+            expr_values[":gender"] = gender
+            session["gender"] = gender  # Update session
+        
         if profile_picture_path:
             update_parts.append("profile_picture = :pp")
             expr_values[":pp"] = profile_picture_path
@@ -2751,10 +2776,15 @@ def update_profile():
         
         if update_parts:
             update_expr = "SET " + ", ".join(update_parts)
+            attr_names = {}
+            if "#name" in update_expr:
+                attr_names["#name"] = "name"
+            
             users_table.update_item(
                 Key={"username": username},
                 UpdateExpression=update_expr,
-                ExpressionAttributeValues=expr_values
+                ExpressionAttributeValues=expr_values,
+                ExpressionAttributeNames=attr_names if attr_names else None
             )
         
         return jsonify({"success": True, "message": "Profile updated successfully"})

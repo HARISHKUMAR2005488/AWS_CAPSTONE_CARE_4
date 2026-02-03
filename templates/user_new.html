@@ -960,11 +960,28 @@
                 <form id="editProfileForm">
                     <div class="form-group">
                         <label for="editEmail">Email</label>
-                        <input type="email" id="editEmail" value="{{ current_user.email or '' }}" placeholder="Enter your email">
+                        <input type="email" id="editEmail" value="{{ current_user.email or session.get('email', '') }}" placeholder="Enter your email">
                     </div>
                     <div class="form-group">
                         <label for="editPhone">Phone Number</label>
-                        <input type="tel" id="editPhone" value="{{ current_user.phone or '' }}" placeholder="Enter your phone number">
+                        <input type="tel" id="editPhone" value="{{ current_user.phone or session.get('phone', '') }}" placeholder="Enter your phone number">
+                    </div>
+                    <div class="form-group">
+                        <label for="editFullName">Full Name</label>
+                        <input type="text" id="editFullName" value="{{ session.get('full_name', '') }}" placeholder="Enter your full name">
+                    </div>
+                    <div class="form-group">
+                        <label for="editAge">Age</label>
+                        <input type="number" id="editAge" min="1" max="150" value="{{ session.get('age', '') }}" placeholder="Enter your age">
+                    </div>
+                    <div class="form-group">
+                        <label for="editGender">Gender</label>
+                        <select id="editGender">
+                            <option value="">Select Gender</option>
+                            <option value="Male" {% if session.get('gender') == 'Male' %}selected{% endif %}>Male</option>
+                            <option value="Female" {% if session.get('gender') == 'Female' %}selected{% endif %}>Female</option>
+                            <option value="Other" {% if session.get('gender') == 'Other' %}selected{% endif %}>Other</option>
+                        </select>
                     </div>
                     <div class="form-group">
                         <label for="editProfilePicture">Profile Picture</label>

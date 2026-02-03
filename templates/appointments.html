@@ -145,6 +145,12 @@
                     Please ensure your contact information is up to date. 
                     <a href="#" class="form-link">Update profile</a>
                 </p>
+                <!-- Hidden fields for form submission with auto-filled data -->
+                <input type="hidden" name="patient_email" value="{{ session.get('email', '') }}">
+                <input type="hidden" name="patient_phone" value="{{ session.get('phone', '') }}">
+                <input type="hidden" name="patient_name" value="{{ session.get('full_name', '') }}">
+                <input type="hidden" name="patient_age" value="{{ session.get('age', '') }}">
+                <input type="hidden" name="patient_gender" value="{{ session.get('gender', '') }}">
             </div>
             
             <div class="booking-summary">

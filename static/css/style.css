@@ -9867,6 +9867,10 @@ body {
 
 /* ===== ADMIN HEADER ===== */
 .admin-header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
     background: var(--admin-navy);
     color: white;
     padding: 1rem 2rem;
@@ -10000,6 +10004,8 @@ body {
     display: flex;
     flex: 1;
     overflow: hidden;
+    margin-top: 72px;
+    height: calc(100vh - 72px);
 }
 
 /* ===== ADMIN SIDEBAR ===== */
@@ -10008,7 +10014,9 @@ body {
     background: white;
     border-right: 1px solid var(--admin-gray-light);
     overflow-y: auto;
+    overflow-x: hidden;
     padding: 1.5rem 0;
+    height: 100%;
 }
 
 .sidebar-nav {
@@ -10083,7 +10091,9 @@ body {
 .admin-main {
     flex: 1;
     overflow-y: auto;
+    overflow-x: hidden;
     padding: 2rem;
+    height: 100%;
 }
 
 /* ===== SECTION HEADER ===== */

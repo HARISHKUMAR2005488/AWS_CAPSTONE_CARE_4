@@ -771,11 +771,11 @@ textarea::placeholder {
 .appointments-table,
 .data-table,
 .table-container {
-    background: var(--card-bg);
+    background: #FFFFFF;
     border-radius: var(--radius-xl);
     overflow: hidden;
-    box-shadow: var(--shadow-card);
-    border: 1px solid rgba(95, 234, 190, 0.15);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    border: 2px solid #5FEABE;
     margin-top: var(--spacing-lg);
 }
 
@@ -785,7 +785,7 @@ table {
 }
 
 thead {
-    background: linear-gradient(135deg, var(--text-primary) 0%, rgba(29, 27, 27, 0.9) 100%);
+    background: linear-gradient(135deg, #5FEABE 0%, #4dd9a7 100%);
     color: var(--white);
 }
 
@@ -796,17 +796,17 @@ thead th {
     font-size: var(--font-size-xs);
     text-transform: uppercase;
     letter-spacing: 0.8px;
-    color: var(--white);
-    border-bottom: 2px solid var(--primary);
+    color: #1D1B1B;
+    border-bottom: 3px solid #E4FECA;
 }
 
 tbody tr {
-    border-bottom: 1px solid rgba(95, 234, 190, 0.1);
+    border-bottom: 1px solid rgba(228, 254, 202, 0.3);
     transition: var(--transition-fast);
 }
 
 tbody tr:hover {
-    background: rgba(95, 234, 190, 0.05);
+    background: rgba(228, 254, 202, 0.4);
     transform: scale(1.002);
 }
 
@@ -822,7 +822,7 @@ tbody td {
 }
 
 tbody tr:nth-child(even) {
-    background: rgba(95, 234, 190, 0.02);
+    background: rgba(228, 254, 202, 0.15);
 }
 
 /* ===== UNIVERSAL STATUS BADGES ===== */

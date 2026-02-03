@@ -6818,6 +6818,15 @@ body {
     box-shadow: 0 8px 24px rgba(245, 158, 11, 0.15);
 }
 
+.completed-card {
+    border-left-color: #10b981 !important;
+    background: linear-gradient(to right, #f0fdf4 0%, white 50%);
+}
+
+.completed-card:hover {
+    box-shadow: 0 8px 24px rgba(16, 185, 129, 0.15);
+}
+
 .request-header {
     margin-bottom: 1.5rem;
     display: flex;

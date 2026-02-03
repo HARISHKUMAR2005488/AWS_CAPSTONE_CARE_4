@@ -751,6 +751,79 @@
                         <p>All appointment requests have been processed.</p>
                     </div>
                 {% endif %}
+
+                <!-- Completed Appointments Section -->
+                <div class="section-header" style="margin-top: 3rem;">
+                    <h2><i class="fas fa-check-circle"></i> Completed Appointments</h2>
+                    <p class="subtitle">View your completed consultations</p>
+                </div>
+                {% set completed_appointments = [] %}
+                {% for appt in appointments %}
+                    {% if appt.status and appt.status.lower() == 'completed' %}
+                        {% set _ = completed_appointments.append(appt) %}
+                    {% endif %}
+                {% endfor %}
+                {% if completed_appointments %}
+                    <div class="requests-container">
+                        {% for appointment in completed_appointments %}
+                            <div class="request-card completed-card">
+                                <div class="request-header">
+                                    <div>
+                                        <h3><i class="fas fa-user-circle"></i> {{ appointment.patient.name or appointment.patient.username }}</h3>
+                                        <span class="patient-username">@{{ appointment.patient.username }}</span>
+                                    </div>
+                                    <span class="status-badge status-completed">Completed</span>
+                                </div>
+                                
+                                <div class="patient-info">
+                                    <div class="info-row">
+                                        <div class="info-item">
+                                            <i class="fas fa-calendar-alt"></i>
+                                            <span><strong>Date:</strong> {{ appointment.appointment_date.strftime('%B %d, %Y') if appointment.appointment_date else 'N/A' }}</span>
+                                        </div>
+                                        <div class="info-item">
+                                            <i class="fas fa-clock"></i>
+                                            <span><strong>Time:</strong> {{ appointment.appointment_time }}</span>
+                                        </div>
+                                    </div>
+                                    <div class="info-row">
+                                        {% if appointment.patient.email %}
+                                        <div class="info-item">
+                                            <i class="fas fa-envelope"></i>
+                                            <span>{{ appointment.patient.email }}</span>
+                                        </div>
+                                        {% endif %}
+                                        {% if appointment.patient.phone %}
+                                        <div class="info-item">
+                                            <i class="fas fa-phone"></i>
+                                            <span>{{ appointment.patient.phone }}</span>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                
+                                <div class="request-body">
+                                    <div class="reason">
+                                        <label><i class="fas fa-notes-medical"></i> Symptoms:</label>
+                                        <p>{{ appointment.symptoms or 'Not specified' }}</p>
+                                    </div>
+                                    {% if appointment.notes or appointment.prescription %}
+                                        <div class="notes">
+                                            <label><i class="fas fa-prescription"></i> Prescription/Notes:</label>
+                                            <p>{{ appointment.prescription or appointment.notes or 'No prescription provided' }}</p>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="empty-state large">
+                        <i class="fas fa-check-circle"></i>
+                        <h3>No Completed Appointments</h3>
+                        <p>Completed appointments will appear here.</p>
+                    </div>
+                {% endif %}
             </div>
 
             <!-- Schedule View -->

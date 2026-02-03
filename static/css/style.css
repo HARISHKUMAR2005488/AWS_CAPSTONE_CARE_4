@@ -8123,7 +8123,7 @@ body {
 
     .user-container,
     .doctor-container {
-        padding: 0;
+        padding: 0 var(--spacing-md);
     }
 
     .profile-info {

@@ -96,16 +96,6 @@
                     </div>
                     
                     <div class="overview-card">
-                        <div class="card-icon pending-icon">
-                            <i class="fas fa-hourglass-start"></i>
-                        </div>
-                        <div class="card-content">
-                            <h3>{{ pending_count }}</h3>
-                            <p>Pending Requests</p>
-                        </div>
-                    </div>
-                    
-                    <div class="overview-card">
                         <div class="card-icon completed-icon">
                             <i class="fas fa-check-circle"></i>
                         </div>
@@ -130,25 +120,26 @@
                 <div class="dashboard-content-grid">
                     <!-- Left Column: Appointments -->
                     <div class="dashboard-left-column">
-                        <!-- Upcoming Appointments Preview -->
+                        <!-- Upcoming Confirmed Appointments Preview -->
                         <div class="appointments-preview">
                             <div class="section-header">
-                                <h2><i class="fas fa-calendar-day"></i> Next Appointments</h2>
+                                <h2><i class="fas fa-calendar-check"></i> Next Appointments</h2>
                                 <a href="#" class="view-all-link" onclick="showTodayView(event)">View All →</a>
                             </div>
-                            {% if today_appointments %}
+                            {% set confirmed_appointments = today_appointments|selectattr('status', 'equalto', 'confirmed')|list %}
+                            {% if confirmed_appointments %}
                                 <div class="appointments-list">
-                                    {% for appointment in today_appointments[:3] %}
+                                    {% for appointment in confirmed_appointments[:3] %}
                                         <div class="appointment-item">
                                             <div class="appointment-time-badge">
                                                 <span class="time">{{ appointment.appointment_time }}</span>
                                             </div>
                                             <div class="appointment-info">
-                                                <h4>{{ appointment.patient.username }}</h4>
+                                                <h4>{{ appointment.patient.name or appointment.patient.username }}</h4>
                                                 <p>{{ appointment.symptoms[:50] }}{% if appointment.symptoms|length > 50 %}...{% endif %}</p>
                                             </div>
-                                            <span class="status-badge-mini status-{{ appointment.status|lower }}">
-                                                {{ appointment.status|title }}
+                                            <span class="status-badge-mini status-confirmed">
+                                                Confirmed
                                             </span>
                                         </div>
                                     {% endfor %}
@@ -156,54 +147,41 @@
                             {% else %}
                                 <div class="empty-state">
                                     <i class="fas fa-inbox"></i>
-                                    <p>No appointments today</p>
+                                    <p>No confirmed appointments</p>
                                 </div>
                             {% endif %}
                         </div>
                     </div>
 
-                    <!-- Right Column: Profile and Requests -->
+                    <!-- Right Column: Additional Info -->
                     <div class="dashboard-right-column">
-                        <!-- Doctor Profile Quick View -->
-                        <div class="doctor-profile-quick">
-                            <div class="profile-quick-header">
-                                <h2><i class="fas fa-user-md"></i> Your Profile</h2>
+                        <!-- Quick Stats -->
+                        <div class="quick-stats-card">
+                            <div class="section-header">
+                                <h2><i class="fas fa-chart-line"></i> Quick Stats</h2>
                             </div>
-                            <div class="profile-quick-content">
-                                <div class="profile-quick-avatar">
-                                    {% if doctor.profile_image %}
-                                        <img src="{{ url_for('serve_profile_picture', filename=doctor.profile_image.split('/')[-1]) }}" alt="{{ doctor.name }}">
-                                    {% else %}
-                                        <i class="fas fa-user-md"></i>
-                                    {% endif %}
-                                </div>
-                                <div class="profile-quick-info">
-                                    <h3>{{ doctor.name }}</h3>
-                                    <p class="specialization">{{ doctor.specialization }}</p>
-                                    <p class="experience"><i class="fas fa-award"></i> {{ doctor.experience }} years experience</p>
-                                    <div class="profile-quick-actions">
-                                        <button class="btn-text" onclick="showSettingsView(event)">
-                                            <i class="fas fa-edit"></i> Edit Profile
-                                        </button>
+                            <div class="stats-content">
+                                <div class="stat-item">
+                                    <i class="fas fa-calendar-check"></i>
+                                    <div class="stat-details">
+                                        <h3>{{ confirmed_count }}</h3>
+                                        <p>Confirmed Appointments</p>
                                     </div>
                                 </div>
-                            </div>
-                        </div>
-
-                        <!-- Appointment Requests Summary -->
-                        <div class="requests-summary">
-                            <div class="section-header">
-                                <h2><i class="fas fa-bell"></i> Pending Requests</h2>
-                                <a href="#" class="view-all-link" onclick="showRequestsView(event)">View All →</a>
-                            </div>
-                            <div class="request-summary-content">
-                                <div class="request-stat">
-                                    <div class="stat-number">{{ pending_count }}</div>
-                                    <p>Awaiting Your Approval</p>
+                                <div class="stat-item">
+                                    <i class="fas fa-check-circle"></i>
+                                    <div class="stat-details">
+                                        <h3>{{ completed_count }}</h3>
+                                        <p>Completed Today</p>
+                                    </div>
                                 </div>
-                                <button class="btn btn-primary" onclick="showRequestsView(event)">
-                                    <i class="fas fa-list-check"></i> Review Requests
-                                </button>
+                                <div class="stat-item">
+                                    <i class="fas fa-calendar-alt"></i>
+                                    <div class="stat-details">
+                                        <h3>{{ total_appointments }}</h3>
+                                        <p>Total Appointments</p>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>

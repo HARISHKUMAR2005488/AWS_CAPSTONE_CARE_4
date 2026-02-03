@@ -544,9 +544,14 @@
                                                     <h4>{{ appointment.patient.name or appointment.patient.username }}</h4>
                                                     <p>{{ appointment.symptoms[:50] if appointment.symptoms else 'No symptoms noted' }}{% if appointment.symptoms and appointment.symptoms|length > 50 %}...{% endif %}</p>
                                                 </div>
-                                                <span class="status-badge-mini status-confirmed">
-                                                    Confirmed
-                                                </span>
+                                                <div class="appointment-actions">
+                                                    <button class="btn-action btn-prescription" onclick="openPrescriptionModal('{{ appointment.id }}', '{{ appointment.patient.name or appointment.patient.username }}')">
+                                                        <i class="fas fa-prescription"></i>
+                                                    </button>
+                                                    <button class="btn-action btn-complete" onclick="completeAppointment('{{ appointment.id }}', '{{ appointment.patient.name or appointment.patient.username }}')">
+                                                        <i class="fas fa-check-circle"></i>
+                                                    </button>
+                                                </div>
                                             </div>
                                         {% endfor %}
                                     </div>
@@ -1154,6 +1159,68 @@ function showChangePasswordModal() {
 
 function closeModal(modalId) {
     document.getElementById(modalId).style.display = 'none';
+}
+
+// Prescription Modal Functions
+function openPrescriptionModal(appointmentId, patientName) {
+    const prescription = prompt(`Enter prescription for ${patientName}:`);
+    if (prescription && prescription.trim()) {
+        addPrescription(appointmentId, prescription.trim());
+    }
+}
+
+function addPrescription(appointmentId, prescription) {
+    fetch('/doctor/add-prescription', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            appointment_id: appointmentId,
+            prescription: prescription
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Prescription added successfully!');
+            location.reload();
+        } else {
+            alert('Error: ' + (data.message || 'Failed to add prescription'));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while adding prescription');
+    });
+}
+
+// Complete Appointment Function
+function completeAppointment(appointmentId, patientName) {
+    if (confirm(`Mark appointment with ${patientName} as completed?`)) {
+        fetch('/doctor/complete-appointment', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                appointment_id: appointmentId
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Appointment marked as completed!');
+                location.reload();
+            } else {
+                alert('Error: ' + (data.message || 'Failed to complete appointment'));
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while completing appointment');
+        });
+    }
 }
 
 // Close modal when clicking outside

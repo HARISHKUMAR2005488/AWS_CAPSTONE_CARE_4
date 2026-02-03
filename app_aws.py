@@ -1897,6 +1897,128 @@ def update_appointment_status(appointment_id: str):
         return jsonify({"success": False, "message": "An error occurred"}), 500
 
 
+@app.route("/doctor/add-prescription", methods=["POST"])
+def doctor_add_prescription():
+    """Add prescription to an appointment"""
+    if "username" not in session or session.get("role") != "doctor":
+        return jsonify({"success": False, "message": "Unauthorized"}), 401
+    
+    try:
+        data = request.get_json()
+        appointment_id = data.get("appointment_id")
+        prescription = data.get("prescription", "").strip()
+        
+        if not appointment_id or not prescription:
+            return jsonify({"success": False, "message": "Missing required fields"}), 400
+        
+        doctor_username = session["username"]
+        
+        # Get appointment
+        appointment = appointments_table.get_item(Key={"id": appointment_id}).get("Item")
+        if not appointment:
+            return jsonify({"success": False, "message": "Appointment not found"}), 404
+        
+        # Verify authorization
+        user_item = get_user(doctor_username)
+        logged_in_doctor_id = user_item.get("doctor_id") if user_item else None
+        appointment_doctor_id = appointment.get("doctor_id")
+        
+        is_authorized = (
+            (logged_in_doctor_id and appointment_doctor_id == logged_in_doctor_id) or
+            appointment_doctor_id == doctor_username or
+            appointment.get("doctor_username") == doctor_username
+        )
+        
+        if not is_authorized:
+            return jsonify({"success": False, "message": "Not authorized"}), 403
+        
+        # Update appointment with prescription
+        appointments_table.update_item(
+            Key={"id": appointment_id},
+            UpdateExpression="SET notes = :notes, prescription = :prescription",
+            ExpressionAttributeValues={
+                ":notes": prescription,
+                ":prescription": prescription
+            }
+        )
+        
+        # Save to medical records
+        patient_username = appointment.get("username")
+        save_medical_record(
+            username=patient_username,
+            doctor_id=doctor_username,
+            record_data={
+                "appointment_id": appointment_id,
+                "type": "prescription",
+                "prescription": prescription,
+                "date": appointment.get("appointment_date", datetime.utcnow().strftime("%Y-%m-%d")),
+                "created_by": doctor_username,
+                "created_at": datetime.utcnow().isoformat()
+            }
+        )
+        
+        return jsonify({"success": True, "message": "Prescription added successfully"})
+        
+    except Exception as exc:
+        logger.error(f"Error adding prescription: {exc}", exc_info=True)
+        return jsonify({"success": False, "message": "An error occurred"}), 500
+
+
+@app.route("/doctor/complete-appointment", methods=["POST"])
+def doctor_complete_appointment():
+    """Mark an appointment as completed"""
+    if "username" not in session or session.get("role") != "doctor":
+        return jsonify({"success": False, "message": "Unauthorized"}), 401
+    
+    try:
+        data = request.get_json()
+        appointment_id = data.get("appointment_id")
+        
+        if not appointment_id:
+            return jsonify({"success": False, "message": "Missing appointment ID"}), 400
+        
+        doctor_username = session["username"]
+        
+        # Get appointment
+        appointment = appointments_table.get_item(Key={"id": appointment_id}).get("Item")
+        if not appointment:
+            return jsonify({"success": False, "message": "Appointment not found"}), 404
+        
+        # Verify authorization
+        user_item = get_user(doctor_username)
+        logged_in_doctor_id = user_item.get("doctor_id") if user_item else None
+        appointment_doctor_id = appointment.get("doctor_id")
+        
+        is_authorized = (
+            (logged_in_doctor_id and appointment_doctor_id == logged_in_doctor_id) or
+            appointment_doctor_id == doctor_username or
+            appointment.get("doctor_username") == doctor_username
+        )
+        
+        if not is_authorized:
+            return jsonify({"success": False, "message": "Not authorized"}), 403
+        
+        # Update appointment status to completed
+        appointments_table.update_item(
+            Key={"id": appointment_id},
+            UpdateExpression="SET #status = :status",
+            ExpressionAttributeNames={"#status": "status"},
+            ExpressionAttributeValues={":status": "completed"}
+        )
+        
+        # Send notification
+        send_notification(
+            subject="Appointment Completed",
+            message=f"Your appointment has been marked as completed.",
+        )
+        
+        return jsonify({"success": True, "message": "Appointment marked as completed"})
+        
+    except Exception as exc:
+        logger.error(f"Error completing appointment: {exc}", exc_info=True)
+        return jsonify({"success": False, "message": "An error occurred"}), 500
+
+
 @app.route("/admin/update-appointment/<appointment_id>", methods=["POST"])
 def admin_update_appointment(appointment_id: str):
     """Admin: Update appointment status (confirm, cancel)"""

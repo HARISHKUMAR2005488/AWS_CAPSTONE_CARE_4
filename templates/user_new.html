@@ -211,9 +211,9 @@
                                         </div>
                                     </div>
                                     <div class="card-actions">
-                                        <a href="{{ url_for('my_appointments') }}" class="btn btn-primary btn-block">
+                                        <button onclick="showAppointmentDetails()" class="btn btn-primary btn-block">
                                             <i class="fas fa-eye"></i> View Details
-                                        </a>
+                                        </button>
                                     </div>
                                 {% else %}
                                     <div class="empty-state">
@@ -1021,6 +1021,104 @@
             </div>
         </div>
     </div>
+
+    <!-- Appointment Details Modal -->
+    <div id="appointmentDetailsModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-calendar-check"></i> Appointment Details</h3>
+                <button class="close-modal" onclick="closeAppointmentDetailsModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                {% if appointments and appointments|length > 0 %}
+                    {% set next_appointment = appointments[0] %}
+                    <div class="appointment-full-details">
+                        <div class="detail-section">
+                            <h4><i class="fas fa-user-md"></i> Doctor Information</h4>
+                            <div class="detail-row">
+                                <label>Doctor Name:</label>
+                                <span>{{ next_appointment.doctor_name }}</span>
+                            </div>
+                            <div class="detail-row">
+                                <label>Specialization:</label>
+                                <span>{% if next_appointment.specialization %}{{ next_appointment.specialization }}{% else %}General Physician{% endif %}</span>
+                            </div>
+                        </div>
+                        
+                        <div class="detail-section">
+                            <h4><i class="fas fa-calendar-alt"></i> Appointment Schedule</h4>
+                            <div class="detail-row">
+                                <label>Date:</label>
+                                <span>{{ next_appointment.appointment_date.strftime('%B %d, %Y') }}</span>
+                            </div>
+                            <div class="detail-row">
+                                <label>Time:</label>
+                                <span>{% if next_appointment.appointment_time %}{{ next_appointment.appointment_time }}{% else %}Not scheduled{% endif %}</span>
+                            </div>
+                            <div class="detail-row">
+                                <label>Status:</label>
+                                <span class="status-badge status-{{ next_appointment.status|lower }}">
+                                    {{ next_appointment.status|title }}
+                                </span>
+                            </div>
+                        </div>
+                        
+                        {% if next_appointment.symptoms or next_appointment.reason %}
+                        <div class="detail-section">
+                            <h4><i class="fas fa-notes-medical"></i> Reason for Visit</h4>
+                            <div class="detail-row">
+                                <p>{{ next_appointment.symptoms or next_appointment.reason }}</p>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        {% if next_appointment.notes or next_appointment.medical_notes %}
+                        <div class="detail-section">
+                            <h4><i class="fas fa-file-medical"></i> Medical Notes</h4>
+                            <div class="detail-row">
+                                <p>{{ next_appointment.notes or next_appointment.medical_notes }}</p>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        <div class="modal-footer-actions">
+                            {% if next_appointment.status|lower == 'pending' %}
+                            <a href="{{ url_for('cancel_appointment', appointment_id=next_appointment.id) }}" 
+                               class="btn btn-danger"
+                               onclick="return confirm('Are you sure you want to cancel this appointment?')">
+                                <i class="fas fa-times-circle"></i> Cancel Appointment
+                            </a>
+                            {% endif %}
+                            <button class="btn btn-secondary" onclick="closeAppointmentDetailsModal()">
+                                <i class="fas fa-arrow-left"></i> Close
+                            </button>
+                        </div>
+                    </div>
+                {% else %}
+                    <p class="text-center">No appointment details available.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Appointment Details Modal Functions
+        function showAppointmentDetails() {
+            document.getElementById('appointmentDetailsModal').style.display = 'flex';
+        }
+
+        function closeAppointmentDetailsModal() {
+            document.getElementById('appointmentDetailsModal').style.display = 'none';
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('appointmentDetailsModal');
+            if (event.target == modal) {
+                closeAppointmentDetailsModal();
+            }
+        }
+    </script>
 
     <script src="{{ url_for('static', filename='js/user-dashboard.js') }}"></script>
 </body>

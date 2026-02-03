@@ -8738,7 +8738,7 @@ body {
 }
 
 .search-group select {
-    flex: auto-width;
+    flex: 10;
     min-width: 0;
     padding: var(--spacing-md) var(--spacing-lg);
     border: 2px solid var(--gray-lighter);

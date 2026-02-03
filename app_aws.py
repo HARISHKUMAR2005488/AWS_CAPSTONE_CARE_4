@@ -878,6 +878,61 @@ def dashboard():
         upcoming_appointments.sort(key=lambda x: (x.get("appointment_date") or date.today(), x.get("appointment_time") or "", x.get("id", "")))
         pending_appointments.sort(key=lambda x: (x.get("appointment_date") or date.today(), x.get("appointment_time") or "", x.get("id", "")))
 
+        # Get patient data for patient records view
+        patient_usernames = set(a.get("username") for a in doctor_appts if a.get("username"))
+        patient_data = []
+        for patient_username in patient_usernames:
+            patient_user = get_user(patient_username)
+            if not patient_user:
+                continue
+            
+            # Get appointments for this patient with this doctor
+            patient_appts = [a for a in doctor_appts if a.get("username") == patient_username]
+            
+            # Get medical records for this patient
+            try:
+                records_resp = medical_records_table.scan(
+                    FilterExpression="patient_username = :username",
+                    ExpressionAttributeValues={":username": patient_username}
+                )
+                medical_records = records_resp.get("Items", [])
+            except:
+                medical_records = []
+            
+            # Find last appointment date
+            last_appt = None
+            if patient_appts:
+                from datetime import datetime as dt_class
+                dates = []
+                for appt in patient_appts:
+                    date_val = appt.get("date") or appt.get("appointment_date")
+                    if date_val:
+                        try:
+                            if isinstance(date_val, str):
+                                dates.append(dt_class.strptime(date_val, "%Y-%m-%d").date())
+                            else:
+                                dates.append(date_val)
+                        except (ValueError, TypeError):
+                            pass
+                if dates:
+                    last_appt = max(dates)
+            
+            patient_data.append({
+                "patient": {
+                    "username": patient_username,
+                    "email": patient_user.get("email", ""),
+                    "phone": patient_user.get("phone", ""),
+                    "id": patient_username
+                },
+                "total_appointments": len(patient_appts),
+                "last_appointment": last_appt,
+                "medical_records_count": len(medical_records),
+                "medical_records": medical_records
+            })
+        
+        # Sort by total appointments (descending)
+        patient_data.sort(key=lambda x: x["total_appointments"], reverse=True)
+
         return render_template(
             "doctor.html",
             username=username,
@@ -886,6 +941,7 @@ def dashboard():
             today_appointments=today_appointments,
             upcoming_appointments=upcoming_appointments,
             pending_appointments=pending_appointments,
+            patient_data=patient_data,
             today=today,
             total_appointments=total_appointments,
             pending_count=pending_count,
@@ -977,87 +1033,13 @@ app.add_url_rule("/doctor-dashboard", "doctor_dashboard", dashboard)
 
 @app.route("/doctor-patients", endpoint="doctor_patients")
 def doctor_patients():
-    """View all patients and their records for a doctor"""
+    """Redirect to doctor dashboard - patients view is now integrated"""
     if "username" not in session or session.get("role") != "doctor":
         flash("Access denied", "danger")
         return redirect(url_for("login"))
     
-    try:
-        doctor_username = session["username"]
-        logger.info(f"Loading patients for doctor {doctor_username}")
-        
-        # Get all appointments for this doctor
-        appts_resp = appointments_table.scan()
-        doctor_appts = [a for a in appts_resp.get("Items", []) 
-                       if a.get("doctor_id") == doctor_username or a.get("doctor_id") == session.get("doctor_id")]
-        
-        # Get unique patients
-        patient_usernames = set(a.get("username") for a in doctor_appts if a.get("username"))
-        logger.info(f"Found {len(patient_usernames)} unique patients for doctor {doctor_username}")
-        
-        # Build patient data with appointments and medical records
-        patient_data = []
-        for patient_username in patient_usernames:
-            patient_user = get_user(patient_username)
-            if not patient_user:
-                continue
-            
-            # Get appointments for this patient with this doctor
-            patient_appts = [a for a in doctor_appts if a.get("username") == patient_username]
-            
-            # Get medical records for this patient
-            records_resp = medical_records_table.scan(
-                FilterExpression="patient_username = :username",
-                ExpressionAttributeValues={":username": patient_username}
-            )
-            medical_records = records_resp.get("Items", [])
-            
-            # Find last appointment date
-            last_appt = None
-            if patient_appts:
-                from datetime import datetime as dt_class
-                dates = []
-                for appt in patient_appts:
-                    date_val = appt.get("date") or appt.get("appointment_date")
-                    if date_val:
-                        try:
-                            if isinstance(date_val, str):
-                                dates.append(dt_class.strptime(date_val, "%Y-%m-%d").date())
-                            else:
-                                dates.append(date_val)
-                        except (ValueError, TypeError):
-                            pass
-                if dates:
-                    last_appt = max(dates)
-            
-            patient_data.append({
-                "patient": {
-                    "username": patient_username,
-                    "email": patient_user.get("email", ""),
-                    "phone": patient_user.get("phone", ""),
-                    "id": patient_username  # Use username as ID for URL
-                },
-                "total_appointments": len(patient_appts),
-                "last_appointment": last_appt,
-                "medical_records_count": len(medical_records),
-                "medical_records": medical_records
-            })
-        
-        # Sort by total appointments (descending)
-        patient_data.sort(key=lambda x: x["total_appointments"], reverse=True)
-        
-        logger.info(f"Loaded data for {len(patient_data)} patients")
-        
-        return render_template(
-            "doctor_patients.html",
-            patient_data=patient_data,
-            username=doctor_username
-        )
-        
-    except Exception as exc:
-        logger.error(f"Error loading patient list for doctor {session.get('username')}: {exc}", exc_info=True)
-        flash("Error loading patient list", "danger")
-        return redirect(url_for("dashboard"))
+    # Redirect to dashboard where patient records view is integrated
+    return redirect(url_for("doctor_dashboard"))
 
 @app.route("/doctor/patient-records/<patient_id>", endpoint="doctor_view_patient_records")
 def doctor_view_patient_records(patient_id: str):

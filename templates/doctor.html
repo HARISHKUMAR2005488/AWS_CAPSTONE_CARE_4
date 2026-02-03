@@ -16,6 +16,147 @@
         padding: 0;
         margin: 0;
     }
+    
+    /* Patient Details Styles */
+    .patient-details-row {
+        background-color: #f8f9fa !important;
+    }
+
+    .patient-details-container {
+        padding: 20px;
+        animation: slideDown 0.3s ease-in-out;
+    }
+
+    @keyframes slideDown {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .patient-info-card-expanded {
+        background: white;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .info-header-expanded {
+        display: flex;
+        gap: 20px;
+        align-items: flex-start;
+    }
+
+    .patient-avatar-expanded {
+        font-size: 60px;
+        color: #5FEABE;
+    }
+
+    .patient-details-expanded h3 {
+        margin: 0 0 15px 0;
+        color: #1D1B1B;
+    }
+
+    .detail-grid-expanded {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 10px;
+        margin-top: 15px;
+    }
+
+    .detail-item-expanded {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px;
+        background: #f8f9fa;
+        border-radius: 5px;
+    }
+
+    .detail-item-expanded i {
+        color: #5FEABE;
+        width: 20px;
+    }
+
+    .info-stats-expanded {
+        margin-top: 20px;
+        padding-top: 20px;
+        border-top: 1px solid #e0e0e0;
+    }
+
+    .stat-box-expanded {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 20px;
+        background: #E4FECA;
+        border-radius: 8px;
+    }
+
+    .stat-box-expanded .stat-icon {
+        font-size: 24px;
+        color: #5FEABE;
+    }
+
+    .stat-box-expanded h4 {
+        margin: 0;
+        font-size: 24px;
+        color: #1D1B1B;
+    }
+
+    .stat-box-expanded p {
+        margin: 0;
+        color: #666;
+        font-size: 14px;
+    }
+
+    .appointments-history-section {
+        margin-top: 20px;
+    }
+
+    .section-header-expanded {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+    }
+
+    .section-header-expanded h3 {
+        color: #1D1B1B;
+        margin: 0;
+    }
+
+    .appointment-count-badge-small {
+        background: #5FEABE;
+        color: #1D1B1B;
+        padding: 5px 15px;
+        border-radius: 20px;
+        font-size: 14px;
+    }
+
+    .view-records-btn.active {
+        background: #dc3545 !important;
+    }
+
+    .view-records-btn.active i:before {
+        content: "\f146" !important; /* fa-folder-minus */
+    }
+
+    .patient-cell {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .patient-cell i {
+        font-size: 24px;
+        color: #5FEABE;
+    }
 </style>
 <div class="doctor-container">
     <!-- Top Header -->
@@ -56,7 +197,7 @@
                     <i class="fas fa-home"></i>
                     <span>Dashboard</span>
                 </a>
-                <a href="{{ url_for('doctor_patients') }}" class="nav-item">
+                <a href="#" class="nav-item" onclick="showPatientsView(event)">
                     <i class="fas fa-user-injured"></i>
                     <span>Patient Records</span>
                 </a>
@@ -370,6 +511,91 @@
                 </div>
             </div>
 
+            <!-- Patient Records View -->
+            <div class="content-view patients-view" id="patientsView" style="display: none;">
+                <div class="section-header">
+                    <h2><i class="fas fa-users"></i> My Patients</h2>
+                    <div class="patient-count-badge">
+                        <i class="fas fa-user-injured"></i>
+                        <span>{{ patient_data|length if patient_data else 0 }} Patient{% if patient_data and patient_data|length != 1 %}s{% endif %}</span>
+                    </div>
+                </div>
+                
+                {% if patient_data %}
+                    <div class="appointments-table">
+                        <table id="patientsTable">
+                            <thead>
+                                <tr>
+                                    <th>Patient Name</th>
+                                    <th>Email</th>
+                                    <th>Phone</th>
+                                    <th>Total Appointments</th>
+                                    <th>Last Appointment</th>
+                                    <th>Medical Records</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for data in patient_data %}
+                                    <tr class="patient-row" data-patient-id="{{ data.patient.id }}">
+                                        <td>
+                                            <div class="patient-cell">
+                                                <i class="fas fa-user-circle"></i>
+                                                <strong>{{ data.patient.username }}</strong>
+                                            </div>
+                                        </td>
+                                        <td>{{ data.patient.email }}</td>
+                                        <td>{{ data.patient.phone or 'N/A' }}</td>
+                                        <td>
+                                            <span class="badge">{{ data.total_appointments }}</span>
+                                        </td>
+                                        <td>
+                                            {% if data.last_appointment %}
+                                                {{ data.last_appointment.strftime('%b %d, %Y') }}
+                                            {% else %}
+                                                N/A
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <span class="badge {% if data.medical_records_count > 0 %}badge-success{% else %}badge-secondary{% endif %}">
+                                                {{ data.medical_records_count }} 
+                                                {% if data.medical_records_count == 1 %}
+                                                    document
+                                                {% else %}
+                                                    documents
+                                                {% endif %}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <button onclick="togglePatientDetails('{{ data.patient.id }}', this)" 
+                                                    class="btn btn-primary btn-sm view-records-btn">
+                                                <i class="fas fa-folder-open"></i> View Records
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    <!-- Expandable Detail Row -->
+                                    <tr class="patient-details-row" id="details-{{ data.patient.id }}" style="display: none;">
+                                        <td colspan="7">
+                                            <div class="patient-details-container">
+                                                <div class="loading-spinner" style="text-align: center; padding: 20px;">
+                                                    <i class="fas fa-spinner fa-spin fa-2x"></i>
+                                                    <p>Loading patient details...</p>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="no-data">
+                        <i class="fas fa-users-slash"></i>
+                        <p>No patients found. Patients will appear here once they book appointments with you.</p>
+                    </div>
+                {% endif %}
+            </div>
+
             <!-- Settings View -->
             <div class="content-view settings-view" id="settingsView" style="display: none;">
                 <div class="section-header">
@@ -611,6 +837,12 @@ function showDashboardView(event) {
     event.preventDefault();
     showView('dashboardView');
     setActiveNav(event.target.closest('.nav-item'));
+}
+
+function showPatientsView(event) {
+    event.preventDefault();
+    showView('patientsView');
+    setActiveNav(document.querySelector('[onclick*="showPatientsView"]'));
 }
 
 function showTodayView(event) {
@@ -1010,6 +1242,189 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 });
+
+// Patient Details Functionality
+let currentlyOpenPatient = null;
+
+async function togglePatientDetails(patientId, button) {
+    const detailsRow = document.getElementById(`details-${patientId}`);
+    const allDetailsRows = document.querySelectorAll('.patient-details-row');
+    const allButtons = document.querySelectorAll('.view-records-btn');
+    
+    // If clicking the same patient, close it
+    if (currentlyOpenPatient === patientId && detailsRow.style.display !== 'none') {
+        detailsRow.style.display = 'none';
+        button.classList.remove('active');
+        button.innerHTML = '<i class="fas fa-folder-open"></i> View Records';
+        currentlyOpenPatient = null;
+        return;
+    }
+    
+    // Close all other details rows
+    allDetailsRows.forEach(row => row.style.display = 'none');
+    allButtons.forEach(btn => {
+        btn.classList.remove('active');
+        btn.innerHTML = '<i class="fas fa-folder-open"></i> View Records';
+    });
+    
+    // Open this details row
+    detailsRow.style.display = 'table-row';
+    button.classList.add('active');
+    button.innerHTML = '<i class="fas fa-folder-minus"></i> Hide Records';
+    currentlyOpenPatient = patientId;
+    
+    // Check if we need to load data
+    const container = detailsRow.querySelector('.patient-details-container');
+    if (container.querySelector('.loading-spinner')) {
+        try {
+            const response = await fetch(`/api/doctor/patient/${patientId}/details`);
+            if (!response.ok) {
+                throw new Error('Failed to fetch patient details');
+            }
+            
+            const data = await response.json();
+            renderPatientDetails(container, data);
+        } catch (error) {
+            console.error('Error fetching patient details:', error);
+            container.innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    Error loading patient details. Please try again.
+                </div>
+            `;
+        }
+    }
+}
+
+function renderPatientDetails(container, data) {
+    const { patient, appointments } = data;
+    
+    let html = `
+        <div class="patient-info-card-expanded">
+            <div class="info-header-expanded">
+                <div class="patient-avatar-expanded">
+                    <i class="fas fa-user-circle"></i>
+                </div>
+                <div class="patient-details-expanded">
+                    <h3>${patient.username}</h3>
+                    <div class="detail-grid-expanded">
+                        <div class="detail-item-expanded">
+                            <i class="fas fa-envelope"></i>
+                            <span>${patient.email}</span>
+                        </div>
+    `;
+    
+    if (patient.phone) {
+        html += `
+                        <div class="detail-item-expanded">
+                            <i class="fas fa-phone"></i>
+                            <span>${patient.phone}</span>
+                        </div>
+        `;
+    }
+    
+    if (patient.date_of_birth) {
+        html += `
+                        <div class="detail-item-expanded">
+                            <i class="fas fa-birthday-cake"></i>
+                            <span>DOB: ${patient.date_of_birth}</span>
+                        </div>
+        `;
+    }
+    
+    if (patient.address) {
+        html += `
+                        <div class="detail-item-expanded">
+                            <i class="fas fa-map-marker-alt"></i>
+                            <span>${patient.address}</span>
+                        </div>
+        `;
+    }
+    
+    html += `
+                    </div>
+                </div>
+            </div>
+            <div class="info-stats-expanded">
+                <div class="stat-box-expanded">
+                    <div class="stat-icon">
+                        <i class="fas fa-calendar-check"></i>
+                    </div>
+                    <div>
+                        <h4>${appointments.length}</h4>
+                        <p>Total Appointments</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="appointments-history-section">
+            <div class="section-header-expanded">
+                <h3><i class="fas fa-history"></i> Appointment History</h3>
+                <span class="appointment-count-badge-small">
+                    <i class="fas fa-calendar-alt"></i> ${appointments.length} Appointment${appointments.length !== 1 ? 's' : ''}
+                </span>
+            </div>
+    `;
+    
+    if (appointments.length > 0) {
+        html += `
+            <div class="appointments-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Date & Time</th>
+                            <th>Symptoms</th>
+                            <th>Status</th>
+                            <th>Notes/Prescription</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+        `;
+        
+        appointments.forEach(appt => {
+            const statusClass = appt.status === 'confirmed' ? 'confirmed' : appt.status;
+            const statusText = appt.status === 'confirmed' ? 'Approved' : appt.status.charAt(0).toUpperCase() + appt.status.slice(1);
+            const symptomsText = appt.symptoms ? (appt.symptoms.length > 100 ? appt.symptoms.substring(0, 100) + '...' : appt.symptoms) : '<em class="text-muted">None</em>';
+            const notesText = appt.notes ? (appt.notes.length > 100 ? appt.notes.substring(0, 100) + '...' : appt.notes) : '<em class="text-muted">No notes</em>';
+            
+            html += `
+                        <tr>
+                            <td>#${appt.id.substring(0, 8)}</td>
+                            <td>
+                                <div class="datetime-cell">
+                                    <span class="date">${appt.appointment_date}</span>
+                                    <span class="time">${appt.appointment_time}</span>
+                                </div>
+                            </td>
+                            <td><span class="symptoms-text">${symptomsText}</span></td>
+                            <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+                            <td><div class="notes-preview">${notesText}</div></td>
+                        </tr>
+            `;
+        });
+        
+        html += `
+                    </tbody>
+                </table>
+            </div>
+        `;
+    } else {
+        html += `
+            <div class="no-data">
+                <i class="fas fa-calendar-times"></i>
+                <p>No appointment history found.</p>
+            </div>
+        `;
+    }
+    
+    html += `
+        </div>
+    `;
+    
+    container.innerHTML = html;
+}
 
 </script>
 {% endblock %}

@@ -832,6 +832,55 @@ def doctor_download_record(record_id):
         flash('File not found', 'danger')
         return redirect(url_for('doctor_view_patient_records', patient_id=medical_record.patient_id))
 
+
+@app.route('/doctor/update-schedule', methods=['POST'])
+@login_required
+def doctor_update_schedule():
+    """Update doctor availability (schedule, hours, consultation fee)"""
+    if current_user.user_type != 'doctor':
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 401
+    
+    try:
+        doctor = Doctor.query.get(current_user.doctor_id)
+        
+        # Get form data
+        available_days = request.form.get('available_days', '').strip()
+        available_time = request.form.get('available_time', '').strip()
+        consultation_fee = request.form.get('consultation_fee', '').strip()
+        
+        # Validate required fields
+        if not available_days or not available_time or not consultation_fee:
+            return jsonify({'success': False, 'message': 'All schedule fields are required'}), 400
+        
+        # Validate time format (HH:MM-HH:MM)
+        if '-' not in available_time:
+            return jsonify({'success': False, 'message': 'Time format should be HH:MM-HH:MM'}), 400
+        
+        # Validate consultation fee is a number
+        try:
+            fee = float(consultation_fee)
+            if fee < 0:
+                return jsonify({'success': False, 'message': 'Consultation fee must be positive'}), 400
+        except ValueError:
+            return jsonify({'success': False, 'message': 'Invalid consultation fee'}), 400
+        
+        # Update doctor record
+        doctor.available_days = available_days
+        doctor.available_time = available_time
+        doctor.consultation_fee = fee
+        
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Schedule updated successfully'
+        })
+    
+    except Exception as exc:
+        db.session.rollback()
+        app.logger.error(f'Exception updating doctor schedule: {exc}', exc_info=True)
+        return jsonify({'success': False, 'message': 'An error occurred'}), 500
+
 # AI Health Assistant Chatbot Endpoint
 @app.route('/user/chat-assistant', methods=['POST'])
 @login_required

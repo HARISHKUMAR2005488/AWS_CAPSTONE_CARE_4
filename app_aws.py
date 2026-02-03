@@ -1808,6 +1808,71 @@ def doctor_update_contact():
         return jsonify({"success": False, "message": "An error occurred"}), 500
 
 
+@app.route("/doctor/update-schedule", methods=["POST"])
+def doctor_update_schedule():
+    """Update doctor availability (schedule, hours, consultation fee)"""
+    if "username" not in session or session.get("role") != "doctor":
+        return jsonify({"success": False, "message": "Unauthorized"}), 401
+    
+    try:
+        doctor_username = session["username"]
+        
+        # Get form data
+        available_days = request.form.get("available_days", "").strip()
+        available_time = request.form.get("available_time", "").strip()
+        consultation_fee = request.form.get("consultation_fee", "").strip()
+        
+        # Validate required fields
+        if not available_days or not available_time or not consultation_fee:
+            return jsonify({"success": False, "message": "All schedule fields are required"}), 400
+        
+        # Validate time format (HH:MM-HH:MM)
+        if "-" not in available_time:
+            return jsonify({"success": False, "message": "Time format should be HH:MM-HH:MM"}), 400
+        
+        # Validate consultation fee is a number
+        try:
+            fee = float(consultation_fee)
+            if fee < 0:
+                return jsonify({"success": False, "message": "Consultation fee must be positive"}), 400
+        except ValueError:
+            return jsonify({"success": False, "message": "Invalid consultation fee"}), 400
+        
+        # Build update expression
+        update_expr = "SET available_days = :days, available_time = :time, consultation_fee = :fee"
+        expr_values = {
+            ":days": available_days,
+            ":time": available_time,
+            ":fee": fee
+        }
+        
+        # Update doctor record in database
+        doctors_table.update_item(
+            Key={"id": doctor_username},
+            UpdateExpression=update_expr,
+            ExpressionAttributeValues=expr_values
+        )
+        
+        # Update session
+        session["available_days"] = available_days
+        session["available_time"] = available_time
+        session["consultation_fee"] = fee
+        
+        logger.info(f"Doctor {doctor_username} updated schedule successfully")
+        
+        return jsonify({
+            "success": True,
+            "message": "Schedule updated successfully"
+        })
+    
+    except ClientError as exc:
+        logger.error(f"ClientError updating doctor schedule: {exc}")
+        return jsonify({"success": False, "message": "Database error"}), 500
+    except Exception as exc:
+        logger.error(f"Exception updating doctor schedule: {exc}", exc_info=True)
+        return jsonify({"success": False, "message": "An error occurred"}), 500
+
+
 @app.route("/doctor/change-password", methods=["POST"])
 def doctor_change_password():
     """Change doctor password"""

@@ -1442,13 +1442,17 @@ def book(doctor_id: str):
         reason = request.form.get("symptoms", "").strip()
         medical_notes = request.form.get("symptoms", "").strip()
         
-        # Get doctor's username from the doctor object (the parameter doctor_id is actually the doctor's ID)
-        doctor_username = doctor.get("username")
+        # Get doctor's username - use doctor's name as fallback since username might not be in doctors table
+        doctor_username = doctor.get("username") or doctor.get("name")
+        
+        # Also store the doctor's UUID for better querying
+        doctor_uuid = doctor_id
 
         appointments_table.put_item(
             Item={
                 "id": appointment_id,
-                "doctor_id": doctor_username,  # Store doctor's username, not their ID
+                "doctor_id": doctor_uuid,  # Store doctor's UUID for dashboard filtering
+                "doctor_username": doctor_username,  # Also store username for reference
                 "doctor_name": doctor.get("name"),
                 "username": username,
                 "date": date,
@@ -1463,7 +1467,7 @@ def book(doctor_id: str):
         if medical_notes:
             save_medical_record(
                 username=username,
-                doctor_id=doctor_username,  # Use doctor's username
+                doctor_id=doctor_uuid,  # Use doctor's UUID
                 record_data={
                     "appointment_id": appointment_id,
                     "notes": medical_notes,

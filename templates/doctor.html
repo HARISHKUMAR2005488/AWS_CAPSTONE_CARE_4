@@ -13,11 +13,25 @@
         padding: 0 !important;
         overflow-x: hidden;
         height: 100%;
+        width: 100%;
     }
     main {
         padding: 0 !important;
         margin: 0 !important;
         min-height: 100vh !important;
+        width: 100% !important;
+    }
+    
+    /* Force doctor-container to fill entire viewport */
+    .doctor-container {
+        margin: 0 !important;
+        padding: 0 !important;
+        width: 100vw !important;
+        min-height: 100vh !important;
+        position: relative;
+        left: 0;
+        right: 0;
+    }
     }
     
     /* Patient Details Styles */

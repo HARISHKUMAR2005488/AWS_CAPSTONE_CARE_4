@@ -871,6 +871,8 @@ def doctor_update_schedule():
         
         db.session.commit()
         
+        app.logger.info(f'Doctor {doctor.name} (ID: {doctor.id}) updated schedule: days={available_days}, time={available_time}, fee={fee}')
+        
         return jsonify({
             'success': True,
             'message': 'Schedule updated successfully'

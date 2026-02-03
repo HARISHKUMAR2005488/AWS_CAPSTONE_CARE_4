@@ -710,11 +710,16 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Render weekly schedule dynamically
     const renderWeeklySchedule = function() {
-        const availableDaysStr = "{{ doctor.available_days }}";
-        const availableTimeStr = "{{ doctor.available_time }}";
+        const availableDaysStr = "{{ doctor.available_days if doctor.available_days else '' }}";
+        const availableTimeStr = "{{ doctor.available_time if doctor.available_time else '' }}";
         const weeklyGrid = document.getElementById('weeklyScheduleGrid');
         
-        if (!weeklyGrid) return;
+        console.log('Rendering schedule with:', { availableDaysStr, availableTimeStr });
+        
+        if (!weeklyGrid) {
+            console.warn('Weekly grid element not found');
+            return;
+        }
         
         // All days of the week
         const allDays = [
@@ -727,22 +732,27 @@ document.addEventListener('DOMContentLoaded', function() {
             { short: 'Sun', full: 'Sunday' }
         ];
         
-        // Parse available days
-        const availableDays = availableDaysStr ? 
-            availableDaysStr.split(',').map(d => d.trim()) : [];
+        // Parse available days - handle both comma-separated and whitespace
+        let availableDays = [];
+        if (availableDaysStr && availableDaysStr.trim()) {
+            availableDays = availableDaysStr.split(',').map(d => d.trim()).filter(d => d);
+            console.log('Parsed available days:', availableDays);
+        }
         
         // Clear existing content
         weeklyGrid.innerHTML = '';
         
         // Render each day
         allDays.forEach(day => {
-            const isAvailable = availableDays.includes(day.full);
+            const isAvailable = availableDays.some(availDay => 
+                availDay.toLowerCase() === day.full.toLowerCase()
+            );
             const daySlot = document.createElement('div');
             daySlot.className = 'day-slot';
             
             daySlot.innerHTML = `
                 <span class="day">${day.short}</span>
-                <span class="time">${isAvailable ? availableTimeStr : '--:--'}</span>
+                <span class="time">${isAvailable && availableTimeStr ? availableTimeStr : '--:--'}</span>
                 <span class="status ${isAvailable ? 'available' : 'unavailable'}">
                     ${isAvailable ? 'Available' : 'Not Available'}
                 </span>
@@ -750,6 +760,8 @@ document.addEventListener('DOMContentLoaded', function() {
             
             weeklyGrid.appendChild(daySlot);
         });
+        
+        console.log('Weekly schedule rendered successfully');
     };
     
     // Call on page load

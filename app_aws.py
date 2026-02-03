@@ -1817,6 +1817,19 @@ def doctor_update_schedule():
     try:
         doctor_username = session["username"]
         
+        # Get the doctor's actual ID from the users table
+        user_item = get_user(doctor_username)
+        doctor_id = (user_item or {}).get("doctor_id")
+        
+        if not doctor_id:
+            # Fallback: try to find doctor by name
+            scan_resp = doctors_table.scan()
+            doctor_profile = next((d for d in scan_resp.get("Items", []) if d.get("name") == doctor_username), None)
+            doctor_id = doctor_profile.get("id") if doctor_profile else None
+        
+        if not doctor_id:
+            return jsonify({"success": False, "message": "Doctor profile not found"}), 404
+        
         # Get form data
         available_days = request.form.get("available_days", "").strip()
         available_time = request.form.get("available_time", "").strip()
@@ -1848,7 +1861,7 @@ def doctor_update_schedule():
         
         # Update doctor record in database
         doctors_table.update_item(
-            Key={"id": doctor_username},
+            Key={"id": doctor_id},
             UpdateExpression=update_expr,
             ExpressionAttributeValues=expr_values
         )
@@ -1858,7 +1871,7 @@ def doctor_update_schedule():
         session["available_time"] = available_time
         session["consultation_fee"] = float(fee)
         
-        logger.info(f"Doctor {doctor_username} updated schedule successfully")
+        logger.info(f"Doctor {doctor_username} (ID: {doctor_id}) updated schedule successfully: days={available_days}, time={available_time}, fee={fee}")
         
         return jsonify({
             "success": True,

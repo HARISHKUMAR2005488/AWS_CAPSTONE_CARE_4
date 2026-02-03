@@ -974,6 +974,72 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
     }
+    
+    // Appointment approval/rejection functions
+    window.approveAppointment = async function(appointmentId, patientName, appointmentDate, appointmentTime) {
+        console.log(`[approveAppointment] Called - ID: ${appointmentId}, Patient: ${patientName}`);
+        const confirmMsg = `Approve appointment for ${patientName} on ${appointmentDate} at ${appointmentTime}?`;
+        
+        if (confirm(confirmMsg)) {
+            console.log(`[approveAppointment] User confirmed, calling updateAppointmentStatus`);
+            await updateAppointmentStatus(appointmentId, 'confirmed');
+        } else {
+            console.log('[approveAppointment] User cancelled');
+        }
+    };
+
+    window.rejectAppointment = async function(appointmentId, patientName) {
+        console.log(`[rejectAppointment] Called - ID: ${appointmentId}, Patient: ${patientName}`);
+        const confirmMsg = `Reject appointment request from ${patientName}?`;
+        
+        if (confirm(confirmMsg)) {
+            console.log(`[rejectAppointment] User confirmed, calling updateAppointmentStatus`);
+            await updateAppointmentStatus(appointmentId, 'cancelled');
+        } else {
+            console.log('[rejectAppointment] User cancelled');
+        }
+    };
+
+    async function updateAppointmentStatus(appointmentId, status) {
+        console.log(`[updateAppointmentStatus] Starting - ID: ${appointmentId}, Status: ${status}`);
+        
+        try {
+            const url = `/doctor/update-appointment/${appointmentId}`;
+            console.log(`[updateAppointmentStatus] Fetching: ${url}`);
+            
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `status=${status}`
+            });
+            
+            console.log(`[updateAppointmentStatus] Response status: ${response.status}`);
+            
+            if (!response.ok) {
+                console.error(`[updateAppointmentStatus] HTTP error: ${response.status} ${response.statusText}`);
+            }
+            
+            const result = await response.json();
+            console.log('[updateAppointmentStatus] Result:', result);
+            
+            if (result.success) {
+                console.log('[updateAppointmentStatus] Success!');
+                alert(`Appointment ${status === 'confirmed' ? 'approved' : 'rejected'} successfully!`);
+                window.location.reload();
+            } else {
+                console.error('[updateAppointmentStatus] Failed:', result.message);
+                alert(`Error: ${result.message}`);
+            }
+            
+            return result;
+        } catch (error) {
+            console.error('[updateAppointmentStatus] Exception:', error);
+            alert('Network error occurred. Please try again.\\n\\nCheck the browser console for details.');
+            return { success: false, message: 'Network error' };
+        }
+    }
 });
 
 </script>

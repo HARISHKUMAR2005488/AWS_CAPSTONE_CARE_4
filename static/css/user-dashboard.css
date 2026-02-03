@@ -4968,6 +4968,11 @@ body {
     color: #15803d;
 }
 
+.day-slot .status.unavailable {
+    background: #FEE2E2;
+    color: #991B1B;
+}
+
 /* Settings View */
 .settings-grid {
     display: grid;

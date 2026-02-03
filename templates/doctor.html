@@ -351,37 +351,8 @@
                     </div>
                     <div class="schedule-preview">
                         <h3>Weekly Schedule</h3>
-                        <div class="weekly-grid">
-                            <div class="day-slot">
-                                <span class="day">Mon</span>
-                                <span class="time">09:00-17:00</span>
-                                <span class="status available">Available</span>
-                            </div>
-                            <div class="day-slot">
-                                <span class="day">Tue</span>
-                                <span class="time">09:00-17:00</span>
-                                <span class="status available">Available</span>
-                            </div>
-                            <div class="day-slot">
-                                <span class="day">Wed</span>
-                                <span class="time">09:00-17:00</span>
-                                <span class="status available">Available</span>
-                            </div>
-                            <div class="day-slot">
-                                <span class="day">Thu</span>
-                                <span class="time">09:00-17:00</span>
-                                <span class="status available">Available</span>
-                            </div>
-                            <div class="day-slot">
-                                <span class="day">Fri</span>
-                                <span class="time">09:00-17:00</span>
-                                <span class="status available">Available</span>
-                            </div>
-                            <div class="day-slot">
-                                <span class="day">Sat</span>
-                                <span class="time">10:00-14:00</span>
-                                <span class="status available">Available</span>
-                            </div>
+                        <div class="weekly-grid" id="weeklyScheduleGrid">
+                            <!-- Dynamic schedule will be inserted here -->
                         </div>
                     </div>
                 </div>
@@ -666,6 +637,10 @@ function setActiveNav(element) {
 }
 
 function showEditScheduleModal() {
+    // Re-populate the form with current values before showing
+    if (window.populateScheduleFormFn) {
+        window.populateScheduleFormFn();
+    }
     document.getElementById('editScheduleModal').style.display = 'flex';
 }
 
@@ -702,6 +677,11 @@ document.addEventListener('DOMContentLoaded', function() {
         // Parse days and check corresponding checkboxes
         if (availableDaysStr) {
             const days = availableDaysStr.split(',').map(d => d.trim());
+            
+            // First uncheck all boxes
+            document.querySelectorAll('input[name="days"]').forEach(cb => cb.checked = false);
+            
+            // Then check the available days
             days.forEach(day => {
                 const checkbox = document.getElementById(`day_${day.toLowerCase()}`);
                 if (checkbox) {
@@ -725,8 +705,56 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     };
     
+    // Make it globally accessible
+    window.populateScheduleFormFn = populateScheduleForm;
+    
+    // Render weekly schedule dynamically
+    const renderWeeklySchedule = function() {
+        const availableDaysStr = "{{ doctor.available_days }}";
+        const availableTimeStr = "{{ doctor.available_time }}";
+        const weeklyGrid = document.getElementById('weeklyScheduleGrid');
+        
+        if (!weeklyGrid) return;
+        
+        // All days of the week
+        const allDays = [
+            { short: 'Mon', full: 'Monday' },
+            { short: 'Tue', full: 'Tuesday' },
+            { short: 'Wed', full: 'Wednesday' },
+            { short: 'Thu', full: 'Thursday' },
+            { short: 'Fri', full: 'Friday' },
+            { short: 'Sat', full: 'Saturday' },
+            { short: 'Sun', full: 'Sunday' }
+        ];
+        
+        // Parse available days
+        const availableDays = availableDaysStr ? 
+            availableDaysStr.split(',').map(d => d.trim()) : [];
+        
+        // Clear existing content
+        weeklyGrid.innerHTML = '';
+        
+        // Render each day
+        allDays.forEach(day => {
+            const isAvailable = availableDays.includes(day.full);
+            const daySlot = document.createElement('div');
+            daySlot.className = 'day-slot';
+            
+            daySlot.innerHTML = `
+                <span class="day">${day.short}</span>
+                <span class="time">${isAvailable ? availableTimeStr : '--:--'}</span>
+                <span class="status ${isAvailable ? 'available' : 'unavailable'}">
+                    ${isAvailable ? 'Available' : 'Not Available'}
+                </span>
+            `;
+            
+            weeklyGrid.appendChild(daySlot);
+        });
+    };
+    
     // Call on page load
     populateScheduleForm();
+    renderWeeklySchedule();
     
     // Handle form submission
     const editScheduleForm = document.getElementById('editScheduleForm');

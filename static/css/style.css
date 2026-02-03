@@ -5996,13 +5996,13 @@ body {
 
 /* Doctor Header */
 .doctor-header {
-    background: linear-gradient(135deg, var(--medical-blue) 0%, var(--medical-blue-dark) 100%);
-    color: white;
+    background: linear-gradient(135deg, #5FEABE 0%, #4DD9A8 100%);
+    color: var(--text-primary);
     padding: 1.5rem 2rem;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    box-shadow: 0 4px 12px rgba(30, 124, 232, 0.2);
+    box-shadow: 0 4px 12px rgba(95, 234, 190, 0.2);
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
@@ -6065,40 +6065,43 @@ body {
 
 .doctor-avatar-header i {
     font-size: 1.5rem;
-    color: white;
+    color: var(--text-primary);
 }
 
 .doctor-details-header h3 {
     margin: 0;
     font-size: 1rem;
     font-weight: 600;
+    color: var(--text-primary);
 }
 
 .doctor-details-header p {
     margin: 0;
     font-size: 0.85rem;
-    opacity: 0.9;
+    opacity: 0.8;
+    color: var(--text-primary);
 }
 
 .btn-logout {
-    background: rgba(255, 255, 255, 0.15);
-    color: white;
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(29, 27, 27, 0.15);
+    color: var(--text-primary);
+    border: 2px solid var(--text-primary);
     padding: 0.6rem 1.2rem;
-    border-radius: 6px;
+    border-radius: var(--radius-full);
     cursor: pointer;
     display: flex;
     align-items: center;
     gap: 0.5rem;
     font-size: 0.9rem;
-    font-weight: 500;
-    transition: all 0.3s ease;
+    font-weight: 600;
+    transition: all var(--transition-base);
 }
 
 .btn-logout:hover {
-    background: rgba(255, 255, 255, 0.25);
-    border-color: rgba(255, 255, 255, 0.3);
-    transform: translateY(-1px);
+    background: var(--text-primary);
+    color: #FFFFFF;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(29, 27, 27, 0.2);
 }
 
 /* Doctor Dashboard Wrapper */

@@ -170,6 +170,30 @@
                         <span class="summary-label">Selected Time:</span>
                         <span class="summary-value" id="selectedTime">Not selected</span>
                     </div>
+                    <div class="summary-row">
+                        <span class="summary-label">Symptoms/Reason:</span>
+                        <span class="summary-value" id="selectedSymptoms" style="word-wrap: break-word; white-space: normal;">Not provided</span>
+                    </div>
+                    <div class="summary-row">
+                        <span class="summary-label">Patient Name:</span>
+                        <span class="summary-value" id="selectedPatientName">Not provided</span>
+                    </div>
+                    <div class="summary-row">
+                        <span class="summary-label">Patient Email:</span>
+                        <span class="summary-value" id="selectedPatientEmail">Not provided</span>
+                    </div>
+                    <div class="summary-row">
+                        <span class="summary-label">Patient Phone:</span>
+                        <span class="summary-value" id="selectedPatientPhone">Not provided</span>
+                    </div>
+                    <div class="summary-row">
+                        <span class="summary-label">Age:</span>
+                        <span class="summary-value" id="selectedPatientAge">Not provided</span>
+                    </div>
+                    <div class="summary-row">
+                        <span class="summary-label">Gender:</span>
+                        <span class="summary-value" id="selectedPatientGender">Not provided</span>
+                    </div>
                     <div class="summary-row separator">
                         <span class="summary-label">Consultation Fee:</span>
                         <span class="summary-value">${{ doctor.consultation_fee }}</span>
@@ -250,7 +274,57 @@ document.addEventListener('DOMContentLoaded', function() {
     const symptomsInput = document.getElementById('symptoms');
     const selectedDateSpan = document.getElementById('selectedDate');
     const selectedTimeSpan = document.getElementById('selectedTime');
+    const selectedSymptomsSpan = document.getElementById('selectedSymptoms');
+    const selectedPatientNameSpan = document.getElementById('selectedPatientName');
+    const selectedPatientEmailSpan = document.getElementById('selectedPatientEmail');
+    const selectedPatientPhoneSpan = document.getElementById('selectedPatientPhone');
+    const selectedPatientAgeSpan = document.getElementById('selectedPatientAge');
+    const selectedPatientGenderSpan = document.getElementById('selectedPatientGender');
     const charCountSpan = document.getElementById('charCount');
+    
+    // Initialize patient info from page load
+    const initializePatientInfo = function() {
+        const patientNameInput = document.querySelector('input[name="patient_name"]');
+        const patientEmailInput = document.querySelector('input[name="patient_email"]');
+        const patientPhoneInput = document.querySelector('input[name="patient_phone"]');
+        const patientAgeInput = document.querySelector('input[name="patient_age"]');
+        const patientGenderInput = document.querySelector('input[name="patient_gender"]');
+        
+        if (patientNameInput && patientNameInput.value) {
+            selectedPatientNameSpan.textContent = patientNameInput.value;
+            selectedPatientNameSpan.style.color = 'var(--dark)';
+        } else if (document.querySelector('.info-value') && document.querySelector('.info-value').textContent) {
+            // Fallback to username from display
+            const displayName = document.querySelector('.patient-info-display .info-value');
+            if (displayName) {
+                selectedPatientNameSpan.textContent = displayName.textContent;
+                selectedPatientNameSpan.style.color = 'var(--dark)';
+            }
+        }
+        
+        if (patientEmailInput && patientEmailInput.value) {
+            selectedPatientEmailSpan.textContent = patientEmailInput.value;
+            selectedPatientEmailSpan.style.color = 'var(--dark)';
+        }
+        
+        if (patientPhoneInput && patientPhoneInput.value) {
+            selectedPatientPhoneSpan.textContent = patientPhoneInput.value;
+            selectedPatientPhoneSpan.style.color = 'var(--dark)';
+        }
+        
+        if (patientAgeInput && patientAgeInput.value) {
+            selectedPatientAgeSpan.textContent = patientAgeInput.value;
+            selectedPatientAgeSpan.style.color = 'var(--dark)';
+        }
+        
+        if (patientGenderInput && patientGenderInput.value) {
+            selectedPatientGenderSpan.textContent = patientGenderInput.value;
+            selectedPatientGenderSpan.style.color = 'var(--dark)';
+        }
+    };
+    
+    // Call on page load
+    setTimeout(initializePatientInfo, 100);
     
     // Fetch doctor availability
     const doctorId = {{ doctor.id }};
@@ -330,6 +404,8 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Reset time select
             timeSelect.innerHTML = '<option value="">Select time slot</option>';
+            selectedTimeSpan.textContent = 'Not selected';
+            selectedTimeSpan.style.color = 'var(--gray)';
         }
     });
     
@@ -352,14 +428,24 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    // Update character count for symptoms
+    // Update character count and summary for symptoms
     symptomsInput.addEventListener('input', function() {
         const count = this.value.length;
         charCountSpan.textContent = count;
         
+        // Update symptoms summary
+        if (this.value.trim()) {
+            selectedSymptomsSpan.textContent = this.value;
+            selectedSymptomsSpan.style.color = 'var(--dark)';
+        } else {
+            selectedSymptomsSpan.textContent = 'Not provided';
+            selectedSymptomsSpan.style.color = 'var(--gray)';
+        }
+        
         if (count > 500) {
             this.value = this.value.substring(0, 500);
             charCountSpan.textContent = 500;
+            selectedSymptomsSpan.textContent = this.value;
         }
         
         if (count > 450) {
@@ -383,6 +469,13 @@ document.addEventListener('DOMContentLoaded', function() {
             e.preventDefault();
             alert('Please select a time slot');
             timeSelect.focus();
+            return false;
+        }
+        
+        if (!symptomsInput.value.trim()) {
+            e.preventDefault();
+            alert('Please provide symptoms or reason for visit');
+            symptomsInput.focus();
             return false;
         }
         

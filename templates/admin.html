@@ -16,7 +16,12 @@
             <div class="profile-section">
                 <div class="profile-avatar">
                     {% if current_user.profile_picture %}
-                    <img src="{{ url_for('serve_profile_picture', filename=current_user.profile_picture.split('/')[-1]) }}"
+                    <img src="{{ url_for('serve_profile_picture', filename=current_user.profile_pic                    <!-- Footer Section -->
+                    <footer class="footer">
+                        <div class="footer-content">
+                            <p>&copy; 2026 Your Company. All rights reserved.</p>
+                        </div>
+                    </footer>ture.split('/')[-1]) }}"
                         alt="{{ current_user.username }}">
                     {% else %}
                     <i class="fas fa-user-shield"></i>

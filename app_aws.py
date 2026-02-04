@@ -1792,11 +1792,47 @@ def book(doctor_id: str):
         reason = request.form.get("symptoms", "").strip()
         medical_notes = request.form.get("symptoms", "").strip()
         
+        # Validate required fields
+        if not date:
+            flash("Appointment date is required", "danger")
+            return redirect(url_for("book_appointment", doctor_id=doctor_id))
+        
+        if not time:
+            flash("Appointment time is required", "danger")
+            return redirect(url_for("book_appointment", doctor_id=doctor_id))
+        
+        if not reason:
+            flash("Symptoms/reason for visit is required", "danger")
+            return redirect(url_for("book_appointment", doctor_id=doctor_id))
+        
         # Get payment information
         payment_method = request.form.get("payment_method", "")
         card_number = request.form.get("card_number", "")
         card_holder = request.form.get("card_holder", "")
         upi_id = request.form.get("upi_id", "")
+        
+        # Validate payment method is selected
+        if not payment_method:
+            flash("Payment method is required", "danger")
+            return redirect(url_for("book_appointment", doctor_id=doctor_id))
+        
+        # Validate payment details based on method
+        if payment_method in ["credit_card", "debit_card"]:
+            if not card_number or not card_holder:
+                flash("Card number and cardholder name are required", "danger")
+                return redirect(url_for("book_appointment", doctor_id=doctor_id))
+            
+            expiry_date = request.form.get("expiry_date", "")
+            cvv = request.form.get("cvv", "")
+            
+            if not expiry_date or not cvv:
+                flash("Expiry date and CVV are required", "danger")
+                return redirect(url_for("book_appointment", doctor_id=doctor_id))
+        
+        elif payment_method == "upi":
+            if not upi_id:
+                flash("UPI ID is required", "danger")
+                return redirect(url_for("book_appointment", doctor_id=doctor_id))
         
         # Mask card number for security (only last 4 digits)
         masked_card_number = ""

@@ -153,54 +153,116 @@
                 <input type="hidden" name="patient_gender" value="{{ session.get('gender', '') }}">
             </div>
             
-            <div class="booking-summary">
+            <div class="form-section">
                 <h3 class="form-section-title">
-                    <i class="fas fa-receipt"></i> Appointment Summary
+                    <i class="fas fa-credit-card"></i> Payment Information
                 </h3>
-                <div class="summary-details">
-                    <div class="summary-row">
-                        <span class="summary-label">Doctor:</span>
-                        <span class="summary-value">{{ doctor.name }} - {{ doctor.specialization }}</span>
+                <div class="payment-info-box">
+                    <div class="fee-display">
+                        <span class="fee-label">Consultation Fee:</span>
+                        <span class="fee-amount">${{ doctor.consultation_fee }}</span>
                     </div>
-                    <div class="summary-row">
-                        <span class="summary-label">Selected Date:</span>
-                        <span class="summary-value" id="selectedDate">Not selected</span>
+                </div>
+                
+                <div class="form-group">
+                    <label for="payment_method">
+                        <i class="fas fa-wallet"></i>
+                        Payment Method <span class="form-required">*</span>
+                    </label>
+                    <select id="payment_method" name="payment_method" class="form-input" required
+                            aria-label="Payment Method"
+                            aria-required="true">
+                        <option value="">Select payment method</option>
+                        <option value="credit_card">Credit Card</option>
+                        <option value="debit_card">Debit Card</option>
+                        <option value="upi">UPI</option>
+                    </select>
+                    <span class="form-feedback"></span>
+                </div>
+                
+                <div id="cardPaymentFields" style="display: none;">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="card_number">
+                                <i class="fas fa-credit-card"></i>
+                                Card Number <span class="form-required">*</span>
+                            </label>
+                            <input type="text" id="card_number" name="card_number" class="form-input" 
+                                   placeholder="1234 5678 9012 3456" maxlength="19"
+                                   aria-label="Card Number">
+                            <span class="form-feedback"></span>
+                        </div>
+                        <div class="form-group">
+                            <label for="card_holder">
+                                <i class="fas fa-user"></i>
+                                Card Holder Name <span class="form-required">*</span>
+                            </label>
+                            <input type="text" id="card_holder" name="card_holder" class="form-input" 
+                                   placeholder="John Doe"
+                                   aria-label="Card Holder Name">
+                            <span class="form-feedback"></span>
+                        </div>
                     </div>
-                    <div class="summary-row">
-                        <span class="summary-label">Selected Time:</span>
-                        <span class="summary-value" id="selectedTime">Not selected</span>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="expiry_date">
+                                <i class="fas fa-calendar"></i>
+                                Expiry Date <span class="form-required">*</span>
+                            </label>
+                            <input type="text" id="expiry_date" name="expiry_date" class="form-input" 
+                                   placeholder="MM/YY" maxlength="5"
+                                   aria-label="Expiry Date">
+                            <span class="form-feedback"></span>
+                        </div>
+                        <div class="form-group">
+                            <label for="cvv">
+                                <i class="fas fa-lock"></i>
+                                CVV <span class="form-required">*</span>
+                            </label>
+                            <input type="password" id="cvv" name="cvv" class="form-input" 
+                                   placeholder="123" maxlength="3"
+                                   aria-label="CVV">
+                            <span class="form-feedback"></span>
+                        </div>
                     </div>
-                    <div class="summary-row">
-                        <span class="summary-label">Symptoms/Reason:</span>
-                        <span class="summary-value" id="selectedSymptoms" style="word-wrap: break-word; white-space: normal;">Not provided</span>
+                </div>
+                
+                <div id="upiPaymentFields" style="display: none;">
+                    <div class="form-group">
+                        <label for="upi_id">
+                            <i class="fas fa-mobile-alt"></i>
+                            UPI ID <span class="form-required">*</span>
+                        </label>
+                        <input type="text" id="upi_id" name="upi_id" class="form-input" 
+                               placeholder="yourname@upi"
+                               aria-label="UPI ID">
+                        <span class="form-feedback"></span>
                     </div>
-                    <div class="summary-row">
-                        <span class="summary-label">Patient Name:</span>
-                        <span class="summary-value" id="selectedPatientName">Not provided</span>
+                </div>
+                
+                <div class="payment-note">
+                    <i class="fas fa-shield-alt"></i>
+                    Your payment information is secure and encrypted
+                </div>
+            </div>
+            
+            <div class="form-section">
+                <h3 class="form-section-title">
+                    <i class="fas fa-file-invoice-dollar"></i> Transaction Fee
+                </h3>
+                <div class="transaction-fee-box">
+                    <div class="fee-row">
+                        <span class="fee-label">Consultation Fee:</span>
+                        <span class="fee-value">${{ doctor.consultation_fee }}</span>
                     </div>
-                    <div class="summary-row">
-                        <span class="summary-label">Patient Email:</span>
-                        <span class="summary-value" id="selectedPatientEmail">Not provided</span>
+                    <div class="fee-row">
+                        <span class="fee-label">Processing Fee:</span>
+                        <span class="fee-value">$2.00</span>
                     </div>
-                    <div class="summary-row">
-                        <span class="summary-label">Patient Phone:</span>
-                        <span class="summary-value" id="selectedPatientPhone">Not provided</span>
-                    </div>
-                    <div class="summary-row">
-                        <span class="summary-label">Age:</span>
-                        <span class="summary-value" id="selectedPatientAge">Not provided</span>
-                    </div>
-                    <div class="summary-row">
-                        <span class="summary-label">Gender:</span>
-                        <span class="summary-value" id="selectedPatientGender">Not provided</span>
-                    </div>
-                    <div class="summary-row separator">
-                        <span class="summary-label">Consultation Fee:</span>
-                        <span class="summary-value">${{ doctor.consultation_fee }}</span>
-                    </div>
-                    <div class="summary-row total">
-                        <span class="summary-label">Total Amount:</span>
-                        <span class="summary-value">${{ doctor.consultation_fee }}</span>
+                    <div class="fee-row total">
+                        <span class="fee-label">Total Amount:</span>
+                        <span class="fee-value">${{ "%.2f"|format(doctor.consultation_fee|float + 2.0) }}</span>
                     </div>
                 </div>
                 
@@ -208,7 +270,8 @@
                     <input type="checkbox" id="confirm_terms" name="confirm_terms" required>
                     <label for="confirm_terms">
                         I confirm that I have read and agree to the 
-                        <a href="#" class="form-link">Appointment Terms & Conditions</a>
+                        <a href="#" class="form-link">Appointment Terms & Conditions</a> and 
+                        <a href="#" class="form-link">Payment Policy</a>
                         <span class="form-required">*</span>
                     </label>
                     <span class="form-feedback"></span>
@@ -272,83 +335,60 @@ document.addEventListener('DOMContentLoaded', function() {
     const dateInput = document.getElementById('appointment_date');
     const timeSelect = document.getElementById('appointment_time');
     const symptomsInput = document.getElementById('symptoms');
-    const selectedDateSpan = document.getElementById('selectedDate');
-    const selectedTimeSpan = document.getElementById('selectedTime');
-    const selectedSymptomsSpan = document.getElementById('selectedSymptoms');
-    const selectedPatientNameSpan = document.getElementById('selectedPatientName');
-    const selectedPatientEmailSpan = document.getElementById('selectedPatientEmail');
-    const selectedPatientPhoneSpan = document.getElementById('selectedPatientPhone');
-    const selectedPatientAgeSpan = document.getElementById('selectedPatientAge');
-    const selectedPatientGenderSpan = document.getElementById('selectedPatientGender');
     const charCountSpan = document.getElementById('charCount');
+    const paymentMethodSelect = document.getElementById('payment_method');
+    const cardPaymentFields = document.getElementById('cardPaymentFields');
+    const upiPaymentFields = document.getElementById('upiPaymentFields');
     
-    // Helper function to update summary from hidden fields
-    const updateSummaryFromHiddenFields = function() {
-        const patientNameInput = document.querySelector('input[name="patient_name"]');
-        const patientEmailInput = document.querySelector('input[name="patient_email"]');
-        const patientPhoneInput = document.querySelector('input[name="patient_phone"]');
-        const patientAgeInput = document.querySelector('input[name="patient_age"]');
-        const patientGenderInput = document.querySelector('input[name="patient_gender"]');
+    // Payment method change handler
+    paymentMethodSelect.addEventListener('change', function() {
+        const method = this.value;
         
-        // Update from hidden fields (actual data being sent)
-        if (patientNameInput && patientNameInput.value) {
-            selectedPatientNameSpan.textContent = patientNameInput.value;
-            selectedPatientNameSpan.style.color = 'var(--dark)';
-        } else {
-            // Fallback to display username
-            const displayName = document.querySelector('.patient-info-display .info-value');
-            if (displayName && displayName.textContent) {
-                selectedPatientNameSpan.textContent = displayName.textContent;
-                selectedPatientNameSpan.style.color = 'var(--dark)';
-            }
-        }
+        // Reset all payment fields
+        cardPaymentFields.style.display = 'none';
+        upiPaymentFields.style.display = 'none';
         
-        if (patientEmailInput && patientEmailInput.value) {
-            selectedPatientEmailSpan.textContent = patientEmailInput.value;
-            selectedPatientEmailSpan.style.color = 'var(--dark)';
-        }
+        // Clear required attributes
+        document.querySelectorAll('#cardPaymentFields input, #upiPaymentFields input').forEach(input => {
+            input.removeAttribute('required');
+        });
         
-        if (patientPhoneInput && patientPhoneInput.value) {
-            selectedPatientPhoneSpan.textContent = patientPhoneInput.value;
-            selectedPatientPhoneSpan.style.color = 'var(--dark)';
+        // Show relevant fields and set required
+        if (method === 'credit_card' || method === 'debit_card') {
+            cardPaymentFields.style.display = 'block';
+            document.getElementById('card_number').setAttribute('required', 'required');
+            document.getElementById('card_holder').setAttribute('required', 'required');
+            document.getElementById('expiry_date').setAttribute('required', 'required');
+            document.getElementById('cvv').setAttribute('required', 'required');
+        } else if (method === 'upi') {
+            upiPaymentFields.style.display = 'block';
+            document.getElementById('upi_id').setAttribute('required', 'required');
         }
-        
-        if (patientAgeInput && patientAgeInput.value) {
-            selectedPatientAgeSpan.textContent = patientAgeInput.value;
-            selectedPatientAgeSpan.style.color = 'var(--dark)';
-        }
-        
-        if (patientGenderInput && patientGenderInput.value) {
-            selectedPatientGenderSpan.textContent = patientGenderInput.value;
-            selectedPatientGenderSpan.style.color = 'var(--dark)';
-        }
-    };
+    });
     
-    // Initialize patient info on page load
-    updateSummaryFromHiddenFields();
+    // Card number formatting
+    const cardNumberInput = document.getElementById('card_number');
+    cardNumberInput.addEventListener('input', function(e) {
+        let value = e.target.value.replace(/\s/g, '');
+        let formattedValue = value.match(/.{1,4}/g)?.join(' ') || value;
+        e.target.value = formattedValue;
+    });
     
-    // Watch for changes to hidden fields and update summary
-    const patientNameInput = document.querySelector('input[name="patient_name"]');
-    const patientEmailInput = document.querySelector('input[name="patient_email"]');
-    const patientPhoneInput = document.querySelector('input[name="patient_phone"]');
-    const patientAgeInput = document.querySelector('input[name="patient_age"]');
-    const patientGenderInput = document.querySelector('input[name="patient_gender"]');
+    // Expiry date formatting
+    const expiryDateInput = document.getElementById('expiry_date');
+    expiryDateInput.addEventListener('input', function(e) {
+        let value = e.target.value.replace(/\D/g, '');
+        if (value.length >= 2) {
+            value = value.slice(0, 2) + '/' + value.slice(2, 4);
+        }
+        e.target.value = value;
+    });
     
-    if (patientNameInput) {
-        patientNameInput.addEventListener('change', updateSummaryFromHiddenFields);
-    }
-    if (patientEmailInput) {
-        patientEmailInput.addEventListener('change', updateSummaryFromHiddenFields);
-    }
-    if (patientPhoneInput) {
-        patientPhoneInput.addEventListener('change', updateSummaryFromHiddenFields);
-    }
-    if (patientAgeInput) {
-        patientAgeInput.addEventListener('change', updateSummaryFromHiddenFields);
-    }
-    if (patientGenderInput) {
-        patientGenderInput.addEventListener('change', updateSummaryFromHiddenFields);
-    }
+    // CVV validation (numbers only)
+    const cvvInput = document.getElementById('cvv');
+    cvvInput.addEventListener('input', function(e) {
+        e.target.value = e.target.value.replace(/\D/g, '').slice(0, 3);
+    });
     
     // Fetch doctor availability
     const doctorId = {{ doctor.id }};
@@ -379,15 +419,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 dateInput.setCustomValidity('Doctor is not available on this day');
                 alert(`Doctor is not available on ${selectedDate.toLocaleDateString('en-US', { weekday: 'long' })}. Available days: ${doctorAvailability.available_days_str}`);
                 dateInput.value = '';
-                selectedDateSpan.textContent = 'Not selected';
-                selectedDateSpan.style.color = 'var(--gray)';
             } else {
                 dateInput.setCustomValidity('');
             }
         }
     }
     
-    // Update summary date in real-time and populate time slots
+    // Update time slots when date changes
     dateInput.addEventListener('change', function() {
         if (this.value) {
             const date = new Date(this.value);
@@ -538,22 +576,7 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .catch(error => console.error('Error fetching doctor availability:', error));
     
-    function validateDateAvailability() {
-        if (dateInput.value && doctorAvailability.available_days.length > 0) {
-            const selectedDate = new Date(dateInput.value);
-            if (!isDateAvailable(selectedDate, doctorAvailability.available_days)) {
-                dateInput.setCustomValidity('Doctor is not available on this day');
-                alert(`Doctor is not available on ${selectedDate.toLocaleDateString('en-US', { weekday: 'long' })}. Available days: ${doctorAvailability.available_days_str}`);
-                dateInput.value = '';
-                selectedDateSpan.textContent = 'Not selected';
-                selectedDateSpan.style.color = 'var(--gray)';
-            } else {
-                dateInput.setCustomValidity('');
-            }
-        }
-    }
-    
-    // Update summary date in real-time and populate time slots
+    // Update time slots when date changes
     dateInput.addEventListener('change', function() {
         if (this.value) {
             const date = new Date(this.value);
@@ -563,11 +586,6 @@ document.addEventListener('DOMContentLoaded', function() {
             if (dateInput.validity.customError) {
                 return;
             }
-            
-            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-            selectedDateSpan.textContent = date.toLocaleDateString('en-US', options);
-            selectedDateSpan.style.color = 'var(--dark)';
-            selectedDateSpan.style.fontWeight = '600';
             
             // Generate time slots based on doctor's available time range
             const timeSlots = generateTimeSlots(doctorAvailability.start_time, doctorAvailability.end_time);
@@ -588,54 +606,19 @@ document.addEventListener('DOMContentLoaded', function() {
                 timeSelect.appendChild(option);
             });
         } else {
-            selectedDateSpan.textContent = 'Not selected';
-            selectedDateSpan.style.color = 'var(--gray)';
-            selectedDateSpan.style.fontWeight = '400';
-            
             // Reset time select
             timeSelect.innerHTML = '<option value="">Select time slot</option>';
-            selectedTimeSpan.textContent = 'Not selected';
-            selectedTimeSpan.style.color = 'var(--gray)';
         }
     });
     
-    // Update summary time in real-time
-    timeSelect.addEventListener('change', function() {
-        if (this.value) {
-            // Format time from 24-hour (HH:MM) to 12-hour format for display
-            const [hour, min] = this.value.split(':').map(Number);
-            const period = hour >= 12 ? 'PM' : 'AM';
-            const displayHour = hour % 12 || 12;
-            const displayTime = `${displayHour}:${String(min).padStart(2, '0')} ${period}`;
-            
-            selectedTimeSpan.textContent = displayTime;
-            selectedTimeSpan.style.color = 'var(--dark)';
-            selectedTimeSpan.style.fontWeight = '600';
-        } else {
-            selectedTimeSpan.textContent = 'Not selected';
-            selectedTimeSpan.style.color = 'var(--gray)';
-            selectedTimeSpan.style.fontWeight = '400';
-        }
-    });
-    
-    // Update character count and summary for symptoms
+    // Update character count for symptoms
     symptomsInput.addEventListener('input', function() {
         const count = this.value.length;
         charCountSpan.textContent = count;
         
-        // Update symptoms summary
-        if (this.value.trim()) {
-            selectedSymptomsSpan.textContent = this.value;
-            selectedSymptomsSpan.style.color = 'var(--dark)';
-        } else {
-            selectedSymptomsSpan.textContent = 'Not provided';
-            selectedSymptomsSpan.style.color = 'var(--gray)';
-        }
-        
         if (count > 500) {
             this.value = this.value.substring(0, 500);
             charCountSpan.textContent = 500;
-            selectedSymptomsSpan.textContent = this.value;
         }
         
         if (count > 450) {
@@ -667,6 +650,48 @@ document.addEventListener('DOMContentLoaded', function() {
             alert('Please provide symptoms or reason for visit');
             symptomsInput.focus();
             return false;
+        }
+        
+        if (!paymentMethodSelect.value) {
+            e.preventDefault();
+            alert('Please select a payment method');
+            paymentMethodSelect.focus();
+            return false;
+        }
+        
+        // Validate payment fields based on selected method
+        if (paymentMethodSelect.value === 'credit_card' || paymentMethodSelect.value === 'debit_card') {
+            const cardNumber = document.getElementById('card_number').value.replace(/\s/g, '');
+            if (cardNumber.length < 13 || cardNumber.length > 19) {
+                e.preventDefault();
+                alert('Please enter a valid card number');
+                document.getElementById('card_number').focus();
+                return false;
+            }
+            
+            const expiryDate = document.getElementById('expiry_date').value;
+            if (!/^\d{2}\/\d{2}$/.test(expiryDate)) {
+                e.preventDefault();
+                alert('Please enter a valid expiry date (MM/YY)');
+                document.getElementById('expiry_date').focus();
+                return false;
+            }
+            
+            const cvv = document.getElementById('cvv').value;
+            if (cvv.length !== 3) {
+                e.preventDefault();
+                alert('Please enter a valid CVV');
+                document.getElementById('cvv').focus();
+                return false;
+            }
+        } else if (paymentMethodSelect.value === 'upi') {
+            const upiId = document.getElementById('upi_id').value;
+            if (!upiId.includes('@')) {
+                e.preventDefault();
+                alert('Please enter a valid UPI ID');
+                document.getElementById('upi_id').focus();
+                return false;
+            }
         }
         
         const selectedDate = new Date(dateInput.value);

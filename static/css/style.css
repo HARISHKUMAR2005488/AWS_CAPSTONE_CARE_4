@@ -11803,3 +11803,156 @@ a[href^="#"] {
 
 /* End of Unified Design System */
 
+/* ========================================
+   PAYMENT FORM STYLES
+   ======================================== */
+
+.payment-info-box {
+    background: var(--bg-primary);
+    border: 1px solid var(--gray-light);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-lg);
+    margin-bottom: var(--spacing-lg);
+}
+
+.fee-display {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: var(--font-size-lg);
+}
+
+.fee-label {
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.fee-amount {
+    color: var(--primary);
+    font-weight: 700;
+    font-size: var(--font-size-xl);
+}
+
+.transaction-fee-box {
+    background: var(--bg-primary);
+    border: 2px solid var(--primary);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-lg);
+    margin-bottom: var(--spacing-lg);
+}
+
+.fee-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing-sm) 0;
+    border-bottom: 1px solid var(--gray-lighter);
+}
+
+.fee-row:last-child {
+    border-bottom: none;
+}
+
+.fee-row.total {
+    margin-top: var(--spacing-md);
+    padding-top: var(--spacing-md);
+    border-top: 2px solid var(--primary);
+    font-size: var(--font-size-lg);
+    font-weight: 700;
+}
+
+.fee-value {
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+.fee-row.total .fee-value {
+    color: var(--primary);
+    font-size: var(--font-size-xl);
+}
+
+.payment-note {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-md);
+    background: var(--success-light);
+    border-radius: var(--radius-md);
+    color: var(--text-secondary);
+    font-size: var(--font-size-sm);
+    margin-top: var(--spacing-md);
+}
+
+.payment-note i {
+    color: var(--success);
+    font-size: var(--font-size-lg);
+}
+
+/* Payment Information Display in Doctor's View */
+.payment-info {
+    margin-top: var(--spacing-lg);
+    padding: var(--spacing-md);
+    background: var(--gray-lightest);
+    border-radius: var(--radius-md);
+    border-left: 4px solid var(--primary);
+}
+
+.payment-info label {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: var(--spacing-md);
+}
+
+.payment-details {
+    margin-top: var(--spacing-sm);
+}
+
+.payment-details .info-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-sm);
+}
+
+.payment-details .info-item {
+    flex: 1;
+    min-width: 200px;
+}
+
+.payment-status-badge {
+    padding: 0.25rem 0.75rem;
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.payment-status-badge.completed {
+    background: var(--success-light);
+    color: var(--success-dark);
+}
+
+.payment-status-badge.pending {
+    background: var(--warning-light);
+    color: var(--warning-dark);
+}
+
+/* Mobile Responsiveness for Payment Forms */
+@media (max-width: 768px) {
+    .transaction-fee-box,
+    .payment-info-box {
+        padding: var(--spacing-md);
+    }
+    
+    .fee-display,
+    .fee-row {
+        font-size: var(--font-size-base);
+    }
+    
+    .payment-details .info-item {
+        min-width: 100%;
+    }
+}

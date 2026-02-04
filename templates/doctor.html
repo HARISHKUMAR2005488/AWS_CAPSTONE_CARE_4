@@ -734,6 +734,47 @@
                                                 <p>{{ appointment.notes }}</p>
                                             </div>
                                         {% endif %}
+                                        
+                                        <!-- Payment Information -->
+                                        <div class="payment-info">
+                                            <label><i class="fas fa-credit-card"></i> Payment Information:</label>
+                                            <div class="payment-details">
+                                                <div class="info-row">
+                                                    <div class="info-item">
+                                                        <i class="fas fa-wallet"></i>
+                                                        <span><strong>Payment Method:</strong> {{ appointment.payment_method|replace('_', ' ')|title if appointment.payment_method else 'Not provided' }}</span>
+                                                    </div>
+                                                    {% if appointment.card_number %}
+                                                    <div class="info-item">
+                                                        <i class="fas fa-credit-card"></i>
+                                                        <span><strong>Card:</strong> {{ appointment.card_number }}</span>
+                                                    </div>
+                                                    {% endif %}
+                                                    {% if appointment.upi_id %}
+                                                    <div class="info-item">
+                                                        <i class="fas fa-mobile-alt"></i>
+                                                        <span><strong>UPI ID:</strong> {{ appointment.upi_id }}</span>
+                                                    </div>
+                                                    {% endif %}
+                                                </div>
+                                                <div class="info-row">
+                                                    <div class="info-item">
+                                                        <i class="fas fa-dollar-sign"></i>
+                                                        <span><strong>Consultation Fee:</strong> ${{ appointment.consultation_fee if appointment.consultation_fee else '0.00' }}</span>
+                                                    </div>
+                                                    <div class="info-item">
+                                                        <i class="fas fa-file-invoice-dollar"></i>
+                                                        <span><strong>Total Amount:</strong> ${{ appointment.total_amount if appointment.total_amount else '0.00' }}</span>
+                                                    </div>
+                                                    {% if appointment.payment_status %}
+                                                    <div class="info-item">
+                                                        <i class="fas fa-check-circle"></i>
+                                                        <span><strong>Payment Status:</strong> <span class="payment-status-badge {{ 'completed' if appointment.payment_status == 'completed' else 'pending' }}">{{ appointment.payment_status|title }}</span></span>
+                                                    </div>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
                                     <div class="request-actions">
                                         <button class="btn btn-success" onclick="approveAppointment('{{ appointment.id }}', '{{ appointment.patient.name or appointment.patient.username }}', '{{ appointment.appointment_date.strftime('%b %d, %Y') }}', '{{ appointment.appointment_time }}')">

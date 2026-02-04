@@ -1658,6 +1658,23 @@ def book(doctor_id: str):
         reason = request.form.get("symptoms", "").strip()
         medical_notes = request.form.get("symptoms", "").strip()
         
+        # Get payment information
+        payment_method = request.form.get("payment_method", "")
+        card_number = request.form.get("card_number", "")
+        card_holder = request.form.get("card_holder", "")
+        upi_id = request.form.get("upi_id", "")
+        
+        # Mask card number for security (only last 4 digits)
+        masked_card_number = ""
+        if card_number:
+            card_number_clean = card_number.replace(" ", "")
+            masked_card_number = "**** **** **** " + card_number_clean[-4:] if len(card_number_clean) >= 4 else card_number
+        
+        # Calculate total amount (consultation fee + processing fee)
+        consultation_fee = float(doctor.get("consultation_fee", 0))
+        processing_fee = 2.0
+        total_amount = consultation_fee + processing_fee
+        
         # Get doctor's username - use doctor's name as fallback since username might not be in doctors table
         doctor_username = doctor.get("username") or doctor.get("name")
         
@@ -1675,6 +1692,14 @@ def book(doctor_id: str):
                 "time": time,
                 "reason": reason,
                 "medical_notes": medical_notes,
+                "payment_method": payment_method,
+                "card_number": masked_card_number,
+                "card_holder": card_holder,
+                "upi_id": upi_id,
+                "consultation_fee": to_decimal(consultation_fee),
+                "processing_fee": to_decimal(processing_fee),
+                "total_amount": to_decimal(total_amount),
+                "payment_status": "completed",  # In a real app, this would be "pending" until payment is processed
                 "created_at": datetime.utcnow().isoformat(),
             }
         )

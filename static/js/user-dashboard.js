@@ -43,7 +43,7 @@ function sendChatMessageFloating(event) {
     userDiv.innerHTML = `
         <div class="message-content">
             <strong>You:</strong>
-            <p>${userMessage}</p>
+            <p>${escapeHtml(userMessage)}</p>
         </div>
     `;
     messagesContainer.appendChild(userDiv);
@@ -57,14 +57,14 @@ function sendChatMessageFloating(event) {
     typingDiv.innerHTML = `
         <div class="message-content">
             <strong>Assistant:</strong>
-            <p>Typing...</p>
+            <p><i class="fas fa-circle"></i> <i class="fas fa-circle"></i> <i class="fas fa-circle"></i> Analyzing...</p>
         </div>
     `;
     messagesContainer.appendChild(typingDiv);
     messagesContainer.scrollTop = messagesContainer.scrollHeight;
     
     // Send to backend
-    fetch('/api/chat', {
+    fetch('/user/chat-assistant', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -76,15 +76,65 @@ function sendChatMessageFloating(event) {
         // Remove typing indicator
         typingDiv.remove();
         
+        if (!data.success) {
+            throw new Error(data.message || 'Unknown error');
+        }
+        
         // Add bot response
         const botDiv = document.createElement('div');
         botDiv.className = 'message bot-message';
-        botDiv.innerHTML = `
+        
+        let responseHtml = `
             <div class="message-content">
-                <strong>Assistant:</strong>
-                <p>${data.response || 'I apologize, but I encountered an error. Please try again.'}</p>
-            </div>
+                <strong>Health Assistant:</strong>
+                <div class="response-text">${data.response}</div>
         `;
+        
+        // Add severity indicator for symptom analysis
+        if (data.message_type === 'symptom_analysis' && data.severity_score) {
+            const severityClass = data.severity_score >= 70 ? 'high' : data.severity_score >= 40 ? 'medium' : 'low';
+            responseHtml += `
+                <div class="severity-indicator severity-${severityClass}">
+                    <i class="fas fa-heartbeat"></i> Severity: ${data.severity_score}/100
+                </div>
+            `;
+        }
+        
+        // Add recommended specialists
+        if (data.specializations && data.specializations.length > 0) {
+            responseHtml += '<div class="specialists-list"><strong><i class="fas fa-user-md"></i> Recommended Specialists:</strong><ul>';
+            data.specializations.forEach(spec => {
+                responseHtml += `<li><strong>${spec.name}</strong>`;
+                if (spec.reason) {
+                    responseHtml += `<br><small>${spec.reason}</small>`;
+                }
+                responseHtml += '</li>';
+            });
+            responseHtml += '</ul></div>';
+        }
+        
+        // Add health tips
+        if (data.health_tips && data.health_tips.length > 0) {
+            responseHtml += '<div class="health-tips"><strong><i class="fas fa-lightbulb"></i> Health Tips:</strong><ul>';
+            data.health_tips.forEach(tip => {
+                responseHtml += `<li>${tip}</li>`;
+            });
+            responseHtml += '</ul></div>';
+        }
+        
+        // Add action buttons
+        if (data.specializations && data.specializations.length > 0 && !data.is_emergency) {
+            responseHtml += `
+                <div class="chat-actions">
+                    <a href="/doctors" class="btn-action">
+                        <i class="fas fa-calendar-plus"></i> Book Appointment
+                    </a>
+                </div>
+            `;
+        }
+        
+        responseHtml += '</div>';
+        botDiv.innerHTML = responseHtml;
         messagesContainer.appendChild(botDiv);
         messagesContainer.scrollTop = messagesContainer.scrollHeight;
     })
@@ -93,16 +143,51 @@ function sendChatMessageFloating(event) {
         typingDiv.remove();
         
         const errorDiv = document.createElement('div');
-        errorDiv.className = 'message bot-message';
+        errorDiv.className = 'message bot-message error-message';
         errorDiv.innerHTML = `
             <div class="message-content">
                 <strong>Assistant:</strong>
-                <p>Sorry, I'm having trouble connecting. Please try again later.</p>
+                <p><i class="fas fa-exclamation-triangle"></i> ${error.message || 'Sorry, I encountered an error. Please try again or contact support if the issue persists.'}</p>
             </div>
         `;
         messagesContainer.appendChild(errorDiv);
         messagesContainer.scrollTop = messagesContainer.scrollHeight;
     });
+}
+
+// Helper function to escape HTML
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// Fill chat input from suggestion chips
+function fillChatInput(text) {
+    const input = document.getElementById('chatInputFloating');
+    input.value = text;
+    input.focus();
+}
+
+// Clear chat history
+function clearChat() {
+    const messagesContainer = document.getElementById('chatMessagesFloating');
+    messagesContainer.innerHTML = `
+        <div class="message bot-message">
+            <div class="message-content">
+                <strong>Health Assistant:</strong>
+                <p>Hello! I'm your AI health assistant. I can help you with:</p>
+                <ul>
+                    <li>Analyzing your symptoms</li>
+                    <li>Recommending appropriate specialists</li>
+                    <li>Answering health-related questions</li>
+                    <li>Providing health tips and guidance</li>
+                    <li>Helping you book appointments</li>
+                </ul>
+                <p><strong>How can I assist you today?</strong></p>
+            </div>
+        </div>
+    `;
 }
 
 // Navigation Functions

@@ -424,7 +424,13 @@
     <!-- Floating Chat Box -->
     <div class="floating-chat-box" id="floatingChatBox" style="display: none;">
         <div class="chat-header-floating">
-            <h4><i class="fas fa-robot"></i> Health Assistant</h4>
+            <div class="chat-header-title">
+                <i class="fas fa-robot"></i>
+                <div>
+                    <h4>Health Assistant</h4>
+                    <span class="chat-status"><i class="fas fa-circle"></i> Online</span>
+                </div>
+            </div>
             <div class="chat-header-actions">
                 <button class="btn-icon-chat" onclick="clearChat()" title="Clear chat">
                     <i class="fas fa-trash-alt"></i>
@@ -437,18 +443,37 @@
         <div id="chatMessagesFloating" class="chat-messages-floating">
             <div class="message bot-message">
                 <div class="message-content">
-                    <strong>Assistant:</strong>
-                    <p>Hello! Describe your symptoms and I'll help analyze them and suggest appropriate specialists.</p>
+                    <strong>Health Assistant:</strong>
+                    <p>Hello! I'm your AI health assistant. I can help you with:</p>
+                    <ul>
+                        <li>Analyzing your symptoms</li>
+                        <li>Recommending appropriate specialists</li>
+                        <li>Answering health-related questions</li>
+                        <li>Providing health tips and guidance</li>
+                        <li>Helping you book appointments</li>
+                    </ul>
+                    <p><strong>How can I assist you today?</strong></p>
                 </div>
             </div>
         </div>
         <div class="chat-input-floating">
             <form id="chatFormFloating" onsubmit="sendChatMessageFloating(event)">
-                <textarea id="chatInputFloating" placeholder="Describe your symptoms..." rows="2" required></textarea>
-                <button type="submit" class="btn-send">
+                <textarea id="chatInputFloating" placeholder="Type your message or describe your symptoms..." rows="2" required></textarea>
+                <button type="submit" class="btn-send" title="Send message">
                     <i class="fas fa-paper-plane"></i>
                 </button>
             </form>
+            <div class="chat-suggestions">
+                <button class="suggestion-chip" onclick="fillChatInput('How do I book an appointment?')">
+                    <i class="fas fa-calendar"></i> Book appointment
+                </button>
+                <button class="suggestion-chip" onclick="fillChatInput('I have a headache and fever')">
+                    <i class="fas fa-thermometer"></i> Common symptoms
+                </button>
+                <button class="suggestion-chip" onclick="fillChatInput('Emergency symptoms')">
+                    <i class="fas fa-exclamation-triangle"></i> Emergency
+                </button>
+            </div>
         </div>
     </div>
 

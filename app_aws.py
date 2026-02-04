@@ -184,11 +184,12 @@ def get_medical_records(username: str) -> list:
 
 def analyze_symptoms(symptoms_text: str) -> dict:
     """
-    Symptom analysis engine
-    Detects emergency conditions, suggests specializations, and calculates severity
+    Enhanced symptom analysis engine with comprehensive medical knowledge
+    Detects emergency conditions, suggests specializations, provides health tips, and calculates severity
     """
     symptoms_text_lower = symptoms_text.lower()
 
+    # Expanded emergency indicators with more conditions
     emergency_indicators = {
         "chest pain": 3,
         "heart attack": 5,
@@ -215,38 +216,54 @@ def analyze_symptoms(symptoms_text: str) -> dict:
         "bleeding heavily": 4,
         "gunshot": 5,
         "stab wound": 4,
+        "coughing blood": 4,
+        "vomiting blood": 4,
+        "sudden weakness": 3,
+        "slurred speech": 4,
+        "confusion": 3,
+        "blue lips": 4,
+        "severe pain": 3,
     }
 
     specialization_map = {
         "Cardiology": {
-            "keywords": ["chest pain", "heart", "palpitation", "arrhythmia", "hypertension", "blood pressure", "cardiac", "angina", "irregular heartbeat", "shortness of breath"],
+            "keywords": ["chest pain", "heart", "palpitation", "arrhythmia", "hypertension", "blood pressure", "cardiac", "angina", "irregular heartbeat", "shortness of breath", "cholesterol", "coronary", "cardiovascular"],
         },
         "Neurology": {
-            "keywords": ["headache", "migraine", "dizziness", "stroke", "seizure", "tremor", "nerve", "neuropathy", "numbness", "paralysis", "vertigo", "brain"],
+            "keywords": ["headache", "migraine", "dizziness", "stroke", "seizure", "tremor", "nerve", "neuropathy", "numbness", "paralysis", "vertigo", "brain", "memory loss", "confusion", "tingling"],
         },
         "Orthopedics": {
-            "keywords": ["fracture", "bone", "joint", "arthritis", "back pain", "knee pain", "shoulder pain", "ankle", "sprain", "ligament"],
+            "keywords": ["fracture", "bone", "joint", "arthritis", "back pain", "knee pain", "shoulder pain", "ankle", "sprain", "ligament", "muscle pain", "hip", "neck pain", "spine"],
         },
         "Gastroenterology": {
-            "keywords": ["stomach", "abdominal", "nausea", "vomiting", "diarrhea", "constipation", "acid reflux", "heartburn", "liver", "digestive", "intestinal"],
+            "keywords": ["stomach", "abdominal", "nausea", "vomiting", "diarrhea", "constipation", "acid reflux", "heartburn", "liver", "digestive", "intestinal", "bloating", "gas", "ulcer", "ibs"],
         },
         "Pulmonology": {
-            "keywords": ["cough", "asthma", "lung", "bronchitis", "pneumonia", "respiratory", "breathing", "wheezing", "shortness of breath", "tuberculosis"],
+            "keywords": ["cough", "asthma", "lung", "bronchitis", "pneumonia", "respiratory", "breathing", "wheezing", "shortness of breath", "tuberculosis", "copd", "chest congestion"],
         },
         "Dermatology": {
-            "keywords": ["rash", "skin", "acne", "eczema", "psoriasis", "mole", "wart", "itching", "fungal", "allergy"],
+            "keywords": ["rash", "skin", "acne", "eczema", "psoriasis", "mole", "wart", "itching", "fungal", "allergy", "hives", "lesion", "blister", "sunburn"],
         },
         "Ophthalmology": {
-            "keywords": ["eye", "vision", "blind", "blurred", "eye pain", "glaucoma", "cataract", "contact lens", "glasses"],
+            "keywords": ["eye", "vision", "blind", "blurred", "eye pain", "glaucoma", "cataract", "contact lens", "glasses", "double vision", "red eyes", "eye discharge"],
         },
         "ENT (Otolaryngology)": {
-            "keywords": ["ear", "nose", "throat", "hearing", "tinnitus", "sinus", "sinusitis", "sore throat", "hoarse", "vertigo"],
+            "keywords": ["ear", "nose", "throat", "hearing", "tinnitus", "sinus", "sinusitis", "sore throat", "hoarse", "vertigo", "earache", "nasal", "congestion", "tonsils"],
         },
         "Pediatrics": {
-            "keywords": ["baby", "child", "infant", "kid", "vaccination", "fever", "crying", "development", "growth"],
+            "keywords": ["baby", "child", "infant", "kid", "vaccination", "fever", "crying", "development", "growth", "newborn", "toddler", "teething"],
         },
         "Psychiatry": {
-            "keywords": ["depression", "anxiety", "stress", "panic", "mental", "psychological", "emotional", "insomnia", "sleep", "mood"],
+            "keywords": ["depression", "anxiety", "stress", "panic", "mental", "psychological", "emotional", "insomnia", "sleep", "mood", "bipolar", "ptsd", "trauma"],
+        },
+        "Endocrinology": {
+            "keywords": ["diabetes", "thyroid", "hormone", "blood sugar", "insulin", "metabolic", "obesity", "weight gain", "weight loss", "fatigue", "growth"],
+        },
+        "Urology": {
+            "keywords": ["urinary", "bladder", "kidney", "prostate", "urine", "frequent urination", "kidney stone", "uti", "incontinence"],
+        },
+        "Gynecology": {
+            "keywords": ["menstrual", "period", "pregnancy", "pelvic", "ovarian", "uterine", "vaginal", "reproductive", "menopause", "pms"],
         },
     }
 
@@ -302,13 +319,55 @@ def analyze_symptoms(symptoms_text: str) -> dict:
         formatted_specializations,
         severity_score,
     )
+    
+    # Generate health tips based on symptoms
+    health_tips = generate_health_tips(symptoms_text_lower, is_emergency)
 
     return {
         "response": response_message,
         "is_emergency": is_emergency,
         "specializations": formatted_specializations,
         "severity_score": severity_score,
+        "health_tips": health_tips,
     }
+
+
+def handle_health_faq(query: str) -> str:
+    """Handle frequently asked health questions"""
+    faqs = {
+        "book appointment": "To book an appointment, navigate to the 'Doctors' section, select a specialist, and choose your preferred date and time. You can also view all available doctors and their specializations.",
+        "cancel appointment": "To cancel an appointment, go to your dashboard, find the appointment in your list, and click the 'Cancel' button. Please note our 24-hour cancellation policy.",
+        "medical record": "You can upload and view your medical records in the 'Medical Records' section. Supported formats include PDF, JPG, and PNG. Your records are securely stored and can be shared with your doctor.",
+        "doctor availability": "Doctor availability varies by specialist. You can check each doctor's available days and times on their profile page when booking an appointment.",
+        "payment": "We accept credit cards, debit cards, and UPI for appointment payments. A consultation fee plus a small processing fee applies. Payment is required when booking.",
+        "profile update": "To update your profile, click on the 'Account' section in your dashboard. You can update your email, phone number, and other personal information.",
+        "emergency": "For medical emergencies, please call 911 (US) or your local emergency number immediately. This chat is for non-emergency consultations only.",
+        "prescription": "Prescriptions are provided by your doctor after your consultation. You can view and download them from your medical records section.",
+        "test result": "Test results will be uploaded by your doctor or lab to your medical records. You'll receive a notification when new results are available.",
+        "follow up": "For follow-up appointments, you can book another session with the same doctor or a specialist recommended by your physician."
+    }
+    
+    for key, response in faqs.items():
+        if key in query or any(word in query for word in key.split()):
+            return f"<strong>Answer:</strong><br><br>{response}<br><br><em>If you need more specific help, please provide more details or contact our support team.</em>"
+    
+    return None
+
+
+def handle_appointment_query(query: str) -> str:
+    """Handle appointment-related queries with helpful guidance"""
+    appointment_keywords = {
+        "how to book": "<strong>Booking an Appointment:</strong><br>1. Click on 'Doctors' in the navigation menu<br>2. Browse or search for a specialist<br>3. Click 'Book Appointment' on the doctor's card<br>4. Select your preferred date and time<br>5. Fill in your symptoms and payment details<br>6. Confirm your booking<br><br>You'll receive a confirmation and can track your appointment in your dashboard.",
+        "reschedule": "<strong>Rescheduling Appointments:</strong><br>Currently, to reschedule an appointment, you'll need to cancel your existing appointment and book a new one. We recommend doing this at least 24 hours in advance.<br><br>To cancel: Dashboard → Find appointment → Cancel button",
+        "what bring": "<strong>What to Bring to Your Appointment:</strong><br>• Valid ID<br>• Insurance information (if applicable)<br>• List of current medications<br>• Previous medical records<br>• Any test results related to your condition<br>• List of questions for your doctor",
+        "prepare": "<strong>Preparing for Your Appointment:</strong><br>• Write down your symptoms and when they started<br>• Note any medications you're taking<br>• List any allergies<br>• Prepare questions for your doctor<br>• Arrive 10-15 minutes early<br>• Bring relevant medical history"
+    }
+    
+    for key, response in appointment_keywords.items():
+        if key in query:
+            return response
+    
+    return None
 
 
 def generate_assistant_response(symptoms: str, is_emergency: bool, specializations: list, severity: int) -> str:
@@ -343,11 +402,61 @@ def generate_assistant_response(symptoms: str, is_emergency: bool, specializatio
         spec_names = [s["name"] for s in specializations[:2]]
         response += f"<strong>Recommended specialists:</strong> {', '.join(spec_names)}.<br><br>"
 
+    response += "<strong>What you can do:</strong><br>"
+    response += "• Keep a symptom diary noting when symptoms occur<br>"
+    response += "• Stay hydrated and get adequate rest<br>"
+    response += "• Avoid self-medication without consulting a doctor<br>"
+    response += "• Book an appointment through our platform for proper diagnosis<br><br>"
+    
     response += (
         "<em>Note: This is an AI-powered preliminary assessment only and does not replace "
-        "professional medical advice. Always consult with a qualified healthcare provider.</em>"
+        "professional medical advice. Always consult with a qualified healthcare provider for proper diagnosis and treatment.</em>"
     )
     return response
+
+
+def generate_health_tips(symptoms: str, is_emergency: bool) -> list:
+    """Generate relevant health tips based on symptoms"""
+    if is_emergency:
+        return ["Seek immediate medical attention", "Call emergency services (911)", "Do not delay treatment"]
+    
+    tips = []
+    
+    # General tips
+    tips.append("Monitor your symptoms and note any changes")
+    tips.append("Stay well-hydrated by drinking plenty of water")
+    
+    # Specific symptom-based tips
+    if any(word in symptoms for word in ["headache", "migraine"]):
+        tips.extend(["Rest in a quiet, dark room", "Apply cold compress to forehead", "Avoid bright screens"])
+    
+    if any(word in symptoms for word in ["fever", "temperature"]):
+        tips.extend(["Get plenty of rest", "Use over-the-counter fever reducers if appropriate", "Monitor temperature regularly"])
+    
+    if any(word in symptoms for word in ["cough", "cold", "congestion"]):
+        tips.extend(["Use a humidifier", "Drink warm fluids", "Get adequate rest"])
+    
+    if any(word in symptoms for word in ["stomach", "nausea", "digestive"]):
+        tips.extend(["Eat bland, easy-to-digest foods", "Avoid spicy or fatty foods", "Try small, frequent meals"])
+    
+    if any(word in symptoms for word in ["pain", "ache"]):
+        tips.extend(["Apply ice or heat as appropriate", "Avoid strenuous activity", "Maintain good posture"])
+    
+    if any(word in symptoms for word in ["stress", "anxiety", "sleep"]):
+        tips.extend(["Practice relaxation techniques", "Maintain a regular sleep schedule", "Limit caffeine intake"])
+    
+    # Add general wellness tip
+    tips.append("Consult a healthcare professional if symptoms persist or worsen")
+    
+    # Return unique tips (remove duplicates while preserving order)
+    seen = set()
+    unique_tips = []
+    for tip in tips:
+        if tip not in seen:
+            seen.add(tip)
+            unique_tips.append(tip)
+    
+    return unique_tips[:6]  # Limit to 6 most relevant tips
 
 
 @lru_cache(maxsize=1)
@@ -538,7 +647,7 @@ def serve_profile_picture(filename: str):
 
 @app.route("/user/chat-assistant", methods=["POST"])
 def chat_assistant():
-    """AI-powered health symptom analyzer and doctor recommendation engine"""
+    """Enhanced AI-powered health assistant with symptom analysis, health tips, and FAQs"""
     if "username" not in session:
         return jsonify({"success": False, "message": "Please log in"}), 401
 
@@ -547,11 +656,34 @@ def chat_assistant():
         return jsonify({"success": False, "message": "This feature is for patients only"}), 403
 
     data = request.get_json(silent=True) or {}
-    symptoms = str(data.get("symptoms", "")).lower().strip()
-    if not symptoms:
-        return jsonify({"success": False, "message": "Please describe your symptoms"}), 400
+    message = str(data.get("message", data.get("symptoms", ""))).strip()
+    if not message:
+        return jsonify({"success": False, "message": "Please enter your message or symptoms"}), 400
 
-    analysis = analyze_symptoms(symptoms)
+    message_lower = message.lower()
+    
+    # Handle common health questions and FAQs
+    faq_response = handle_health_faq(message_lower)
+    if faq_response:
+        return jsonify({
+            "success": True,
+            "response": faq_response,
+            "is_emergency": False,
+            "message_type": "faq"
+        })
+    
+    # Handle appointment-related queries
+    appointment_response = handle_appointment_query(message_lower)
+    if appointment_response:
+        return jsonify({
+            "success": True,
+            "response": appointment_response,
+            "is_emergency": False,
+            "message_type": "appointment_help"
+        })
+    
+    # Perform symptom analysis
+    analysis = analyze_symptoms(message)
 
     return jsonify({
         "success": True,
@@ -559,6 +691,8 @@ def chat_assistant():
         "is_emergency": analysis["is_emergency"],
         "specializations": analysis["specializations"],
         "severity_score": analysis["severity_score"],
+        "health_tips": analysis.get("health_tips", []),
+        "message_type": "symptom_analysis"
     })
 
 

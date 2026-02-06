@@ -72,7 +72,7 @@ medical_records_table = dynamodb.Table(MEDICAL_RECORDS_TABLE)
 
 # SNS topic for booking notifications (subscribe email endpoints to this topic)
 # TODO: Replace with your actual SNS Topic ARN after creating SNS topic in AWS Console
-SNS_TOPIC_ARN = os.getenv("SNS_TOPIC_ARN", "arn:aws:sns:us-east-1:455322615378:HealthcareAppServer")
+SNS_TOPIC_ARN = os.getenv("SNS_TOPIC_ARN", "arn:aws:sns:us-east-1:222634386387:HealthcareNotifications")
 
 # EC2 instance tags for application tracking
 EC2_APP_TAG_KEY = os.getenv("EC2_APP_TAG_KEY", "Application")

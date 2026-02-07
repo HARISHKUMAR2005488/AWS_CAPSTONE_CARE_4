@@ -4,11 +4,15 @@ import logging
 from datetime import datetime
 from functools import lru_cache
 from decimal import Decimal, InvalidOperation
+from io import BytesIO
 
 import boto3
 from botocore.exceptions import ClientError
 from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify, send_from_directory, send_file
 from werkzeug.security import check_password_hash, generate_password_hash
+from reportlab.lib.pagesizes import letter
+from reportlab.pdfgen import canvas
+from reportlab.pdfbase import pdfmetrics
 from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
@@ -1088,6 +1092,23 @@ def dashboard():
         # Sort by total appointments (descending)
         patient_data.sort(key=lambda x: x["total_appointments"], reverse=True)
 
+        if not doctor_profile:
+            doctor_profile = {
+                "id": doctor_id or "",
+                "name": username,
+                "consultation_fee": Decimal("0"),
+                "qualifications": "",
+                "experience": 0,
+                "available_days": "",
+                "available_time": "",
+            }
+        else:
+            doctor_profile.setdefault("consultation_fee", Decimal("0"))
+            doctor_profile.setdefault("qualifications", "")
+            doctor_profile.setdefault("experience", 0)
+            doctor_profile.setdefault("available_days", "")
+            doctor_profile.setdefault("available_time", "")
+
         return render_template(
             "doctor.html",
             username=username,
@@ -1985,6 +2006,132 @@ def cancel_appointment(appointment_id: str):
     return redirect(url_for("dashboard"))
 
 
+@app.route("/appointments/<appointment_id>/summary.pdf")
+def download_appointment_summary(appointment_id: str):
+    if "username" not in session:
+        return redirect(url_for("login"))
+
+    username = session["username"]
+    appointment = appointments_table.get_item(Key={"id": appointment_id}).get("Item")
+    if not appointment:
+        flash("Appointment not found", "danger")
+        return redirect(url_for("dashboard"))
+
+    if appointment.get("username") != username:
+        flash("You can only download your own appointment summary", "danger")
+        return redirect(url_for("dashboard"))
+
+    doctor = None
+    doctor_id = appointment.get("doctor_id")
+    if doctor_id:
+        doctor = doctors_table.get_item(Key={"id": doctor_id}).get("Item")
+    if not doctor:
+        doctor_username = appointment.get("doctor_username") or appointment.get("doctor_name")
+        if doctor_username:
+            scan_resp = doctors_table.scan()
+            doctor = next((d for d in scan_resp.get("Items", []) if d.get("name") == doctor_username), None)
+
+    date_val = appointment.get("date") or appointment.get("appointment_date")
+    if isinstance(date_val, str):
+        try:
+            appointment_date = datetime.strptime(date_val, "%Y-%m-%d").date()
+        except (ValueError, TypeError):
+            appointment_date = None
+    else:
+        appointment_date = date_val
+
+    created_at = appointment.get("created_at")
+    if isinstance(created_at, str):
+        try:
+            created_at = datetime.fromisoformat(created_at)
+        except (ValueError, TypeError):
+            created_at = None
+
+    patient = get_user(username) or {}
+
+    buffer = BytesIO()
+    pdf = canvas.Canvas(buffer, pagesize=letter)
+    width, height = letter
+    margin_x = 54
+    y = height - 54
+
+    def draw_line(label: str, value: str, y_pos: float) -> float:
+        pdf.setFont("Helvetica-Bold", 11)
+        pdf.drawString(margin_x, y_pos, label)
+        pdf.setFont("Helvetica", 11)
+        pdf.drawString(margin_x + 160, y_pos, value)
+        return y_pos - 16
+
+    def draw_wrapped(label: str, value: str, y_pos: float) -> float:
+        pdf.setFont("Helvetica-Bold", 11)
+        pdf.drawString(margin_x, y_pos, label)
+        pdf.setFont("Helvetica", 11)
+        max_width = width - (margin_x + 160) - margin_x
+        words = (value or "").split()
+        line = ""
+        y_pos -= 16
+        for word in words:
+            test_line = f"{line} {word}".strip()
+            if pdfmetrics.stringWidth(test_line, "Helvetica", 11) <= max_width:
+                line = test_line
+            else:
+                pdf.drawString(margin_x + 160, y_pos, line)
+                y_pos -= 16
+                line = word
+        if line:
+            pdf.drawString(margin_x + 160, y_pos, line)
+            y_pos -= 16
+        return y_pos
+
+    pdf.setTitle("Appointment Summary")
+    pdf.setFont("Helvetica-Bold", 16)
+    pdf.drawString(margin_x, y, "Appointment Summary")
+    y -= 28
+
+    y = draw_line("Appointment ID:", appointment.get("id", ""), y)
+    y = draw_line("Status:", (appointment.get("status") or "pending").title(), y)
+    y = draw_line("Date:", appointment_date.strftime("%b %d, %Y") if appointment_date else "N/A", y)
+    y = draw_line("Time:", appointment.get("appointment_time") or appointment.get("time") or "N/A", y)
+    y = draw_line("Booked On:", created_at.strftime("%b %d, %Y %H:%M") if created_at else "N/A", y)
+
+    y -= 8
+    pdf.setFont("Helvetica-Bold", 13)
+    pdf.drawString(margin_x, y, "Patient Details")
+    y -= 20
+    y = draw_line("Name:", patient.get("name") or patient.get("username") or username, y)
+    y = draw_line("Email:", patient.get("email", "N/A"), y)
+    y = draw_line("Phone:", patient.get("phone", "N/A"), y)
+
+    y -= 8
+    pdf.setFont("Helvetica-Bold", 13)
+    pdf.drawString(margin_x, y, "Doctor Details")
+    y -= 20
+    y = draw_line("Doctor:", doctor.get("name") if doctor else appointment.get("doctor_name", "N/A"), y)
+    y = draw_line("Specialization:", doctor.get("specialization") if doctor else appointment.get("specialization", "N/A"), y)
+    y = draw_line("Consultation Fee:", f"${doctor.get('consultation_fee', 'N/A')}" if doctor else "N/A", y)
+
+    y -= 8
+    pdf.setFont("Helvetica-Bold", 13)
+    pdf.drawString(margin_x, y, "Symptoms / Reason")
+    y -= 20
+    symptoms = appointment.get("symptoms") or appointment.get("reason") or "Not provided"
+    y = draw_wrapped("Details:", symptoms, y)
+
+    pdf.setFont("Helvetica-Oblique", 9)
+    pdf.drawString(margin_x, 36, "Generated by Care_4_U Hospitals")
+
+    pdf.showPage()
+    pdf.save()
+    buffer.seek(0)
+
+    return send_file(
+        buffer,
+        mimetype="application/pdf",
+        as_attachment=True,
+        download_name=f"appointment_{appointment_id}_summary.pdf"
+    )
+
+
 @app.route("/doctor/update-appointment/<appointment_id>", methods=["POST"])
 def update_appointment_status(appointment_id: str):
     """Update appointment status (confirm, cancel, complete)"""
@@ -2306,6 +2453,8 @@ def doctor_update_profile():
     
     try:
         doctor_username = session["username"]
+        user_item = get_user(doctor_username)
+        doctor_id = (user_item or {}).get("doctor_id")
         
         # Get form data
         name = request.form.get("name", "").strip()
@@ -2317,6 +2466,19 @@ def doctor_update_profile():
         if not name or not specialization:
             return jsonify({"success": False, "message": "Name and specialization are required"}), 400
         
+        if not doctor_id:
+            scan_resp = doctors_table.scan()
+            doctor_profile = next((d for d in scan_resp.get("Items", []) if d.get("name") == doctor_username), None)
+            doctor_id = doctor_profile.get("id") if doctor_profile else None
+
+        if not doctor_id:
+            doctor_id = str(uuid.uuid4())
+            users_table.update_item(
+                Key={"username": doctor_username},
+                UpdateExpression="SET doctor_id = :doctor_id",
+                ExpressionAttributeValues={":doctor_id": doctor_id}
+            )
+
         # Build update expression
         update_expr = "SET #name = :name, #spec = :spec"
         expr_names = {
@@ -2335,17 +2497,24 @@ def doctor_update_profile():
         
         if experience:
             update_expr += ", experience = :exp"
-            expr_values[":exp"] = experience
+            expr_values[":exp"] = int(experience) if experience.isdigit() else 0
         
         # Update doctor record in database
         doctors_table.update_item(
-            Key={"id": doctor_username},
+            Key={"id": doctor_id},
             UpdateExpression=update_expr,
             ExpressionAttributeNames=expr_names,
             ExpressionAttributeValues=expr_values
         )
+
+        users_table.update_item(
+            Key={"username": doctor_username},
+            UpdateExpression="SET #name = :name",
+            ExpressionAttributeNames={"#name": "name"},
+            ExpressionAttributeValues={":name": name}
+        )
         
-        logger.info(f"Doctor {doctor_username} updated profile successfully")
+        logger.info(f"Doctor {doctor_username} (ID: {doctor_id}) updated profile successfully")
         
         return jsonify({
             "success": True,
@@ -2368,6 +2537,8 @@ def doctor_update_contact():
     
     try:
         doctor_username = session["username"]
+        user_item = get_user(doctor_username)
+        doctor_id = (user_item or {}).get("doctor_id")
         
         # Get form data
         email = request.form.get("email", "").strip()
@@ -2377,6 +2548,19 @@ def doctor_update_contact():
         if not email and not phone:
             return jsonify({"success": False, "message": "At least one contact field is required"}), 400
         
+        if not doctor_id:
+            scan_resp = doctors_table.scan()
+            doctor_profile = next((d for d in scan_resp.get("Items", []) if d.get("name") == doctor_username), None)
+            doctor_id = doctor_profile.get("id") if doctor_profile else None
+
+        if not doctor_id:
+            doctor_id = str(uuid.uuid4())
+            users_table.update_item(
+                Key={"username": doctor_username},
+                UpdateExpression="SET doctor_id = :doctor_id",
+                ExpressionAttributeValues={":doctor_id": doctor_id}
+            )
+
         # Build update expression
         update_parts = []
         expr_values = {}
@@ -2393,7 +2577,13 @@ def doctor_update_contact():
         
         # Update doctor record in database
         doctors_table.update_item(
-            Key={"id": doctor_username},
+            Key={"id": doctor_id},
+            UpdateExpression=update_expr,
+            ExpressionAttributeValues=expr_values
+        )
+
+        users_table.update_item(
+            Key={"username": doctor_username},
             UpdateExpression=update_expr,
             ExpressionAttributeValues=expr_values
         )

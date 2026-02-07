@@ -214,6 +214,9 @@
                                         <button onclick="showAppointmentDetails()" class="btn btn-primary btn-block">
                                             <i class="fas fa-eye"></i> View Details
                                         </button>
+                                        <a href="{{ url_for('download_appointment_summary', appointment_id=next_appointment.id) }}" class="btn btn-secondary btn-block" target="_blank" rel="noopener">
+                                            <i class="fas fa-file-pdf"></i> Download Summary
+                                        </a>
                                     </div>
                                 {% else %}
                                     <div class="empty-state">

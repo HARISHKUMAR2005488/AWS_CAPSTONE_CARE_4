@@ -305,6 +305,39 @@
                             </select>
                         </div>
                     </div>
+
+                    <!-- Doctor-Specific Fields (Add User) -->
+                    <div class="form-section" id="add_doctor_fields" style="display: none;">
+                        <h4>Doctor Information</h4>
+                        <div class="form-group">
+                            <label for="add_user_specialization">Specialization</label>
+                            <input type="text" id="add_user_specialization" name="specialization" placeholder="e.g., Cardiology">
+                        </div>
+                        <div class="form-group">
+                            <label for="add_user_qualifications">Qualifications</label>
+                            <input type="text" id="add_user_qualifications" name="qualifications" placeholder="e.g., MBBS, MD">
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="add_user_experience">Experience (years)</label>
+                                <input type="number" id="add_user_experience" name="experience" min="0">
+                            </div>
+                            <div class="form-group">
+                                <label for="add_user_consultation_fee">Consultation Fee</label>
+                                <input type="number" id="add_user_consultation_fee" name="consultation_fee" min="0" step="0.01">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="add_user_available_days">Available Days</label>
+                                <input type="text" id="add_user_available_days" name="available_days" placeholder="e.g., Mon-Fri">
+                            </div>
+                            <div class="form-group">
+                                <label for="add_user_available_time">Available Time</label>
+                                <input type="text" id="add_user_available_time" name="available_time" placeholder="e.g., 9:00 AM - 5:00 PM">
+                            </div>
+                        </div>
+                    </div>
                     <div class="modal-actions">
                         <button type="button" class="btn btn-secondary close-modal">Cancel</button>
                         <button type="submit" class="btn btn-primary">
@@ -1014,6 +1047,16 @@
                         alert('An error occurred. Please try again.');
                     });
             });
+        }
+
+        const addUserRoleSelect = document.getElementById('user_role');
+        const addDoctorFields = document.getElementById('add_doctor_fields');
+        if (addUserRoleSelect && addDoctorFields) {
+            const toggleAddDoctorFields = function () {
+                addDoctorFields.style.display = addUserRoleSelect.value === 'doctor' ? 'block' : 'none';
+            };
+            addUserRoleSelect.addEventListener('change', toggleAddDoctorFields);
+            toggleAddDoctorFields();
         }
 
         // Edit User Form

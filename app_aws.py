@@ -2773,15 +2773,37 @@ def admin_add_user():
         if "Item" in existing:
             return jsonify({"success": False, "message": "User already exists"}), 400
         
+        doctor_id = None
+        if role == "doctor":
+            doctor_id = str(uuid.uuid4())
+            doctors_table.put_item(
+                Item={
+                    "id": doctor_id,
+                    "name": username,
+                    "username": username,
+                    "specialization": request.form.get("specialization", "General"),
+                    "email": email,
+                    "phone": phone,
+                    "qualifications": request.form.get("qualifications", ""),
+                    "experience": int(request.form.get("experience", 0) or 0),
+                    "consultation_fee": to_decimal(request.form.get("consultation_fee", "0"), "0"),
+                    "available_days": request.form.get("available_days", ""),
+                    "available_time": request.form.get("available_time", ""),
+                    "is_available": True,
+                }
+            )
+
         # Create user
         user_item = {
             "username": username,
             "password_hash": generate_password_hash(password),
             "role": role,
             "email": email,
-            "phone": phone
+            "phone": phone,
         }
-        
+        if doctor_id:
+            user_item["doctor_id"] = doctor_id
+
         users_table.put_item(Item=user_item)
         logger.info(f"Admin {session['username']} created user {username}")
         

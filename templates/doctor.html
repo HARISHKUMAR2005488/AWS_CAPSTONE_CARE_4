@@ -995,6 +995,24 @@
                 </div>
                 <div class="settings-grid">
                     <div class="settings-card">
+                        <h3><i class="fas fa-camera"></i> Profile Picture</h3>
+                        <div class="settings-item">
+                            <label>Current Photo</label>
+                            <div class="doctor-avatar-header" style="width: 72px; height: 72px;">
+                                {% if doctor.profile_image %}
+                                    <img id="doctorProfileImage" src="{{ url_for('serve_profile_picture', filename=doctor.profile_image.split('/')[-1]) }}" alt="{{ doctor.name }}">
+                                {% else %}
+                                    <i id="doctorProfileImagePlaceholder" class="fas fa-user-md"></i>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <input type="file" id="doctorProfilePictureInput" accept="image/*" style="display: none;">
+                        <button class="btn btn-primary btn-sm" onclick="triggerDoctorProfileUpload()">
+                            <i class="fas fa-upload"></i> Upload Photo
+                        </button>
+                    </div>
+
+                    <div class="settings-card">
                         <h3><i class="fas fa-user"></i> Personal Information</h3>
                         <div class="settings-item">
                             <label>Full Name</label>
@@ -1261,6 +1279,13 @@ function showSettingsView(event) {
     setActiveNav(document.querySelector('[onclick*="showSettingsView"]'));
 }
 
+function triggerDoctorProfileUpload() {
+    const input = document.getElementById('doctorProfilePictureInput');
+    if (input) {
+        input.click();
+    }
+}
+
 function showView(viewId) {
     const views = document.querySelectorAll('.content-view');
     views.forEach(view => view.style.display = 'none');
@@ -1367,6 +1392,37 @@ window.onclick = function(event) {
 
 // Handle Edit Schedule Form
 document.addEventListener('DOMContentLoaded', function() {
+    const doctorProfileInput = document.getElementById('doctorProfilePictureInput');
+    if (doctorProfileInput) {
+        doctorProfileInput.addEventListener('change', function() {
+            const file = this.files && this.files[0];
+            if (!file) {
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('profile_picture', file);
+
+            fetch('/upload-profile-picture', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Profile picture updated successfully!');
+                    location.reload();
+                } else {
+                    alert('Error: ' + (data.message || 'Failed to update profile picture'));
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred. Please try again.');
+            });
+        });
+    }
+
     // Parse existing schedule to populate checkboxes and time inputs
     const populateScheduleForm = function() {
         const availableDaysStr = "{{ doctor.available_days }}";

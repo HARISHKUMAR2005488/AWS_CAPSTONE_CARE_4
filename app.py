@@ -9,6 +9,57 @@ import os
 from config import Config
 from database import db, User, Doctor, Appointment, TimeSlot, MedicalRecord, Feedback
 
+# ---------------------------------------------------------------------------
+# APPOINTMENT STATUS LIFECYCLE
+# Valid statuses: pending, approved, rejected, completed, cancelled
+# Legacy DB value 'confirmed' is treated as 'approved' everywhere.
+# ---------------------------------------------------------------------------
+VALID_STATUSES = {'pending', 'approved', 'rejected', 'completed', 'cancelled'}
+
+# Maps (current_status, role) → set of allowed next statuses
+ALLOWED_TRANSITIONS = {
+    # Patient can only cancel a pending appointment
+    ('pending',   'patient'):  {'cancelled'},
+    # Doctor: pending → approved or rejected; approved → completed (only if past)
+    ('pending',   'doctor'):   {'approved', 'rejected'},
+    ('approved',  'doctor'):   {'completed'},
+    ('confirmed', 'doctor'):   {'completed'},     # legacy compat
+    # Admin has broad control; cannot move completed → pending
+    ('pending',   'admin'):    {'approved', 'rejected', 'cancelled'},
+    ('approved',  'admin'):    {'completed', 'cancelled'},
+    ('confirmed', 'admin'):    {'completed', 'cancelled'},  # legacy compat
+    ('rejected',  'admin'):    {'pending'},
+    ('cancelled', 'admin'):    {'pending'},
+}
+
+
+def validate_transition(appointment, new_status, role):
+    """
+    Returns (ok: bool, error_message: str).
+    Normalises 'confirmed' to 'approved' for lookup.
+    """
+    current = appointment.status or 'pending'
+    # normalise legacy value for transition lookup
+    lookup_current = 'approved' if current == 'confirmed' else current
+
+    allowed = ALLOWED_TRANSITIONS.get((lookup_current, role), set())
+    if new_status not in allowed:
+        return False, (
+            f"Cannot move appointment from '{current}' to '{new_status}' "
+            f"as a {role}."
+        )
+
+    # Doctor can only mark 'completed' if the appointment date has passed
+    if role == 'doctor' and new_status == 'completed':
+        appt_datetime = datetime.combine(appointment.appointment_date, datetime.min.time())
+        if appt_datetime >= datetime.utcnow():
+            return False, (
+                "Appointment can only be marked Completed after the scheduled time has passed."
+            )
+
+    return True, ''
+
+
 app = Flask(__name__)
 app.config.from_object(Config)
 
@@ -209,33 +260,41 @@ def book_appointment(doctor_id):
         appointment_date = request.form.get('appointment_date')
         appointment_time = request.form.get('appointment_time')
         symptoms = request.form.get('symptoms')
-        
-        # Check if slot is available
-        existing_appointment = Appointment.query.filter_by(
-            doctor_id=doctor_id,
-            appointment_date=datetime.strptime(appointment_date, '%Y-%m-%d').date(),
-            appointment_time=appointment_time,
-            status='confirmed'
-        ).first()
-        
-        if existing_appointment:
-            flash('This time slot is already booked', 'danger')
+
+        # Check if slot is already taken (approved OR legacy confirmed)
+        try:
+            appt_date_obj = datetime.strptime(appointment_date, '%Y-%m-%d').date()
+        except (ValueError, TypeError):
+            flash('Invalid date format.', 'danger')
             return redirect(url_for('book_appointment', doctor_id=doctor_id))
-        
-        # Create appointment
-        appointment = Appointment(
-            patient_id=current_user.id,
-            doctor_id=doctor_id,
-            appointment_date=datetime.strptime(appointment_date, '%Y-%m-%d').date(),
-            appointment_time=appointment_time,
-            symptoms=symptoms,
-            status='pending'
-        )
-        
-        db.session.add(appointment)
-        db.session.commit()
-        
-        flash('Appointment booked successfully! Waiting for confirmation.', 'success')
+
+        existing_appointment = Appointment.query.filter(
+            Appointment.doctor_id == doctor_id,
+            Appointment.appointment_date == appt_date_obj,
+            Appointment.appointment_time == appointment_time,
+            Appointment.status.in_(['approved', 'confirmed'])
+        ).first()
+
+        if existing_appointment:
+            flash('This time slot is already booked. Please choose another.', 'danger')
+            return redirect(url_for('book_appointment', doctor_id=doctor_id))
+
+        # Create appointment — status always starts as 'pending'
+        try:
+            appointment = Appointment(
+                patient_id=current_user.id,
+                doctor_id=doctor_id,
+                appointment_date=appt_date_obj,
+                appointment_time=appointment_time,
+                symptoms=symptoms,
+                status='pending'
+            )
+            db.session.add(appointment)
+            db.session.commit()
+            flash('Appointment booked successfully! Awaiting doctor approval.', 'success')
+        except Exception as e:
+            db.session.rollback()
+            flash('Failed to book appointment. Please try again.', 'danger')
         return redirect(url_for('user_dashboard'))
     
     # Generate available time slots (simplified version)
@@ -413,17 +472,26 @@ def manage_appointments():
 def update_appointment(appointment_id):
     if current_user.user_type != 'admin':
         return jsonify({'success': False, 'message': 'Access denied'})
-    
+
     appointment = Appointment.query.get_or_404(appointment_id)
-    new_status = request.form.get('status')
-    
-    if new_status in ['confirmed', 'cancelled', 'completed']:
+    new_status = request.form.get('status', '').strip().lower()
+
+    if new_status not in VALID_STATUSES:
+        return jsonify({'success': False, 'message': f'Invalid status: {new_status}'})
+
+    ok, err = validate_transition(appointment, new_status, 'admin')
+    if not ok:
+        return jsonify({'success': False, 'message': err})
+
+    try:
         appointment.status = new_status
+        appointment.updated_at = datetime.utcnow()
         db.session.commit()
-        flash(f'Appointment {new_status} successfully', 'success')
-        return jsonify({'success': True})
-    
-    return jsonify({'success': False, 'message': 'Invalid status'})
+        flash(f'Appointment status updated to {new_status.title()}.', 'success')
+        return jsonify({'success': True, 'message': f'Status updated to {new_status}'})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': f'Database error: {str(e)}'})
 
 @app.route('/admin/add-doctor', methods=['POST'])
 @login_required
@@ -551,25 +619,25 @@ def available_slots(doctor_id):
         # Get doctor's working days and hours
         doctor = Doctor.query.get_or_404(doctor_id)
         
-        # Get already booked slots
-        booked_slots = Appointment.query.filter_by(
-            doctor_id=doctor_id,
-            appointment_date=selected_date,
-            status='confirmed'
+        # Get already booked slots (approved or legacy confirmed)
+        booked_slots = Appointment.query.filter(
+            Appointment.doctor_id == doctor_id,
+            Appointment.appointment_date == selected_date,
+            Appointment.status.in_(['approved', 'confirmed'])
         ).all()
-        
-        booked_times = [app.appointment_time for app in booked_slots]
-        
+
+        booked_times = [appt.appointment_time for appt in booked_slots]
+
         # Generate available slots based on doctor's schedule
-        available_slots = [
+        all_slots = [
             '9:00 AM', '9:30 AM', '10:00 AM', '10:30 AM',
             '11:00 AM', '11:30 AM', '2:00 PM', '2:30 PM',
             '3:00 PM', '3:30 PM', '4:00 PM'
         ]
-        
-        # Filter out booked slots
-        available_slots = [slot for slot in available_slots if slot not in booked_times]
-        
+
+        # Filter out already booked slots
+        available_slots = [slot for slot in all_slots if slot not in booked_times]
+
         return jsonify({'available_slots': available_slots})
     except ValueError:
         return jsonify({'error': 'Invalid date format'}), 400
@@ -680,50 +748,73 @@ def serve_profile_picture(filename):
     except FileNotFoundError:
         return jsonify({'error': 'File not found'}), 404
 
-@app.route('/cancel-appointment/<int:appointment_id>')
+@app.route('/cancel-appointment/<int:appointment_id>', methods=['POST'])
 @login_required
 def cancel_appointment(appointment_id):
     appointment = Appointment.query.get_or_404(appointment_id)
-    
-    # Check if user owns the appointment or is admin
+
+    # Authorisation: only the owning patient or admin can cancel
     if appointment.patient_id != current_user.id and current_user.user_type != 'admin':
-        flash('Access denied', 'danger')
+        flash('Access denied.', 'danger')
         return redirect(url_for('user_dashboard'))
-    
-    appointment.status = 'cancelled'
-    db.session.commit()
-    
-    flash('Appointment cancelled successfully', 'success')
-    
+
+    # Enforce transition rules
+    role = current_user.user_type
+    ok, err = validate_transition(appointment, 'cancelled', role)
+    if not ok:
+        flash(err, 'danger')
+        if role == 'admin':
+            return redirect(url_for('manage_appointments'))
+        return redirect(url_for('user_dashboard'))
+
+    try:
+        appointment.status = 'cancelled'
+        appointment.updated_at = datetime.utcnow()
+        db.session.commit()
+        flash('Appointment cancelled successfully.', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash('Failed to cancel appointment. Please try again.', 'danger')
+
     if current_user.user_type == 'admin':
         return redirect(url_for('manage_appointments'))
-    else:
-        return redirect(url_for('user_dashboard'))
+    return redirect(url_for('user_dashboard'))
 
 @app.route('/doctor/update-appointment/<int:appointment_id>', methods=['POST'])
 @login_required
 def doctor_update_appointment(appointment_id):
     if current_user.user_type != 'doctor':
         return jsonify({'success': False, 'message': 'Access denied'})
-    
+
     appointment = Appointment.query.get_or_404(appointment_id)
     doctor = Doctor.query.get(current_user.doctor_id)
-    
-    # Ensure this appointment belongs to this doctor
-    if appointment.doctor_id != doctor.id:
+
+    if not doctor or appointment.doctor_id != doctor.id:
         return jsonify({'success': False, 'message': 'Access denied'})
-    
-    new_status = request.form.get('status')
-    notes = request.form.get('notes', '')
-    
-    if new_status in ['confirmed', 'cancelled', 'completed']:
+
+    new_status = request.form.get('status', '').strip().lower()
+    notes = request.form.get('notes', '').strip()
+
+    if new_status not in VALID_STATUSES:
+        return jsonify({'success': False, 'message': f'Invalid status: {new_status}'})
+
+    ok, err = validate_transition(appointment, new_status, 'doctor')
+    if not ok:
+        return jsonify({'success': False, 'message': err})
+
+    try:
         appointment.status = new_status
+        appointment.updated_at = datetime.utcnow()
         if notes:
             appointment.notes = notes
         db.session.commit()
-        return jsonify({'success': True, 'message': f'Appointment {new_status} successfully'})
-    
-    return jsonify({'success': False, 'message': 'Invalid status'})
+        return jsonify({
+            'success': True,
+            'message': f'Appointment {new_status.title()} successfully.'
+        })
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': f'Database error: {str(e)}'})
 
 @app.route('/doctor/patients')
 @login_required

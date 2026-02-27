@@ -50,10 +50,13 @@ class Appointment(db.Model):
     appointment_date = db.Column(db.Date, nullable=False)
     appointment_time = db.Column(db.String(50), nullable=False)
     symptoms = db.Column(db.Text)
-    status = db.Column(db.String(20), default='pending')  # pending, confirmed, cancelled, completed
+    # Allowed values: pending, approved, rejected, completed, cancelled
+    # Legacy value 'confirmed' treated as 'approved' in all display/logic layers
+    status = db.Column(db.String(20), default='pending')
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     notes = db.Column(db.Text)
-    
+
     def __repr__(self):
         return f'<Appointment {self.id}>'
 

@@ -5,23 +5,28 @@
 {% block content %}
 <style>
     /* Hide navbar and footer for doctor dashboard */
-    .navbar, .footer, .flash-messages {
+    .navbar,
+    .footer,
+    .flash-messages {
         display: none !important;
     }
-    html, body {
+
+    html,
+    body {
         margin: 0 !important;
         padding: 0 !important;
         overflow-x: hidden;
         height: 100%;
         width: 100%;
     }
+
     main {
         padding: 0 !important;
         margin: 0 !important;
         min-height: 100vh !important;
         width: 100% !important;
     }
-    
+
     /* Force doctor-container to fill entire viewport */
     .doctor-container {
         margin: 0 !important;
@@ -33,7 +38,7 @@
         right: 0;
     }
     }
-    
+
     /* Patient Details Styles */
     .patients-view .appointments-table {
         width: 100%;
@@ -78,6 +83,7 @@
             opacity: 0;
             transform: translateY(-10px);
         }
+
         to {
             opacity: 1;
             transform: translateY(0);
@@ -89,7 +95,7 @@
         border-radius: 10px;
         padding: 25px;
         margin-bottom: 25px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
     }
 
     .info-header-expanded {
@@ -230,7 +236,8 @@
     }
 
     .view-records-btn.active i:before {
-        content: "\f146" !important; /* fa-folder-minus */
+        content: "\f146" !important;
+        /* fa-folder-minus */
     }
 
     .patient-cell {
@@ -441,9 +448,10 @@
             <div class="doctor-info-header">
                 <div class="doctor-avatar-header">
                     {% if doctor.profile_image %}
-                        <img src="{{ url_for('serve_profile_picture', filename=doctor.profile_image.split('/')[-1]) }}" alt="{{ doctor.name }}">
+                    <img src="{{ url_for('serve_profile_picture', filename=doctor.profile_image.split('/')[-1]) }}"
+                        alt="{{ doctor.name }}">
                     {% else %}
-                        <i class="fas fa-user-md"></i>
+                    <i class="fas fa-user-md"></i>
                     {% endif %}
                 </div>
                 <div class="doctor-details-header">
@@ -500,7 +508,7 @@
                             <p>Appointments Today</p>
                         </div>
                     </div>
-                    
+
                     <div class="overview-card">
                         <div class="card-icon completed-icon">
                             <i class="fas fa-check-circle"></i>
@@ -510,7 +518,7 @@
                             <p>Completed Today</p>
                         </div>
                     </div>
-                    
+
                     <div class="overview-card">
                         <div class="card-icon available-icon">
                             <i class="fas fa-clock"></i>
@@ -520,7 +528,7 @@
                             <p>Confirmed Slots</p>
                         </div>
                     </div>
-                    
+
                     <div class="overview-card">
                         <div class="card-icon total-icon">
                             <i class="fas fa-calendar-alt"></i>
@@ -543,46 +551,51 @@
                                 <a href="#" class="view-all-link" onclick="showTodayView(event)">View All →</a>
                             </div>
                             {% if appointments %}
-                                {% set confirmed_appointments = [] %}
-                                {% for appt in appointments %}
-                                    {% if appt.status and appt.status.lower() == 'confirmed' %}
-                                        {% set _ = confirmed_appointments.append(appt) %}
-                                    {% endif %}
-                                {% endfor %}
-                                {% if confirmed_appointments %}
-                                    <div class="appointments-list">
-                                        {% for appointment in confirmed_appointments[:3] %}
-                                            <div class="appointment-item">
-                                                <div class="appointment-time-badge">
-                                                    <span class="time">{{ appointment.appointment_time }}</span>
-                                                    <span class="date">{{ appointment.appointment_date.strftime('%b %d') if appointment.appointment_date else '' }}</span>
-                                                </div>
-                                                <div class="appointment-info">
-                                                    <h4>{{ appointment.patient.name or appointment.patient.username }}</h4>
-                                                    <p>{{ appointment.symptoms[:50] if appointment.symptoms else 'No symptoms noted' }}{% if appointment.symptoms and appointment.symptoms|length > 50 %}...{% endif %}</p>
-                                                </div>
-                                                <div class="appointment-actions">
-                                                    <button class="btn-action btn-prescription" onclick="openPrescriptionModal('{{ appointment.id }}', '{{ appointment.patient.name or appointment.patient.username }}')">
-                                                        <i class="fas fa-prescription"></i>
-                                                    </button>
-                                                    <button class="btn-action btn-complete" onclick="completeAppointment('{{ appointment.id }}', '{{ appointment.patient.name or appointment.patient.username }}')">
-                                                        <i class="fas fa-check-circle"></i>
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        {% endfor %}
+                            {% set confirmed_appointments = [] %}
+                            {% for appt in appointments %}
+                            {% if appt.status and appt.status.lower() == 'confirmed' %}
+                            {% set _ = confirmed_appointments.append(appt) %}
+                            {% endif %}
+                            {% endfor %}
+                            {% if confirmed_appointments %}
+                            <div class="appointments-list">
+                                {% for appointment in confirmed_appointments[:3] %}
+                                <div class="appointment-item">
+                                    <div class="appointment-time-badge">
+                                        <span class="time">{{ appointment.appointment_time }}</span>
+                                        <span class="date">{{ appointment.appointment_date.strftime('%b %d') if
+                                            appointment.appointment_date else '' }}</span>
                                     </div>
-                                {% else %}
-                                    <div class="empty-state">
-                                        <i class="fas fa-inbox"></i>
-                                        <p>No confirmed appointments</p>
+                                    <div class="appointment-info">
+                                        <h4>{{ appointment.patient.name or appointment.patient.username }}</h4>
+                                        <p>{{ appointment.symptoms[:50] if appointment.symptoms else 'No symptoms noted'
+                                            }}{% if appointment.symptoms and appointment.symptoms|length > 50 %}...{%
+                                            endif %}</p>
                                     </div>
-                                {% endif %}
-                            {% else %}
-                                <div class="empty-state">
-                                    <i class="fas fa-inbox"></i>
-                                    <p>No confirmed appointments</p>
+                                    <div class="appointment-actions">
+                                        <button class="btn-action btn-prescription"
+                                            onclick="openPrescriptionModal('{{ appointment.id }}', '{{ appointment.patient.name or appointment.patient.username }}')">
+                                            <i class="fas fa-prescription"></i>
+                                        </button>
+                                        <button class="btn-action btn-complete"
+                                            onclick="completeAppointment('{{ appointment.id }}', '{{ appointment.patient.name or appointment.patient.username }}')">
+                                            <i class="fas fa-check-circle"></i>
+                                        </button>
+                                    </div>
                                 </div>
+                                {% endfor %}
+                            </div>
+                            {% else %}
+                            <div class="empty-state">
+                                <i class="fas fa-inbox"></i>
+                                <p>No confirmed appointments</p>
+                            </div>
+                            {% endif %}
+                            {% else %}
+                            <div class="empty-state">
+                                <i class="fas fa-inbox"></i>
+                                <p>No confirmed appointments</p>
+                            </div>
                             {% endif %}
                         </div>
                     </div>
@@ -601,64 +614,67 @@
                     <p class="date-display">{{ today.strftime('%A, %B %d, %Y') }}</p>
                 </div>
                 {% if today_appointments %}
-                    <div class="appointments-table-container">
-                        <div class="appointments-cards">
-                            {% for appointment in today_appointments %}
-                                <div class="appointment-card-detailed {{ appointment.status|lower }}">
-                                    <div class="card-header">
-                                        <div class="patient-section">
-                                            <h3>{{ appointment.patient.username }}</h3>
-                                            <p class="email">{{ appointment.patient.email }}</p>
-                                        </div>
-                                        <span class="status-badge status-{{ appointment.status|lower }}">
-                                            {{ 'Approved' if appointment.status == 'confirmed' else appointment.status|title }}
-                                        </span>
-                                    </div>
-                                    <div class="card-body">
-                                        <div class="appointment-detail">
-                                            <i class="fas fa-clock"></i>
-                                            <span>{{ appointment.appointment_time }}</span>
-                                        </div>
-                                        {% if appointment.symptoms %}
-                                            <div class="appointment-detail">
-                                                <i class="fas fa-notes-medical"></i>
-                                                <span>{{ appointment.symptoms }}</span>
-                                            </div>
-                                        {% endif %}
-                                        {% if appointment.notes %}
-                                            <div class="appointment-detail">
-                                                <i class="fas fa-sticky-note"></i>
-                                                <span>{{ appointment.notes }}</span>
-                                            </div>
-                                        {% endif %}
-                                    </div>
-                                    <div class="card-actions">
-                                        <button class="btn btn-outline btn-sm">
-                                            <i class="fas fa-eye"></i> View Details
-                                        </button>
-                                        {% if appointment.status == 'pending' %}
-                                            <button class="btn btn-success btn-sm">
-                                                <i class="fas fa-check"></i> Approve
-                                            </button>
-                                            <button class="btn btn-danger btn-sm">
-                                                <i class="fas fa-times"></i> Reject
-                                            </button>
-                                        {% elif appointment.status == 'confirmed' %}
-                                            <button class="btn btn-primary btn-sm">
-                                                <i class="fas fa-video"></i> Start Consultation
-                                            </button>
-                                        {% endif %}
-                                    </div>
+                <div class="appointments-table-container">
+                    <div class="appointments-cards">
+                        {% for appointment in today_appointments %}
+                        <div class="appointment-card-detailed {{ appointment.status|lower }}">
+                            <div class="card-header">
+                                <div class="patient-section">
+                                    <h3>{{ appointment.patient.username }}</h3>
+                                    <p class="email">{{ appointment.patient.email }}</p>
                                 </div>
-                            {% endfor %}
+                                <span class="status-badge status-{{ appointment.status|lower }}">
+                                    {{ 'Approved' if appointment.status == 'confirmed' else appointment.status|title }}
+                                </span>
+                            </div>
+                            <div class="card-body">
+                                <div class="appointment-detail">
+                                    <i class="fas fa-clock"></i>
+                                    <span>{{ appointment.appointment_time }}</span>
+                                </div>
+                                {% if appointment.symptoms %}
+                                <div class="appointment-detail">
+                                    <i class="fas fa-notes-medical"></i>
+                                    <span>{{ appointment.symptoms }}</span>
+                                </div>
+                                {% endif %}
+                                {% if appointment.notes %}
+                                <div class="appointment-detail">
+                                    <i class="fas fa-sticky-note"></i>
+                                    <span>{{ appointment.notes }}</span>
+                                </div>
+                                {% endif %}
+                            </div>
+                            <div class="card-actions">
+                                <button class="btn btn-outline btn-sm">
+                                    <i class="fas fa-eye"></i> View Details
+                                </button>
+                                {% if appointment.status == 'pending' %}
+                                <button class="btn btn-success btn-sm"
+                                    onclick="doctorUpdateAppointment('{{ appointment.id }}', 'approved', '{{ appointment.patient.username }}')">
+                                    <i class="fas fa-check"></i> Approve
+                                </button>
+                                <button class="btn btn-danger btn-sm"
+                                    onclick="doctorUpdateAppointment('{{ appointment.id }}', 'rejected', '{{ appointment.patient.username }}')">
+                                    <i class="fas fa-times"></i> Reject
+                                </button>
+                                {% elif appointment.status in ['approved', 'confirmed'] %}
+                                <button class="btn btn-primary btn-sm"
+                                    onclick="doctorUpdateAppointment('{{ appointment.id }}', 'completed', '{{ appointment.patient.username }}')">
+                                    <i class="fas fa-check-double"></i> Mark Complete
+                                </button>
+                                {% endif %}
+                            </div>
                         </div>
+                        {% endfor %}
                     </div>
+                </div>
                 {% else %}
-                    <div class="empty-state large">
-                        <i class="fas fa-calendar-check"></i>
-                        <h3>No Appointments Today</h3>
-                        <p>Enjoy your break! You have no scheduled appointments.</p>
-                    </div>
+                <div class="empty-state large">
+                    <i class="fas fa-calendar-check"></i>
+                    <h3>No Appointments Today</h3>
+                    <p>Enjoy your break! You have no scheduled appointments.</p>
+                </div>
                 {% endif %}
             </div>
 
@@ -671,128 +687,138 @@
                     </div>
                 </div>
                 {% if pending_count > 0 %}
-                    <div class="requests-container">
-                        {% for appointment in pending_appointments %}
-                                <div class="request-card">
-                                    <div class="request-header">
-                                        <div>
-                                            <h3><i class="fas fa-user-circle"></i> {{ appointment.patient.name or appointment.patient.username }}</h3>
-                                            <span class="patient-username">@{{ appointment.patient.username }}</span>
+                <div class="requests-container">
+                    {% for appointment in pending_appointments %}
+                    <div class="request-card">
+                        <div class="request-header">
+                            <div>
+                                <h3><i class="fas fa-user-circle"></i> {{ appointment.patient.name or
+                                    appointment.patient.username }}</h3>
+                                <span class="patient-username">@{{ appointment.patient.username }}</span>
+                            </div>
+                            <span class="status-badge status-pending">Pending</span>
+                        </div>
+
+                        <div class="patient-info">
+                            <div class="info-row">
+                                <div class="info-item">
+                                    <i class="fas fa-calendar-alt"></i>
+                                    <span><strong>Date:</strong> {{ appointment.appointment_date.strftime('%B %d, %Y')
+                                        }}</span>
+                                </div>
+                                <div class="info-item">
+                                    <i class="fas fa-clock"></i>
+                                    <span><strong>Time:</strong> {{ appointment.appointment_time }}</span>
+                                </div>
+                            </div>
+                            <div class="info-row">
+                                {% if appointment.patient.email %}
+                                <div class="info-item">
+                                    <i class="fas fa-envelope"></i>
+                                    <span>{{ appointment.patient.email }}</span>
+                                </div>
+                                {% endif %}
+                                {% if appointment.patient.phone %}
+                                <div class="info-item">
+                                    <i class="fas fa-phone"></i>
+                                    <span>{{ appointment.patient.phone }}</span>
+                                </div>
+                                {% endif %}
+                            </div>
+                            <div class="info-row">
+                                {% if appointment.patient.age %}
+                                <div class="info-item">
+                                    <i class="fas fa-birthday-cake"></i>
+                                    <span><strong>Age:</strong> {{ appointment.patient.age }} years</span>
+                                </div>
+                                {% endif %}
+                                {% if appointment.patient.gender %}
+                                <div class="info-item">
+                                    <i class="fas fa-venus-mars"></i>
+                                    <span><strong>Gender:</strong> {{ appointment.patient.gender }}</span>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="request-body">
+                            <div class="reason">
+                                <label><i class="fas fa-notes-medical"></i> Reason for Visit:</label>
+                                <p>{{ appointment.symptoms or 'Not specified' }}</p>
+                            </div>
+                            {% if appointment.notes %}
+                            <div class="notes">
+                                <label><i class="fas fa-comment-medical"></i> Additional Notes:</label>
+                                <p>{{ appointment.notes }}</p>
+                            </div>
+                            {% endif %}
+
+                            <!-- Payment Information -->
+                            <div class="payment-info">
+                                <label><i class="fas fa-credit-card"></i> Payment Information:</label>
+                                <div class="payment-details">
+                                    <div class="info-row">
+                                        <div class="info-item">
+                                            <i class="fas fa-wallet"></i>
+                                            <span><strong>Payment Method:</strong> {{
+                                                appointment.payment_method|replace('_', ' ')|title if
+                                                appointment.payment_method else 'Not provided' }}</span>
                                         </div>
-                                        <span class="status-badge status-pending">Pending</span>
-                                    </div>
-                                    
-                                    <div class="patient-info">
-                                        <div class="info-row">
-                                            <div class="info-item">
-                                                <i class="fas fa-calendar-alt"></i>
-                                                <span><strong>Date:</strong> {{ appointment.appointment_date.strftime('%B %d, %Y') }}</span>
-                                            </div>
-                                            <div class="info-item">
-                                                <i class="fas fa-clock"></i>
-                                                <span><strong>Time:</strong> {{ appointment.appointment_time }}</span>
-                                            </div>
+                                        {% if appointment.card_number %}
+                                        <div class="info-item">
+                                            <i class="fas fa-credit-card"></i>
+                                            <span><strong>Card:</strong> {{ appointment.card_number }}</span>
                                         </div>
-                                        <div class="info-row">
-                                            {% if appointment.patient.email %}
-                                            <div class="info-item">
-                                                <i class="fas fa-envelope"></i>
-                                                <span>{{ appointment.patient.email }}</span>
-                                            </div>
-                                            {% endif %}
-                                            {% if appointment.patient.phone %}
-                                            <div class="info-item">
-                                                <i class="fas fa-phone"></i>
-                                                <span>{{ appointment.patient.phone }}</span>
-                                            </div>
-                                            {% endif %}
-                                        </div>
-                                        <div class="info-row">
-                                            {% if appointment.patient.age %}
-                                            <div class="info-item">
-                                                <i class="fas fa-birthday-cake"></i>
-                                                <span><strong>Age:</strong> {{ appointment.patient.age }} years</span>
-                                            </div>
-                                            {% endif %}
-                                            {% if appointment.patient.gender %}
-                                            <div class="info-item">
-                                                <i class="fas fa-venus-mars"></i>
-                                                <span><strong>Gender:</strong> {{ appointment.patient.gender }}</span>
-                                            </div>
-                                            {% endif %}
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="request-body">
-                                        <div class="reason">
-                                            <label><i class="fas fa-notes-medical"></i> Reason for Visit:</label>
-                                            <p>{{ appointment.symptoms or 'Not specified' }}</p>
-                                        </div>
-                                        {% if appointment.notes %}
-                                            <div class="notes">
-                                                <label><i class="fas fa-comment-medical"></i> Additional Notes:</label>
-                                                <p>{{ appointment.notes }}</p>
-                                            </div>
                                         {% endif %}
-                                        
-                                        <!-- Payment Information -->
-                                        <div class="payment-info">
-                                            <label><i class="fas fa-credit-card"></i> Payment Information:</label>
-                                            <div class="payment-details">
-                                                <div class="info-row">
-                                                    <div class="info-item">
-                                                        <i class="fas fa-wallet"></i>
-                                                        <span><strong>Payment Method:</strong> {{ appointment.payment_method|replace('_', ' ')|title if appointment.payment_method else 'Not provided' }}</span>
-                                                    </div>
-                                                    {% if appointment.card_number %}
-                                                    <div class="info-item">
-                                                        <i class="fas fa-credit-card"></i>
-                                                        <span><strong>Card:</strong> {{ appointment.card_number }}</span>
-                                                    </div>
-                                                    {% endif %}
-                                                    {% if appointment.upi_id %}
-                                                    <div class="info-item">
-                                                        <i class="fas fa-mobile-alt"></i>
-                                                        <span><strong>UPI ID:</strong> {{ appointment.upi_id }}</span>
-                                                    </div>
-                                                    {% endif %}
-                                                </div>
-                                                <div class="info-row">
-                                                    <div class="info-item">
-                                                        <i class="fas fa-dollar-sign"></i>
-                                                        <span><strong>Consultation Fee:</strong> ${{ appointment.consultation_fee if appointment.consultation_fee else '0.00' }}</span>
-                                                    </div>
-                                                    <div class="info-item">
-                                                        <i class="fas fa-file-invoice-dollar"></i>
-                                                        <span><strong>Total Amount:</strong> ${{ appointment.total_amount if appointment.total_amount else '0.00' }}</span>
-                                                    </div>
-                                                    {% if appointment.payment_status %}
-                                                    <div class="info-item">
-                                                        <i class="fas fa-check-circle"></i>
-                                                        <span><strong>Payment Status:</strong> <span class="payment-status-badge {{ 'completed' if appointment.payment_status == 'completed' else 'pending' }}">{{ appointment.payment_status|title }}</span></span>
-                                                    </div>
-                                                    {% endif %}
-                                                </div>
-                                            </div>
+                                        {% if appointment.upi_id %}
+                                        <div class="info-item">
+                                            <i class="fas fa-mobile-alt"></i>
+                                            <span><strong>UPI ID:</strong> {{ appointment.upi_id }}</span>
                                         </div>
+                                        {% endif %}
                                     </div>
-                                    <div class="request-actions">
-                                        <button class="btn btn-success" onclick="approveAppointment('{{ appointment.id }}', '{{ appointment.patient.name or appointment.patient.username }}', '{{ appointment.appointment_date.strftime('%b %d, %Y') }}', '{{ appointment.appointment_time }}')">
-                                            <i class="fas fa-check-circle"></i> Approve
-                                        </button>
-                                        <button class="btn btn-danger" onclick="rejectAppointment('{{ appointment.id }}', '{{ appointment.patient.name or appointment.patient.username }}')">
-                                            <i class="fas fa-times-circle"></i> Reject
-                                        </button>
+                                    <div class="info-row">
+                                        <div class="info-item">
+                                            <i class="fas fa-dollar-sign"></i>
+                                            <span><strong>Consultation Fee:</strong> ${{ appointment.consultation_fee if
+                                                appointment.consultation_fee else '0.00' }}</span>
+                                        </div>
+                                        <div class="info-item">
+                                            <i class="fas fa-file-invoice-dollar"></i>
+                                            <span><strong>Total Amount:</strong> ${{ appointment.total_amount if
+                                                appointment.total_amount else '0.00' }}</span>
+                                        </div>
+                                        {% if appointment.payment_status %}
+                                        <div class="info-item">
+                                            <i class="fas fa-check-circle"></i>
+                                            <span><strong>Payment Status:</strong> <span
+                                                    class="payment-status-badge {{ 'completed' if appointment.payment_status == 'completed' else 'pending' }}">{{
+                                                    appointment.payment_status|title }}</span></span>
+                                        </div>
+                                        {% endif %}
                                     </div>
                                 </div>
-                        {% endfor %}
+                            </div>
+                        </div>
+                        <div class="request-actions">
+                            <button class="btn btn-success"
+                                onclick="doctorUpdateAppointment('{{ appointment.id }}', 'approved', '{{ appointment.patient.name or appointment.patient.username }}')">
+                                <i class="fas fa-check-circle"></i> Approve
+                            </button>
+                            <button class="btn btn-danger"
+                                onclick="doctorUpdateAppointment('{{ appointment.id }}', 'rejected', '{{ appointment.patient.name or appointment.patient.username }}')">
+                                <i class="fas fa-times-circle"></i> Reject
+                            </button>
+                        </div>
                     </div>
+                    {% endfor %}
+                </div>
                 {% else %}
-                    <div class="empty-state large">
-                        <i class="fas fa-inbox"></i>
-                        <h3>No Pending Requests</h3>
-                        <p>All appointment requests have been processed.</p>
-                    </div>
+                <div class="empty-state large">
+                    <i class="fas fa-inbox"></i>
+                    <h3>No Pending Requests</h3>
+                    <p>All appointment requests have been processed.</p>
+                </div>
                 {% endif %}
 
                 <!-- Completed Appointments Section -->
@@ -804,70 +830,72 @@
                 </div>
                 {% set completed_appointments = [] %}
                 {% for appt in appointments %}
-                    {% if appt.status and appt.status.lower() == 'completed' %}
-                        {% set _ = completed_appointments.append(appt) %}
-                    {% endif %}
+                {% if appt.status and appt.status.lower() == 'completed' %}
+                {% set _ = completed_appointments.append(appt) %}
+                {% endif %}
                 {% endfor %}
                 {% if completed_appointments %}
-                    <div class="requests-container">
-                        {% for appointment in completed_appointments %}
-                            <div class="request-card completed-card">
-                                <div class="request-header">
-                                    <div>
-                                        <h3><i class="fas fa-user-circle"></i> {{ appointment.patient.name or appointment.patient.username }}</h3>
-                                        <span class="patient-username">@{{ appointment.patient.username }}</span>
-                                    </div>
-                                    <span class="status-badge status-completed">Completed</span>
+                <div class="requests-container">
+                    {% for appointment in completed_appointments %}
+                    <div class="request-card completed-card">
+                        <div class="request-header">
+                            <div>
+                                <h3><i class="fas fa-user-circle"></i> {{ appointment.patient.name or
+                                    appointment.patient.username }}</h3>
+                                <span class="patient-username">@{{ appointment.patient.username }}</span>
+                            </div>
+                            <span class="status-badge status-completed">Completed</span>
+                        </div>
+
+                        <div class="patient-info">
+                            <div class="info-row">
+                                <div class="info-item">
+                                    <i class="fas fa-calendar-alt"></i>
+                                    <span><strong>Date:</strong> {{ appointment.appointment_date.strftime('%B %d, %Y')
+                                        if appointment.appointment_date else 'N/A' }}</span>
                                 </div>
-                                
-                                <div class="patient-info">
-                                    <div class="info-row">
-                                        <div class="info-item">
-                                            <i class="fas fa-calendar-alt"></i>
-                                            <span><strong>Date:</strong> {{ appointment.appointment_date.strftime('%B %d, %Y') if appointment.appointment_date else 'N/A' }}</span>
-                                        </div>
-                                        <div class="info-item">
-                                            <i class="fas fa-clock"></i>
-                                            <span><strong>Time:</strong> {{ appointment.appointment_time }}</span>
-                                        </div>
-                                    </div>
-                                    <div class="info-row">
-                                        {% if appointment.patient.email %}
-                                        <div class="info-item">
-                                            <i class="fas fa-envelope"></i>
-                                            <span>{{ appointment.patient.email }}</span>
-                                        </div>
-                                        {% endif %}
-                                        {% if appointment.patient.phone %}
-                                        <div class="info-item">
-                                            <i class="fas fa-phone"></i>
-                                            <span>{{ appointment.patient.phone }}</span>
-                                        </div>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                                
-                                <div class="request-body">
-                                    <div class="reason">
-                                        <label><i class="fas fa-notes-medical"></i> Symptoms:</label>
-                                        <p>{{ appointment.symptoms or 'Not specified' }}</p>
-                                    </div>
-                                    {% if appointment.notes or appointment.prescription %}
-                                        <div class="notes">
-                                            <label><i class="fas fa-prescription"></i> Prescription/Notes:</label>
-                                            <p>{{ appointment.prescription or appointment.notes or 'No prescription provided' }}</p>
-                                        </div>
-                                    {% endif %}
+                                <div class="info-item">
+                                    <i class="fas fa-clock"></i>
+                                    <span><strong>Time:</strong> {{ appointment.appointment_time }}</span>
                                 </div>
                             </div>
-                        {% endfor %}
+                            <div class="info-row">
+                                {% if appointment.patient.email %}
+                                <div class="info-item">
+                                    <i class="fas fa-envelope"></i>
+                                    <span>{{ appointment.patient.email }}</span>
+                                </div>
+                                {% endif %}
+                                {% if appointment.patient.phone %}
+                                <div class="info-item">
+                                    <i class="fas fa-phone"></i>
+                                    <span>{{ appointment.patient.phone }}</span>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="request-body">
+                            <div class="reason">
+                                <label><i class="fas fa-notes-medical"></i> Symptoms:</label>
+                                <p>{{ appointment.symptoms or 'Not specified' }}</p>
+                            </div>
+                            {% if appointment.notes or appointment.prescription %}
+                            <div class="notes">
+                                <label><i class="fas fa-prescription"></i> Prescription/Notes:</label>
+                                <p>{{ appointment.prescription or appointment.notes or 'No prescription provided' }}</p>
+                            </div>
+                            {% endif %}
+                        </div>
                     </div>
+                    {% endfor %}
+                </div>
                 {% else %}
-                    <div class="empty-state large">
-                        <i class="fas fa-check-circle"></i>
-                        <h3>No Completed Appointments</h3>
-                        <p>Completed appointments will appear here.</p>
-                    </div>
+                <div class="empty-state large">
+                    <i class="fas fa-check-circle"></i>
+                    <h3>No Completed Appointments</h3>
+                    <p>Completed appointments will appear here.</p>
+                </div>
                 {% endif %}
             </div>
 
@@ -909,82 +937,84 @@
                     <h2><i class="fas fa-users"></i> My Patients</h2>
                     <div class="patient-count-badge">
                         <i class="fas fa-user-injured"></i>
-                        <span>{{ patient_data|length if patient_data else 0 }} Patient{% if patient_data and patient_data|length != 1 %}s{% endif %}</span>
+                        <span>{{ patient_data|length if patient_data else 0 }} Patient{% if patient_data and
+                            patient_data|length != 1 %}s{% endif %}</span>
                     </div>
                 </div>
-                
+
                 {% if patient_data %}
-                    <div class="appointments-table">
-                        <table id="patientsTable">
-                            <thead>
-                                <tr>
-                                    <th>Patient Name</th>
-                                    <th>Email</th>
-                                    <th>Phone</th>
-                                    <th>Total Appointments</th>
-                                    <th>Last Appointment</th>
-                                    <th>Medical Records</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for data in patient_data %}
-                                    <tr class="patient-row" data-patient-id="{{ data.patient.id }}">
-                                        <td>
-                                            <div class="patient-cell">
-                                                <i class="fas fa-user-circle"></i>
-                                                <strong>{{ data.patient.username }}</strong>
-                                            </div>
-                                        </td>
-                                        <td>{{ data.patient.email }}</td>
-                                        <td>{{ data.patient.phone or 'N/A' }}</td>
-                                        <td>
-                                            <span class="badge">{{ data.total_appointments }}</span>
-                                        </td>
-                                        <td>
-                                            {% if data.last_appointment %}
-                                                {{ data.last_appointment.strftime('%b %d, %Y') }}
-                                            {% else %}
-                                                N/A
-                                            {% endif %}
-                                        </td>
-                                        <td>
-                                            <span class="badge {% if data.medical_records_count > 0 %}badge-success{% else %}badge-secondary{% endif %}">
-                                                {{ data.medical_records_count }} 
-                                                {% if data.medical_records_count == 1 %}
-                                                    document
-                                                {% else %}
-                                                    documents
-                                                {% endif %}
-                                            </span>
-                                        </td>
-                                        <td>
-                                            <button onclick="togglePatientDetails('{{ data.patient.id }}', this)" 
-                                                    class="btn btn-primary btn-sm view-records-btn">
-                                                <i class="fas fa-folder-open"></i> View Records
-                                            </button>
-                                        </td>
-                                    </tr>
-                                    <!-- Expandable Detail Row -->
-                                    <tr class="patient-details-row" id="details-{{ data.patient.id }}" style="display: none;">
-                                        <td colspan="7">
-                                            <div class="patient-details-container">
-                                                <div class="loading-spinner" style="text-align: center; padding: 20px;">
-                                                    <i class="fas fa-spinner fa-spin fa-2x"></i>
-                                                    <p>Loading patient details...</p>
-                                                </div>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
+                <div class="appointments-table">
+                    <table id="patientsTable">
+                        <thead>
+                            <tr>
+                                <th>Patient Name</th>
+                                <th>Email</th>
+                                <th>Phone</th>
+                                <th>Total Appointments</th>
+                                <th>Last Appointment</th>
+                                <th>Medical Records</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for data in patient_data %}
+                            <tr class="patient-row" data-patient-id="{{ data.patient.id }}">
+                                <td>
+                                    <div class="patient-cell">
+                                        <i class="fas fa-user-circle"></i>
+                                        <strong>{{ data.patient.username }}</strong>
+                                    </div>
+                                </td>
+                                <td>{{ data.patient.email }}</td>
+                                <td>{{ data.patient.phone or 'N/A' }}</td>
+                                <td>
+                                    <span class="badge">{{ data.total_appointments }}</span>
+                                </td>
+                                <td>
+                                    {% if data.last_appointment %}
+                                    {{ data.last_appointment.strftime('%b %d, %Y') }}
+                                    {% else %}
+                                    N/A
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span
+                                        class="badge {% if data.medical_records_count > 0 %}badge-success{% else %}badge-secondary{% endif %}">
+                                        {{ data.medical_records_count }}
+                                        {% if data.medical_records_count == 1 %}
+                                        document
+                                        {% else %}
+                                        documents
+                                        {% endif %}
+                                    </span>
+                                </td>
+                                <td>
+                                    <button onclick="togglePatientDetails('{{ data.patient.id }}', this)"
+                                        class="btn btn-primary btn-sm view-records-btn">
+                                        <i class="fas fa-folder-open"></i> View Records
+                                    </button>
+                                </td>
+                            </tr>
+                            <!-- Expandable Detail Row -->
+                            <tr class="patient-details-row" id="details-{{ data.patient.id }}" style="display: none;">
+                                <td colspan="7">
+                                    <div class="patient-details-container">
+                                        <div class="loading-spinner" style="text-align: center; padding: 20px;">
+                                            <i class="fas fa-spinner fa-spin fa-2x"></i>
+                                            <p>Loading patient details...</p>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
                 {% else %}
-                    <div class="no-data">
-                        <i class="fas fa-users-slash"></i>
-                        <p>No patients found. Patients will appear here once they book appointments with you.</p>
-                    </div>
+                <div class="no-data">
+                    <i class="fas fa-users-slash"></i>
+                    <p>No patients found. Patients will appear here once they book appointments with you.</p>
+                </div>
                 {% endif %}
             </div>
 
@@ -1000,9 +1030,11 @@
                             <label>Current Photo</label>
                             <div class="doctor-avatar-header" style="width: 72px; height: 72px;">
                                 {% if doctor.profile_image %}
-                                    <img id="doctorProfileImage" src="{{ url_for('serve_profile_picture', filename=doctor.profile_image.split('/')[-1]) }}" alt="{{ doctor.name }}">
+                                <img id="doctorProfileImage"
+                                    src="{{ url_for('serve_profile_picture', filename=doctor.profile_image.split('/')[-1]) }}"
+                                    alt="{{ doctor.name }}">
                                 {% else %}
-                                    <i id="doctorProfileImagePlaceholder" class="fas fa-user-md"></i>
+                                <i id="doctorProfileImagePlaceholder" class="fas fa-user-md"></i>
                                 {% endif %}
                             </div>
                         </div>
@@ -1127,16 +1159,14 @@
                 <!-- Consultation Fee Section -->
                 <div class="form-group">
                     <label for="consultation_fee"><i class="fas fa-dollar-sign"></i> Consultation Fee ($)</label>
-                    <input type="number" id="consultation_fee" name="consultation_fee" 
-                           value="{{ doctor.consultation_fee }}" 
-                           step="0.01" min="0"
-                           placeholder="e.g., 50.00"
-                           required>
+                    <input type="number" id="consultation_fee" name="consultation_fee"
+                        value="{{ doctor.consultation_fee }}" step="0.01" min="0" placeholder="e.g., 50.00" required>
                     <small>Enter the consultation fee per appointment</small>
                 </div>
 
                 <div class="modal-actions">
-                    <button type="button" class="btn btn-outline" onclick="closeModal('editScheduleModal')">Cancel</button>
+                    <button type="button" class="btn btn-outline"
+                        onclick="closeModal('editScheduleModal')">Cancel</button>
                     <button type="submit" class="btn btn-primary">
                         <i class="fas fa-save"></i> Save Changes
                     </button>
@@ -1161,18 +1191,22 @@
                 </div>
                 <div class="form-group">
                     <label for="edit_specialization">Specialization</label>
-                    <input type="text" id="edit_specialization" name="specialization" value="{{ doctor.specialization }}" required>
+                    <input type="text" id="edit_specialization" name="specialization"
+                        value="{{ doctor.specialization }}" required>
                 </div>
                 <div class="form-group">
                     <label for="edit_qualifications">Qualifications</label>
-                    <textarea id="edit_qualifications" name="qualifications" rows="3" required>{{ doctor.qualifications }}</textarea>
+                    <textarea id="edit_qualifications" name="qualifications" rows="3"
+                        required>{{ doctor.qualifications }}</textarea>
                 </div>
                 <div class="form-group">
                     <label for="edit_experience">Years of Experience</label>
-                    <input type="number" id="edit_experience" name="experience" value="{{ doctor.experience }}" required>
+                    <input type="number" id="edit_experience" name="experience" value="{{ doctor.experience }}"
+                        required>
                 </div>
                 <div class="modal-actions">
-                    <button type="button" class="btn btn-outline" onclick="closeModal('editProfileModal')">Cancel</button>
+                    <button type="button" class="btn btn-outline"
+                        onclick="closeModal('editProfileModal')">Cancel</button>
                     <button type="submit" class="btn btn-primary">
                         <i class="fas fa-save"></i> Save Changes
                     </button>
@@ -1200,7 +1234,8 @@
                     <input type="tel" id="edit_phone" name="phone" value="{{ doctor.phone }}" required>
                 </div>
                 <div class="modal-actions">
-                    <button type="button" class="btn btn-outline" onclick="closeModal('editContactModal')">Cancel</button>
+                    <button type="button" class="btn btn-outline"
+                        onclick="closeModal('editContactModal')">Cancel</button>
                     <button type="submit" class="btn btn-primary">
                         <i class="fas fa-save"></i> Save Changes
                     </button>
@@ -1232,7 +1267,8 @@
                     <input type="password" id="confirm_password" name="confirm_password" minlength="6" required>
                 </div>
                 <div class="modal-actions">
-                    <button type="button" class="btn btn-outline" onclick="closeModal('changePasswordModal')">Cancel</button>
+                    <button type="button" class="btn btn-outline"
+                        onclick="closeModal('changePasswordModal')">Cancel</button>
                     <button type="submit" class="btn btn-primary">
                         <i class="fas fa-key"></i> Change Password
                     </button>
@@ -1243,573 +1279,573 @@
 </div>
 
 <script>
-function showDashboardView(event) {
-    event.preventDefault();
-    showView('dashboardView');
-    setActiveNav(event.target.closest('.nav-item'));
-}
-
-function showPatientsView(event) {
-    event.preventDefault();
-    showView('patientsView');
-    setActiveNav(document.querySelector('[onclick*="showPatientsView"]'));
-}
-
-function showTodayView(event) {
-    event.preventDefault();
-    showView('todayView');
-    setActiveNav(document.querySelector('[onclick*="showTodayView"]'));
-}
-
-function showRequestsView(event) {
-    event.preventDefault();
-    showView('requestsView');
-    setActiveNav(document.querySelector('[onclick*="showRequestsView"]'));
-}
-
-function showScheduleView(event) {
-    event.preventDefault();
-    showView('scheduleView');
-    setActiveNav(document.querySelector('[onclick*="showScheduleView"]'));
-}
-
-function showSettingsView(event) {
-    event.preventDefault();
-    showView('settingsView');
-    setActiveNav(document.querySelector('[onclick*="showSettingsView"]'));
-}
-
-function triggerDoctorProfileUpload() {
-    const input = document.getElementById('doctorProfilePictureInput');
-    if (input) {
-        input.click();
+    function showDashboardView(event) {
+        event.preventDefault();
+        showView('dashboardView');
+        setActiveNav(event.target.closest('.nav-item'));
     }
-}
 
-function showView(viewId) {
-    const views = document.querySelectorAll('.content-view');
-    views.forEach(view => view.style.display = 'none');
-    document.getElementById(viewId).style.display = 'block';
-}
-
-function setActiveNav(element) {
-    document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
-    if (element) element.classList.add('active');
-}
-
-function showEditScheduleModal() {
-    // Re-populate the form with current values before showing
-    if (window.populateScheduleFormFn) {
-        window.populateScheduleFormFn();
+    function showPatientsView(event) {
+        event.preventDefault();
+        showView('patientsView');
+        setActiveNav(document.querySelector('[onclick*="showPatientsView"]'));
     }
-    document.getElementById('editScheduleModal').style.display = 'flex';
-}
 
-function showEditProfileModal() {
-    document.getElementById('editProfileModal').style.display = 'flex';
-}
-
-function showEditContactModal() {
-    document.getElementById('editContactModal').style.display = 'flex';
-}
-
-function showChangePasswordModal() {
-    document.getElementById('changePasswordModal').style.display = 'flex';
-}
-
-function closeModal(modalId) {
-    document.getElementById(modalId).style.display = 'none';
-}
-
-// Prescription Modal Functions
-function openPrescriptionModal(appointmentId, patientName) {
-    const prescription = prompt(`Enter prescription for ${patientName}:`);
-    if (prescription && prescription.trim()) {
-        addPrescription(appointmentId, prescription.trim());
+    function showTodayView(event) {
+        event.preventDefault();
+        showView('todayView');
+        setActiveNav(document.querySelector('[onclick*="showTodayView"]'));
     }
-}
 
-function addPrescription(appointmentId, prescription) {
-    fetch('/doctor/add-prescription', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-            appointment_id: appointmentId,
-            prescription: prescription
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            alert('Prescription added successfully!');
-            location.reload();
-        } else {
-            alert('Error: ' + (data.message || 'Failed to add prescription'));
+    function showRequestsView(event) {
+        event.preventDefault();
+        showView('requestsView');
+        setActiveNav(document.querySelector('[onclick*="showRequestsView"]'));
+    }
+
+    function showScheduleView(event) {
+        event.preventDefault();
+        showView('scheduleView');
+        setActiveNav(document.querySelector('[onclick*="showScheduleView"]'));
+    }
+
+    function showSettingsView(event) {
+        event.preventDefault();
+        showView('settingsView');
+        setActiveNav(document.querySelector('[onclick*="showSettingsView"]'));
+    }
+
+    function triggerDoctorProfileUpload() {
+        const input = document.getElementById('doctorProfilePictureInput');
+        if (input) {
+            input.click();
         }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('An error occurred while adding prescription');
-    });
-}
+    }
 
-// Complete Appointment Function
-function completeAppointment(appointmentId, patientName) {
-    if (confirm(`Mark appointment with ${patientName} as completed?`)) {
-        fetch('/doctor/complete-appointment', {
+    function showView(viewId) {
+        const views = document.querySelectorAll('.content-view');
+        views.forEach(view => view.style.display = 'none');
+        document.getElementById(viewId).style.display = 'block';
+    }
+
+    function setActiveNav(element) {
+        document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+        if (element) element.classList.add('active');
+    }
+
+    function showEditScheduleModal() {
+        // Re-populate the form with current values before showing
+        if (window.populateScheduleFormFn) {
+            window.populateScheduleFormFn();
+        }
+        document.getElementById('editScheduleModal').style.display = 'flex';
+    }
+
+    function showEditProfileModal() {
+        document.getElementById('editProfileModal').style.display = 'flex';
+    }
+
+    function showEditContactModal() {
+        document.getElementById('editContactModal').style.display = 'flex';
+    }
+
+    function showChangePasswordModal() {
+        document.getElementById('changePasswordModal').style.display = 'flex';
+    }
+
+    function closeModal(modalId) {
+        document.getElementById(modalId).style.display = 'none';
+    }
+
+    // Prescription Modal Functions
+    function openPrescriptionModal(appointmentId, patientName) {
+        const prescription = prompt(`Enter prescription for ${patientName}:`);
+        if (prescription && prescription.trim()) {
+            addPrescription(appointmentId, prescription.trim());
+        }
+    }
+
+    function addPrescription(appointmentId, prescription) {
+        fetch('/doctor/add-prescription', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-                appointment_id: appointmentId
+                appointment_id: appointmentId,
+                prescription: prescription
             })
         })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                alert('Appointment marked as completed!');
-                location.reload();
-            } else {
-                alert('Error: ' + (data.message || 'Failed to complete appointment'));
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('An error occurred while completing appointment');
-        });
-    }
-}
-
-// Close modal when clicking outside
-window.onclick = function(event) {
-    if (event.target.classList.contains('modal')) {
-        event.target.style.display = 'none';
-    }
-}
-
-// Handle Edit Schedule Form
-document.addEventListener('DOMContentLoaded', function() {
-    const doctorProfileInput = document.getElementById('doctorProfilePictureInput');
-    if (doctorProfileInput) {
-        doctorProfileInput.addEventListener('change', function() {
-            const file = this.files && this.files[0];
-            if (!file) {
-                return;
-            }
-
-            const formData = new FormData();
-            formData.append('profile_picture', file);
-
-            fetch('/upload-profile-picture', {
-                method: 'POST',
-                body: formData
-            })
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    alert('Profile picture updated successfully!');
+                    alert('Prescription added successfully!');
                     location.reload();
                 } else {
-                    alert('Error: ' + (data.message || 'Failed to update profile picture'));
+                    alert('Error: ' + (data.message || 'Failed to add prescription'));
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert('An error occurred. Please try again.');
+                alert('An error occurred while adding prescription');
             });
-        });
     }
 
-    // Parse existing schedule to populate checkboxes and time inputs
-    const populateScheduleForm = function() {
-        const availableDaysStr = "{{ doctor.available_days }}";
-        const availableTimeStr = "{{ doctor.available_time }}";
-        
-        // Parse days and check corresponding checkboxes
-        if (availableDaysStr) {
-            const days = availableDaysStr.split(',').map(d => d.trim());
-            
-            // First uncheck all boxes
-            document.querySelectorAll('input[name="days"]').forEach(cb => cb.checked = false);
-            
-            // Then check the available days
-            days.forEach(day => {
-                const checkbox = document.getElementById(`day_${day.toLowerCase()}`);
-                if (checkbox) {
-                    checkbox.checked = true;
+    // Complete Appointment Function
+    function completeAppointment(appointmentId, patientName) {
+        if (confirm(`Mark appointment with ${patientName} as completed?`)) {
+            fetch('/doctor/complete-appointment', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    appointment_id: appointmentId
+                })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Appointment marked as completed!');
+                        location.reload();
+                    } else {
+                        alert('Error: ' + (data.message || 'Failed to complete appointment'));
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('An error occurred while completing appointment');
+                });
+        }
+    }
+
+    // Close modal when clicking outside
+    window.onclick = function (event) {
+        if (event.target.classList.contains('modal')) {
+            event.target.style.display = 'none';
+        }
+    }
+
+    // Handle Edit Schedule Form
+    document.addEventListener('DOMContentLoaded', function () {
+        const doctorProfileInput = document.getElementById('doctorProfilePictureInput');
+        if (doctorProfileInput) {
+            doctorProfileInput.addEventListener('change', function () {
+                const file = this.files && this.files[0];
+                if (!file) {
+                    return;
                 }
+
+                const formData = new FormData();
+                formData.append('profile_picture', file);
+
+                fetch('/upload-profile-picture', {
+                    method: 'POST',
+                    body: formData
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            alert('Profile picture updated successfully!');
+                            location.reload();
+                        } else {
+                            alert('Error: ' + (data.message || 'Failed to update profile picture'));
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('An error occurred. Please try again.');
+                    });
             });
         }
-        
-        // Parse time range (HH:MM-HH:MM format) and populate time inputs
-        if (availableTimeStr && availableTimeStr.includes('-')) {
-            const [startTime, endTime] = availableTimeStr.split('-').map(t => t.trim());
-            const startInput = document.getElementById('start_time');
-            const endInput = document.getElementById('end_time');
-            
-            if (startTime && startInput) {
-                startInput.value = startTime;
+
+        // Parse existing schedule to populate checkboxes and time inputs
+        const populateScheduleForm = function () {
+            const availableDaysStr = "{{ doctor.available_days }}";
+            const availableTimeStr = "{{ doctor.available_time }}";
+
+            // Parse days and check corresponding checkboxes
+            if (availableDaysStr) {
+                const days = availableDaysStr.split(',').map(d => d.trim());
+
+                // First uncheck all boxes
+                document.querySelectorAll('input[name="days"]').forEach(cb => cb.checked = false);
+
+                // Then check the available days
+                days.forEach(day => {
+                    const checkbox = document.getElementById(`day_${day.toLowerCase()}`);
+                    if (checkbox) {
+                        checkbox.checked = true;
+                    }
+                });
             }
-            if (endTime && endInput) {
-                endInput.value = endTime;
+
+            // Parse time range (HH:MM-HH:MM format) and populate time inputs
+            if (availableTimeStr && availableTimeStr.includes('-')) {
+                const [startTime, endTime] = availableTimeStr.split('-').map(t => t.trim());
+                const startInput = document.getElementById('start_time');
+                const endInput = document.getElementById('end_time');
+
+                if (startTime && startInput) {
+                    startInput.value = startTime;
+                }
+                if (endTime && endInput) {
+                    endInput.value = endTime;
+                }
             }
-        }
-    };
-    
-    // Make it globally accessible
-    window.populateScheduleFormFn = populateScheduleForm;
-    
-    // Render weekly schedule dynamically
-    const renderWeeklySchedule = function() {
-        const availableDaysStr = "{{ doctor.available_days if doctor.available_days else '' }}";
-        const availableTimeStr = "{{ doctor.available_time if doctor.available_time else '' }}";
-        const weeklyGrid = document.getElementById('weeklyScheduleGrid');
-        
-        console.log('Rendering schedule with:', { availableDaysStr, availableTimeStr });
-        
-        if (!weeklyGrid) {
-            console.warn('Weekly grid element not found');
-            return;
-        }
-        
-        // All days of the week
-        const allDays = [
-            { short: 'Mon', full: 'Monday' },
-            { short: 'Tue', full: 'Tuesday' },
-            { short: 'Wed', full: 'Wednesday' },
-            { short: 'Thu', full: 'Thursday' },
-            { short: 'Fri', full: 'Friday' },
-            { short: 'Sat', full: 'Saturday' },
-            { short: 'Sun', full: 'Sunday' }
-        ];
-        
-        // Parse available days - handle both comma-separated and whitespace
-        let availableDays = [];
-        if (availableDaysStr && availableDaysStr.trim()) {
-            availableDays = availableDaysStr.split(',').map(d => d.trim()).filter(d => d);
-            console.log('Parsed available days:', availableDays);
-        }
-        
-        // Clear existing content
-        weeklyGrid.innerHTML = '';
-        
-        // Render each day
-        allDays.forEach(day => {
-            const isAvailable = availableDays.some(availDay => 
-                availDay.toLowerCase() === day.full.toLowerCase()
-            );
-            const daySlot = document.createElement('div');
-            daySlot.className = 'day-slot';
-            
-            daySlot.innerHTML = `
+        };
+
+        // Make it globally accessible
+        window.populateScheduleFormFn = populateScheduleForm;
+
+        // Render weekly schedule dynamically
+        const renderWeeklySchedule = function () {
+            const availableDaysStr = "{{ doctor.available_days if doctor.available_days else '' }}";
+            const availableTimeStr = "{{ doctor.available_time if doctor.available_time else '' }}";
+            const weeklyGrid = document.getElementById('weeklyScheduleGrid');
+
+            console.log('Rendering schedule with:', { availableDaysStr, availableTimeStr });
+
+            if (!weeklyGrid) {
+                console.warn('Weekly grid element not found');
+                return;
+            }
+
+            // All days of the week
+            const allDays = [
+                { short: 'Mon', full: 'Monday' },
+                { short: 'Tue', full: 'Tuesday' },
+                { short: 'Wed', full: 'Wednesday' },
+                { short: 'Thu', full: 'Thursday' },
+                { short: 'Fri', full: 'Friday' },
+                { short: 'Sat', full: 'Saturday' },
+                { short: 'Sun', full: 'Sunday' }
+            ];
+
+            // Parse available days - handle both comma-separated and whitespace
+            let availableDays = [];
+            if (availableDaysStr && availableDaysStr.trim()) {
+                availableDays = availableDaysStr.split(',').map(d => d.trim()).filter(d => d);
+                console.log('Parsed available days:', availableDays);
+            }
+
+            // Clear existing content
+            weeklyGrid.innerHTML = '';
+
+            // Render each day
+            allDays.forEach(day => {
+                const isAvailable = availableDays.some(availDay =>
+                    availDay.toLowerCase() === day.full.toLowerCase()
+                );
+                const daySlot = document.createElement('div');
+                daySlot.className = 'day-slot';
+
+                daySlot.innerHTML = `
                 <span class="day">${day.short}</span>
                 <span class="time">${isAvailable && availableTimeStr ? availableTimeStr : '--:--'}</span>
                 <span class="status ${isAvailable ? 'available' : 'unavailable'}">
                     ${isAvailable ? 'Available' : 'Not Available'}
                 </span>
             `;
-            
-            weeklyGrid.appendChild(daySlot);
-        });
-        
-        console.log('Weekly schedule rendered successfully');
-    };
-    
-    // Call on page load
-    populateScheduleForm();
-    renderWeeklySchedule();
-    
-    // Handle form submission
-    const editScheduleForm = document.getElementById('editScheduleForm');
-    if (editScheduleForm) {
-        editScheduleForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            // Get checked days
-            const dayCheckboxes = document.querySelectorAll('input[name="days"]:checked');
-            if (dayCheckboxes.length === 0) {
-                alert('Please select at least one day');
-                return;
-            }
-            
-            const availableDays = Array.from(dayCheckboxes)
-                .map(checkbox => checkbox.value)
-                .join(',');
-            
-            // Get time range
-            const startTime = document.getElementById('start_time').value;
-            const endTime = document.getElementById('end_time').value;
-            
-            if (!startTime || !endTime) {
-                alert('Please select both start and end time');
-                return;
-            }
-            
-            if (startTime >= endTime) {
-                alert('End time must be after start time');
-                return;
-            }
-            
-            const availableTime = `${startTime}-${endTime}`;
-            
-            // Get consultation fee
-            const consultationFee = document.getElementById('consultation_fee').value;
-            
-            if (!consultationFee || parseFloat(consultationFee) < 0) {
-                alert('Please enter a valid consultation fee');
-                return;
-            }
-            
-            // Create form data
-            const formData = new FormData();
-            formData.append('available_days', availableDays);
-            formData.append('available_time', availableTime);
-            formData.append('consultation_fee', consultationFee);
-            
-            // Send request
-            fetch('/doctor/update-schedule', {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    alert('Schedule updated successfully!');
-                    closeModal('editScheduleModal');
-                    location.reload();
-                } else {
-                    alert('Error: ' + (data.message || 'Failed to update schedule'));
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('An error occurred. Please try again.');
-            });
-        });
-    }
 
-    // Handle Edit Profile Form
-    const editProfileForm = document.getElementById('editProfileForm');
-    if (editProfileForm) {
-        editProfileForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            const formData = new FormData(this);
-            
-            fetch('/doctor/update-profile', {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    alert('Profile updated successfully!');
-                    closeModal('editProfileModal');
-                    location.reload();
-                } else {
-                    alert('Error: ' + (data.message || 'Failed to update profile'));
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('An error occurred. Please try again.');
+                weeklyGrid.appendChild(daySlot);
             });
-        });
-    }
 
-    // Handle Edit Contact Form
-    const editContactForm = document.getElementById('editContactForm');
-    if (editContactForm) {
-        editContactForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            const formData = new FormData(this);
-            
-            fetch('/doctor/update-contact', {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    alert('Contact information updated successfully!');
-                    closeModal('editContactModal');
-                    location.reload();
-                } else {
-                    alert('Error: ' + (data.message || 'Failed to update contact information'));
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('An error occurred. Please try again.');
-            });
-        });
-    }
+            console.log('Weekly schedule rendered successfully');
+        };
 
-    // Handle Change Password Form
-    const changePasswordForm = document.getElementById('changePasswordForm');
-    if (changePasswordForm) {
-        changePasswordForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            const newPassword = document.getElementById('new_password').value;
-            const confirmPassword = document.getElementById('confirm_password').value;
-            
-            if (newPassword !== confirmPassword) {
-                alert('New passwords do not match!');
-                return;
-            }
-            
-            const formData = new FormData(this);
-            
-            fetch('/doctor/change-password', {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    alert('Password changed successfully!');
-                    closeModal('changePasswordModal');
-                    this.reset();
-                } else {
-                    alert('Error: ' + (data.message || 'Failed to change password'));
+        // Call on page load
+        populateScheduleForm();
+        renderWeeklySchedule();
+
+        // Handle form submission
+        const editScheduleForm = document.getElementById('editScheduleForm');
+        if (editScheduleForm) {
+            editScheduleForm.addEventListener('submit', function (e) {
+                e.preventDefault();
+
+                // Get checked days
+                const dayCheckboxes = document.querySelectorAll('input[name="days"]:checked');
+                if (dayCheckboxes.length === 0) {
+                    alert('Please select at least one day');
+                    return;
                 }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('An error occurred. Please try again.');
+
+                const availableDays = Array.from(dayCheckboxes)
+                    .map(checkbox => checkbox.value)
+                    .join(',');
+
+                // Get time range
+                const startTime = document.getElementById('start_time').value;
+                const endTime = document.getElementById('end_time').value;
+
+                if (!startTime || !endTime) {
+                    alert('Please select both start and end time');
+                    return;
+                }
+
+                if (startTime >= endTime) {
+                    alert('End time must be after start time');
+                    return;
+                }
+
+                const availableTime = `${startTime}-${endTime}`;
+
+                // Get consultation fee
+                const consultationFee = document.getElementById('consultation_fee').value;
+
+                if (!consultationFee || parseFloat(consultationFee) < 0) {
+                    alert('Please enter a valid consultation fee');
+                    return;
+                }
+
+                // Create form data
+                const formData = new FormData();
+                formData.append('available_days', availableDays);
+                formData.append('available_time', availableTime);
+                formData.append('consultation_fee', consultationFee);
+
+                // Send request
+                fetch('/doctor/update-schedule', {
+                    method: 'POST',
+                    body: formData
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            alert('Schedule updated successfully!');
+                            closeModal('editScheduleModal');
+                            location.reload();
+                        } else {
+                            alert('Error: ' + (data.message || 'Failed to update schedule'));
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('An error occurred. Please try again.');
+                    });
             });
-        });
-    }
-    
-    // Appointment approval/rejection functions
-    window.approveAppointment = async function(appointmentId, patientName, appointmentDate, appointmentTime) {
-        console.log(`[approveAppointment] Called - ID: ${appointmentId}, Patient: ${patientName}`);
-        const confirmMsg = `Approve appointment for ${patientName} on ${appointmentDate} at ${appointmentTime}?`;
-        
-        if (confirm(confirmMsg)) {
-            console.log(`[approveAppointment] User confirmed, calling updateAppointmentStatus`);
-            await updateAppointmentStatus(appointmentId, 'confirmed');
-        } else {
-            console.log('[approveAppointment] User cancelled');
         }
-    };
 
-    window.rejectAppointment = async function(appointmentId, patientName) {
-        console.log(`[rejectAppointment] Called - ID: ${appointmentId}, Patient: ${patientName}`);
-        const confirmMsg = `Reject appointment request from ${patientName}?`;
-        
-        if (confirm(confirmMsg)) {
-            console.log(`[rejectAppointment] User confirmed, calling updateAppointmentStatus`);
-            await updateAppointmentStatus(appointmentId, 'cancelled');
-        } else {
-            console.log('[rejectAppointment] User cancelled');
-        }
-    };
+        // Handle Edit Profile Form
+        const editProfileForm = document.getElementById('editProfileForm');
+        if (editProfileForm) {
+            editProfileForm.addEventListener('submit', function (e) {
+                e.preventDefault();
 
-    async function updateAppointmentStatus(appointmentId, status) {
-        console.log(`[updateAppointmentStatus] Starting - ID: ${appointmentId}, Status: ${status}`);
-        
-        try {
-            const url = `/doctor/update-appointment/${appointmentId}`;
-            console.log(`[updateAppointmentStatus] Fetching: ${url}`);
-            
-            const response = await fetch(url, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                },
-                body: `status=${status}`
+                const formData = new FormData(this);
+
+                fetch('/doctor/update-profile', {
+                    method: 'POST',
+                    body: formData
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            alert('Profile updated successfully!');
+                            closeModal('editProfileModal');
+                            location.reload();
+                        } else {
+                            alert('Error: ' + (data.message || 'Failed to update profile'));
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('An error occurred. Please try again.');
+                    });
             });
-            
-            console.log(`[updateAppointmentStatus] Response status: ${response.status}`);
-            
-            if (!response.ok) {
-                console.error(`[updateAppointmentStatus] HTTP error: ${response.status} ${response.statusText}`);
-            }
-            
-            const result = await response.json();
-            console.log('[updateAppointmentStatus] Result:', result);
-            
-            if (result.success) {
-                console.log('[updateAppointmentStatus] Success!');
-                alert(`Appointment ${status === 'confirmed' ? 'approved' : 'rejected'} successfully!`);
-                window.location.reload();
+        }
+
+        // Handle Edit Contact Form
+        const editContactForm = document.getElementById('editContactForm');
+        if (editContactForm) {
+            editContactForm.addEventListener('submit', function (e) {
+                e.preventDefault();
+
+                const formData = new FormData(this);
+
+                fetch('/doctor/update-contact', {
+                    method: 'POST',
+                    body: formData
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            alert('Contact information updated successfully!');
+                            closeModal('editContactModal');
+                            location.reload();
+                        } else {
+                            alert('Error: ' + (data.message || 'Failed to update contact information'));
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('An error occurred. Please try again.');
+                    });
+            });
+        }
+
+        // Handle Change Password Form
+        const changePasswordForm = document.getElementById('changePasswordForm');
+        if (changePasswordForm) {
+            changePasswordForm.addEventListener('submit', function (e) {
+                e.preventDefault();
+
+                const newPassword = document.getElementById('new_password').value;
+                const confirmPassword = document.getElementById('confirm_password').value;
+
+                if (newPassword !== confirmPassword) {
+                    alert('New passwords do not match!');
+                    return;
+                }
+
+                const formData = new FormData(this);
+
+                fetch('/doctor/change-password', {
+                    method: 'POST',
+                    body: formData
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            alert('Password changed successfully!');
+                            closeModal('changePasswordModal');
+                            this.reset();
+                        } else {
+                            alert('Error: ' + (data.message || 'Failed to change password'));
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('An error occurred. Please try again.');
+                    });
+            });
+        }
+
+        // Appointment approval/rejection functions
+        window.approveAppointment = async function (appointmentId, patientName, appointmentDate, appointmentTime) {
+            console.log(`[approveAppointment] Called - ID: ${appointmentId}, Patient: ${patientName}`);
+            const confirmMsg = `Approve appointment for ${patientName} on ${appointmentDate} at ${appointmentTime}?`;
+
+            if (confirm(confirmMsg)) {
+                console.log(`[approveAppointment] User confirmed, calling updateAppointmentStatus`);
+                await updateAppointmentStatus(appointmentId, 'confirmed');
             } else {
-                console.error('[updateAppointmentStatus] Failed:', result.message);
-                alert(`Error: ${result.message}`);
+                console.log('[approveAppointment] User cancelled');
             }
-            
-            return result;
-        } catch (error) {
-            console.error('[updateAppointmentStatus] Exception:', error);
-            alert('Network error occurred. Please try again.\\n\\nCheck the browser console for details.');
-            return { success: false, message: 'Network error' };
+        };
+
+        window.rejectAppointment = async function (appointmentId, patientName) {
+            console.log(`[rejectAppointment] Called - ID: ${appointmentId}, Patient: ${patientName}`);
+            const confirmMsg = `Reject appointment request from ${patientName}?`;
+
+            if (confirm(confirmMsg)) {
+                console.log(`[rejectAppointment] User confirmed, calling updateAppointmentStatus`);
+                await updateAppointmentStatus(appointmentId, 'cancelled');
+            } else {
+                console.log('[rejectAppointment] User cancelled');
+            }
+        };
+
+        async function updateAppointmentStatus(appointmentId, status) {
+            console.log(`[updateAppointmentStatus] Starting - ID: ${appointmentId}, Status: ${status}`);
+
+            try {
+                const url = `/doctor/update-appointment/${appointmentId}`;
+                console.log(`[updateAppointmentStatus] Fetching: ${url}`);
+
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: `status=${status}`
+                });
+
+                console.log(`[updateAppointmentStatus] Response status: ${response.status}`);
+
+                if (!response.ok) {
+                    console.error(`[updateAppointmentStatus] HTTP error: ${response.status} ${response.statusText}`);
+                }
+
+                const result = await response.json();
+                console.log('[updateAppointmentStatus] Result:', result);
+
+                if (result.success) {
+                    console.log('[updateAppointmentStatus] Success!');
+                    alert(`Appointment ${status === 'confirmed' ? 'approved' : 'rejected'} successfully!`);
+                    window.location.reload();
+                } else {
+                    console.error('[updateAppointmentStatus] Failed:', result.message);
+                    alert(`Error: ${result.message}`);
+                }
+
+                return result;
+            } catch (error) {
+                console.error('[updateAppointmentStatus] Exception:', error);
+                alert('Network error occurred. Please try again.\\n\\nCheck the browser console for details.');
+                return { success: false, message: 'Network error' };
+            }
         }
-    }
-});
-
-// Patient Details Functionality
-let currentlyOpenPatient = null;
-
-async function togglePatientDetails(patientId, button) {
-    const detailsRow = document.getElementById(`details-${patientId}`);
-    const allDetailsRows = document.querySelectorAll('.patient-details-row');
-    const allButtons = document.querySelectorAll('.view-records-btn');
-    
-    // If clicking the same patient, close it
-    if (currentlyOpenPatient === patientId && detailsRow.style.display !== 'none') {
-        detailsRow.style.display = 'none';
-        button.classList.remove('active');
-        button.innerHTML = '<i class="fas fa-folder-open"></i> View Records';
-        currentlyOpenPatient = null;
-        return;
-    }
-    
-    // Close all other details rows
-    allDetailsRows.forEach(row => row.style.display = 'none');
-    allButtons.forEach(btn => {
-        btn.classList.remove('active');
-        btn.innerHTML = '<i class="fas fa-folder-open"></i> View Records';
     });
-    
-    // Open this details row
-    detailsRow.style.display = 'table-row';
-    button.classList.add('active');
-    button.innerHTML = '<i class="fas fa-folder-minus"></i> Hide Records';
-    currentlyOpenPatient = patientId;
-    
-    // Check if we need to load data
-    const container = detailsRow.querySelector('.patient-details-container');
-    if (container.querySelector('.loading-spinner')) {
-        try {
-            const response = await fetch(`/api/doctor/patient/${patientId}/details`);
-            if (!response.ok) {
-                throw new Error('Failed to fetch patient details');
-            }
-            
-            const data = await response.json();
-            renderPatientDetails(container, data);
-        } catch (error) {
-            console.error('Error fetching patient details:', error);
-            container.innerHTML = `
+
+    // Patient Details Functionality
+    let currentlyOpenPatient = null;
+
+    async function togglePatientDetails(patientId, button) {
+        const detailsRow = document.getElementById(`details-${patientId}`);
+        const allDetailsRows = document.querySelectorAll('.patient-details-row');
+        const allButtons = document.querySelectorAll('.view-records-btn');
+
+        // If clicking the same patient, close it
+        if (currentlyOpenPatient === patientId && detailsRow.style.display !== 'none') {
+            detailsRow.style.display = 'none';
+            button.classList.remove('active');
+            button.innerHTML = '<i class="fas fa-folder-open"></i> View Records';
+            currentlyOpenPatient = null;
+            return;
+        }
+
+        // Close all other details rows
+        allDetailsRows.forEach(row => row.style.display = 'none');
+        allButtons.forEach(btn => {
+            btn.classList.remove('active');
+            btn.innerHTML = '<i class="fas fa-folder-open"></i> View Records';
+        });
+
+        // Open this details row
+        detailsRow.style.display = 'table-row';
+        button.classList.add('active');
+        button.innerHTML = '<i class="fas fa-folder-minus"></i> Hide Records';
+        currentlyOpenPatient = patientId;
+
+        // Check if we need to load data
+        const container = detailsRow.querySelector('.patient-details-container');
+        if (container.querySelector('.loading-spinner')) {
+            try {
+                const response = await fetch(`/api/doctor/patient/${patientId}/details`);
+                if (!response.ok) {
+                    throw new Error('Failed to fetch patient details');
+                }
+
+                const data = await response.json();
+                renderPatientDetails(container, data);
+            } catch (error) {
+                console.error('Error fetching patient details:', error);
+                container.innerHTML = `
                 <div class="alert alert-danger">
                     <i class="fas fa-exclamation-triangle"></i>
                     Error loading patient details. Please try again.
                 </div>
             `;
+            }
         }
     }
-}
 
-function renderPatientDetails(container, data) {
-    const { patient, appointments, medical_records } = data;
-    
-    let html = `
+    function renderPatientDetails(container, data) {
+        const { patient, appointments, medical_records } = data;
+
+        let html = `
         <div class="patient-info-card-expanded">
             <div class="info-header-expanded">
                 <div class="patient-avatar-expanded">
@@ -1823,35 +1859,35 @@ function renderPatientDetails(container, data) {
                             <span>${patient.email}</span>
                         </div>
     `;
-    
-    if (patient.phone) {
-        html += `
+
+        if (patient.phone) {
+            html += `
                         <div class="detail-item-expanded">
                             <i class="fas fa-phone"></i>
                             <span>${patient.phone}</span>
                         </div>
         `;
-    }
-    
-    if (patient.date_of_birth) {
-        html += `
+        }
+
+        if (patient.date_of_birth) {
+            html += `
                         <div class="detail-item-expanded">
                             <i class="fas fa-birthday-cake"></i>
                             <span>DOB: ${patient.date_of_birth}</span>
                         </div>
         `;
-    }
-    
-    if (patient.address) {
-        html += `
+        }
+
+        if (patient.address) {
+            html += `
                         <div class="detail-item-expanded">
                             <i class="fas fa-map-marker-alt"></i>
                             <span>${patient.address}</span>
                         </div>
         `;
-    }
-    
-    html += `
+        }
+
+        html += `
                     </div>
                 </div>
             </div>
@@ -1886,17 +1922,17 @@ function renderPatientDetails(container, data) {
                 </span>
             </div>
     `;
-    
-    if (medical_records && medical_records.length > 0) {
-        html += `
+
+        if (medical_records && medical_records.length > 0) {
+            html += `
             <div class="medical-records-grid">
         `;
-        
-        medical_records.forEach(record => {
-            const fileIcon = getFileIcon(record.file_type);
-            const fileSize = formatFileSize(record.file_size);
-            
-            html += `
+
+            medical_records.forEach(record => {
+                const fileIcon = getFileIcon(record.file_type);
+                const fileSize = formatFileSize(record.file_size);
+
+                html += `
                 <div class="medical-record-card">
                     <div class="record-icon">
                         <i class="fas ${fileIcon}"></i>
@@ -1919,21 +1955,21 @@ function renderPatientDetails(container, data) {
                     </div>
                 </div>
             `;
-        });
-        
-        html += `
+            });
+
+            html += `
             </div>
         `;
-    } else {
-        html += `
+        } else {
+            html += `
             <div class="no-data">
                 <i class="fas fa-file-medical"></i>
                 <p>No medical records uploaded yet.</p>
             </div>
         `;
-    }
-    
-    html += `
+        }
+
+        html += `
         </div>
         
         <div class="appointments-history-section">
@@ -1944,9 +1980,9 @@ function renderPatientDetails(container, data) {
                 </span>
             </div>
     `;
-    
-    if (appointments.length > 0) {
-        html += `
+
+        if (appointments.length > 0) {
+            html += `
             <div class="appointments-table">
                 <table>
                     <thead>
@@ -1960,14 +1996,14 @@ function renderPatientDetails(container, data) {
                     </thead>
                     <tbody>
         `;
-        
-        appointments.forEach(appt => {
-            const statusClass = appt.status === 'confirmed' ? 'confirmed' : appt.status;
-            const statusText = appt.status === 'confirmed' ? 'Approved' : appt.status.charAt(0).toUpperCase() + appt.status.slice(1);
-            const symptomsText = appt.symptoms ? (appt.symptoms.length > 100 ? appt.symptoms.substring(0, 100) + '...' : appt.symptoms) : '<em class="text-muted">None</em>';
-            const notesText = appt.notes ? (appt.notes.length > 100 ? appt.notes.substring(0, 100) + '...' : appt.notes) : '<em class="text-muted">No notes</em>';
-            
-            html += `
+
+            appointments.forEach(appt => {
+                const statusClass = ['approved', 'confirmed'].includes(appt.status) ? 'approved' : appt.status;
+                const statusText = ['approved', 'confirmed'].includes(appt.status) ? 'Approved' : appt.status.charAt(0).toUpperCase() + appt.status.slice(1);
+                const symptomsText = appt.symptoms ? (appt.symptoms.length > 100 ? appt.symptoms.substring(0, 100) + '...' : appt.symptoms) : '<em class="text-muted">None</em>';
+                const notesText = appt.notes ? (appt.notes.length > 100 ? appt.notes.substring(0, 100) + '...' : appt.notes) : '<em class="text-muted">No notes</em>';
+
+                html += `
                         <tr>
                             <td>#${appt.id.substring(0, 8)}</td>
                             <td>
@@ -1981,55 +2017,103 @@ function renderPatientDetails(container, data) {
                             <td><div class="notes-preview">${notesText}</div></td>
                         </tr>
             `;
-        });
-        
-        html += `
+            });
+
+            html += `
                     </tbody>
                 </table>
             </div>
         `;
-    } else {
-        html += `
+        } else {
+            html += `
             <div class="no-data">
                 <i class="fas fa-calendar-times"></i>
                 <p>No appointment history found.</p>
             </div>
         `;
-    }
-    
-    html += `
+        }
+
+        html += `
         </div>
     `;
-    
-    container.innerHTML = html;
-}
 
-function getFileIcon(fileType) {
-    const iconMap = {
-        'pdf': 'fa-file-pdf',
-        'image': 'fa-file-image',
-        'doc': 'fa-file-word',
-        'docx': 'fa-file-word',
-        'xls': 'fa-file-excel',
-        'xlsx': 'fa-file-excel',
-        'txt': 'fa-file-alt',
-        'zip': 'fa-file-archive',
-        'unknown': 'fa-file'
-    };
-    return iconMap[fileType] || 'fa-file';
-}
+        container.innerHTML = html;
+    }
 
-function formatFileSize(bytes) {
-    if (!bytes || bytes === 0) return 'N/A';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
-}
+    function getFileIcon(fileType) {
+        const iconMap = {
+            'pdf': 'fa-file-pdf',
+            'image': 'fa-file-image',
+            'doc': 'fa-file-word',
+            'docx': 'fa-file-word',
+            'xls': 'fa-file-excel',
+            'xlsx': 'fa-file-excel',
+            'txt': 'fa-file-alt',
+            'zip': 'fa-file-archive',
+            'unknown': 'fa-file'
+        };
+        return iconMap[fileType] || 'fa-file';
+    }
 
-function viewRecord(recordId) {
-    window.open(`/doctor/download-record/${recordId}`, '_blank');
-}
+    function formatFileSize(bytes) {
+        if (!bytes || bytes === 0) return 'N/A';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
+    }
+
+    function viewRecord(recordId) {
+        window.open(`/doctor/download-record/${recordId}`, '_blank');
+    }
+
+    // -----------------------------------------------------------------------
+    // APPOINTMENT LIFECYCLE ACTIONS — Doctor
+    // Sends POST to /doctor/update-appointment/<id> with the new status.
+    // -----------------------------------------------------------------------
+    function doctorUpdateAppointment(appointmentId, newStatus, patientName) {
+        const labels = {
+            'approved': 'approve',
+            'rejected': 'reject',
+            'completed': 'mark as completed'
+        };
+        const label = labels[newStatus] || newStatus;
+
+        if (!confirm(`Are you sure you want to ${label} the appointment for ${patientName}?`)) {
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('status', newStatus);
+
+        fetch(`/doctor/update-appointment/${appointmentId}`, {
+            method: 'POST',
+            body: formData
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Show a brief styled toast then reload
+                    const toast = document.createElement('div');
+                    toast.style.cssText = [
+                        'position:fixed', 'top:20px', 'right:20px', 'z-index:9999',
+                        'background:#198754', 'color:#fff', 'padding:12px 22px',
+                        'border-radius:8px', 'font-weight:600', 'box-shadow:0 4px 12px rgba(0,0,0,.2)'
+                    ].join(';');
+                    toast.textContent = data.message || 'Status updated!';
+                    document.body.appendChild(toast);
+                    setTimeout(() => { toast.remove(); location.reload(); }, 1200);
+                } else {
+                    alert('⚠ ' + (data.message || 'Could not update appointment.'));
+                }
+            })
+            .catch(() => alert('Network error. Please try again.'));
+    }
+
+    // Kept for backward compatibility (old completeAppointment call in dashboard preview)
+    function completeAppointment(appointmentId, patientName) {
+        doctorUpdateAppointment(appointmentId, 'completed', patientName);
+    }
 
 </script>
 {% endblock %}

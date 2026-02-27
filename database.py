@@ -72,6 +72,30 @@ class TimeSlot(db.Model):
     def __repr__(self):
         return f'<TimeSlot {self.day_of_week} {self.start_time}-{self.end_time}>'
 
+
+class DoctorAvailability(db.Model):
+    """Structured availability schedule used by the slot engine.
+    One row per (doctor, day_of_week). Admin creates/edits these rows.
+    """
+    __tablename__ = 'doctor_availability'
+    id = db.Column(db.Integer, primary_key=True)
+    doctor_id = db.Column(db.Integer, db.ForeignKey('doctors.id'), nullable=False)
+    # Full weekday name, e.g. "Monday", "Tuesday" …
+    day_of_week = db.Column(db.String(20), nullable=False)
+    # Stored as "HH:MM" 24-hour strings for sqlite compatibility
+    start_time = db.Column(db.String(5), nullable=False, default='09:00')
+    end_time = db.Column(db.String(5), nullable=False, default='17:00')
+    # Minutes per slot (15 / 30 / 45 / 60)
+    slot_duration = db.Column(db.Integer, nullable=False, default=30)
+    is_active = db.Column(db.Boolean, default=True)
+
+    doctor = db.relationship('Doctor', backref=db.backref('availability_schedule', lazy=True))
+
+    def __repr__(self):
+        return f'<DoctorAvailability doc={self.doctor_id} {self.day_of_week} {self.start_time}-{self.end_time}>'
+
+
+
 class MedicalRecord(db.Model):
     __tablename__ = 'medical_records'
     id = db.Column(db.Integer, primary_key=True)

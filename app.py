@@ -2,12 +2,12 @@ from flask import Flask, render_template, request, redirect, url_for, flash, jso
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 import json
 import os
 
 from config import Config
-from database import db, User, Doctor, Appointment, TimeSlot, MedicalRecord, Feedback
+from database import db, User, Doctor, Appointment, TimeSlot, MedicalRecord, Feedback, DoctorAvailability
 
 # ---------------------------------------------------------------------------
 # APPOINTMENT STATUS LIFECYCLE
@@ -58,6 +58,136 @@ def validate_transition(appointment, new_status, role):
             )
 
     return True, ''
+
+
+# ---------------------------------------------------------------------------
+# SLOT GENERATION HELPER
+# ---------------------------------------------------------------------------
+
+def _parse_hhmm(time_str):
+    """Parse 'HH:MM' string → (hour:int, minute:int). Returns (9, 0) on error."""
+    try:
+        h, m = time_str.strip().split(':')
+        return int(h), int(m)
+    except Exception:
+        return 9, 0
+
+
+def _fmt_slot(h, m):
+    """Format (hour, minute) → '9:00 AM' display string and '09:00' value string."""
+    period = 'AM' if h < 12 else 'PM'
+    display_h = h % 12 or 12
+    return f'{display_h}:{m:02d} {period}', f'{h:02d}:{m:02d}'
+
+
+def generate_available_slots(doctor_id, selected_date):
+    """
+    Generate available appointment slots for a doctor on a given date.
+
+    Algorithm:
+    1. Look for a DoctorAvailability row matching doctor + weekday.
+    2. Fall back to Doctor.available_time string (e.g. '09:00-17:00') if not found.
+    3. Generate time slots every `slot_duration` minutes between start and end.
+    4. Remove slots already booked (status in pending/approved/confirmed).
+    5. If selected_date == today, remove slots whose time has already passed.
+
+    Returns:
+        list of dicts: [{'value': '09:00', 'label': '9:00 AM'}, ...]
+        Empty list if doctor not available that day.
+    """
+    WEEKDAY_NAMES = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+    weekday_name = WEEKDAY_NAMES[selected_date.weekday()]
+
+    # --- 1. Fetch DB availability row ---
+    avail = DoctorAvailability.query.filter_by(
+        doctor_id=doctor_id,
+        day_of_week=weekday_name,
+        is_active=True
+    ).first()
+
+    if avail:
+        start_h, start_m = _parse_hhmm(avail.start_time)
+        end_h, end_m = _parse_hhmm(avail.end_time)
+        duration = avail.slot_duration or 30
+    else:
+        # --- 2. Fallback: parse Doctor.available_time string ---
+        doctor = Doctor.query.get(doctor_id)
+        if not doctor:
+            return []
+
+        # Check available_days (comma-separated partial names, e.g. "Mon,Tue,Wed")
+        if doctor.available_days:
+            short = weekday_name[:3]  # "Mon", "Tue" …
+            days_str = doctor.available_days.lower()
+            # If available_days is set and this day is NOT in it, return empty
+            if short.lower() not in days_str and weekday_name.lower() not in days_str:
+                return []
+
+        # Parse available_time string like '09:00-17:00' or '9:00 AM - 5:00 PM'
+        start_h, start_m = 9, 0
+        end_h, end_m = 17, 0
+        duration = 30
+
+        if doctor.available_time and '-' in doctor.available_time:
+            parts = [p.strip() for p in doctor.available_time.split('-', 1)]
+            if len(parts) == 2:
+                try:
+                    # Handle both '09:00' and '9:00 AM' formats
+                    def _parse_flexible(s):
+                        s = s.strip()
+                        is_pm = 'pm' in s.lower()
+                        s = s.upper().replace('AM', '').replace('PM', '').strip()
+                        h, m = _parse_hhmm(s)
+                        if is_pm and h != 12:
+                            h += 12
+                        return h, m
+                    start_h, start_m = _parse_flexible(parts[0])
+                    end_h, end_m = _parse_flexible(parts[1])
+                except Exception:
+                    pass
+
+    # --- 3. Generate slots ---
+    slots = []
+    cur_h, cur_m = start_h, start_m
+    while (cur_h, cur_m) < (end_h, end_m):
+        label, value = _fmt_slot(cur_h, cur_m)
+        slots.append({'value': value, 'label': label})
+        total_min = cur_h * 60 + cur_m + duration
+        cur_h, cur_m = divmod(total_min, 60)
+
+    if not slots:
+        return []
+
+    # --- 4. Remove already-booked slots ---
+    booked = Appointment.query.filter(
+        Appointment.doctor_id == doctor_id,
+        Appointment.appointment_date == selected_date,
+        Appointment.status.in_(['pending', 'approved', 'confirmed'])
+    ).all()
+    booked_values = set()
+    for appt in booked:
+        t = appt.appointment_time
+        if t:
+            # Normalise stored time to HH:MM 24-hour
+            if 'AM' in t.upper() or 'PM' in t.upper():
+                try:
+                    dt = datetime.strptime(t.strip(), '%I:%M %p')
+                    booked_values.add(dt.strftime('%H:%M'))
+                except Exception:
+                    booked_values.add(t)
+            else:
+                booked_values.add(t.strip())
+
+    slots = [s for s in slots if s['value'] not in booked_values]
+
+    # --- 5. Remove past slots if today ---
+    if selected_date == date.today():
+        now = datetime.utcnow()  # use local time if needed; UTC is safe here
+        now_h, now_m = now.hour, now.minute
+        slots = [s for s in slots
+                 if (_parse_hhmm(s['value'])[0], _parse_hhmm(s['value'])[1]) > (now_h, now_m)]
+
+    return slots
 
 
 app = Flask(__name__)
@@ -257,57 +387,69 @@ def book_appointment(doctor_id):
     doctor = Doctor.query.get_or_404(doctor_id)
     
     if request.method == 'POST':
-        appointment_date = request.form.get('appointment_date')
-        appointment_time = request.form.get('appointment_time')
-        symptoms = request.form.get('symptoms')
+        appointment_date = request.form.get('appointment_date', '').strip()
+        appointment_time = request.form.get('appointment_time', '').strip()
+        symptoms = request.form.get('symptoms', '').strip()
 
-        # Check if slot is already taken (approved OR legacy confirmed)
+        # --- Validate date ---
         try:
             appt_date_obj = datetime.strptime(appointment_date, '%Y-%m-%d').date()
         except (ValueError, TypeError):
-            flash('Invalid date format.', 'danger')
+            flash('Invalid date format. Please select a valid date.', 'danger')
             return redirect(url_for('book_appointment', doctor_id=doctor_id))
 
+        if appt_date_obj < date.today():
+            flash('Cannot book an appointment in the past.', 'danger')
+            return redirect(url_for('book_appointment', doctor_id=doctor_id))
+
+        # --- Validate time via slot engine ---
+        available = generate_available_slots(doctor_id, appt_date_obj)
+        valid_values = {s['value'] for s in available}
+        # Also accept legacy 12-hour format stored in DB: normalise submitted time
+        submitted_value = appointment_time
+        if not submitted_value:
+            flash('Please select a time slot.', 'danger')
+            return redirect(url_for('book_appointment', doctor_id=doctor_id))
+
+        if available and submitted_value not in valid_values:
+            flash('Selected time slot is not available. Please choose from the list.', 'danger')
+            return redirect(url_for('book_appointment', doctor_id=doctor_id))
+
+        # --- Double-booking prevention (pending + approved + confirmed) ---
         existing_appointment = Appointment.query.filter(
             Appointment.doctor_id == doctor_id,
             Appointment.appointment_date == appt_date_obj,
-            Appointment.appointment_time == appointment_time,
-            Appointment.status.in_(['approved', 'confirmed'])
+            Appointment.appointment_time == submitted_value,
+            Appointment.status.in_(['pending', 'approved', 'confirmed'])
         ).first()
 
         if existing_appointment:
             flash('This time slot is already booked. Please choose another.', 'danger')
             return redirect(url_for('book_appointment', doctor_id=doctor_id))
 
-        # Create appointment — status always starts as 'pending'
+        # --- Create appointment (status always starts as 'pending') ---
         try:
             appointment = Appointment(
                 patient_id=current_user.id,
                 doctor_id=doctor_id,
                 appointment_date=appt_date_obj,
-                appointment_time=appointment_time,
+                appointment_time=submitted_value,
                 symptoms=symptoms,
                 status='pending'
             )
             db.session.add(appointment)
             db.session.commit()
             flash('Appointment booked successfully! Awaiting doctor approval.', 'success')
+            return redirect(url_for('user_dashboard'))
         except Exception as e:
             db.session.rollback()
             flash('Failed to book appointment. Please try again.', 'danger')
-        return redirect(url_for('user_dashboard'))
-    
-    # Generate available time slots (simplified version)
-    available_slots = [
-        '9:00 AM', '9:30 AM', '10:00 AM', '10:30 AM',
-        '11:00 AM', '11:30 AM', '2:00 PM', '2:30 PM',
-        '3:00 PM', '3:30 PM', '4:00 PM'
-    ]
-    
-    return render_template('appointments.html', 
-                         doctor=doctor, 
-                         available_slots=available_slots,
-                         min_date=date.today())
+            return redirect(url_for('book_appointment', doctor_id=doctor_id))
+
+    # --- GET: pass today's slots to pre-populate if user picks today ---
+    return render_template('appointments.html',
+                           doctor=doctor,
+                           min_date=date.today())
 
 @app.route('/user/dashboard')
 @login_required
@@ -608,41 +750,174 @@ def delete_doctor(doctor_id):
 
 @app.route('/api/available-slots/<int:doctor_id>')
 def available_slots(doctor_id):
-    date_str = request.args.get('date')
-    
+    """Return available time slots for a doctor on a given date.
+    Used by the booking form AJAX call when the user picks a date.
+    """
+    date_str = request.args.get('date', '').strip()
     if not date_str:
         return jsonify({'error': 'Date required'}), 400
-    
+
     try:
         selected_date = datetime.strptime(date_str, '%Y-%m-%d').date()
-        
-        # Get doctor's working days and hours
-        doctor = Doctor.query.get_or_404(doctor_id)
-        
-        # Get already booked slots (approved or legacy confirmed)
-        booked_slots = Appointment.query.filter(
-            Appointment.doctor_id == doctor_id,
-            Appointment.appointment_date == selected_date,
-            Appointment.status.in_(['approved', 'confirmed'])
-        ).all()
-
-        booked_times = [appt.appointment_time for appt in booked_slots]
-
-        # Generate available slots based on doctor's schedule
-        all_slots = [
-            '9:00 AM', '9:30 AM', '10:00 AM', '10:30 AM',
-            '11:00 AM', '11:30 AM', '2:00 PM', '2:30 PM',
-            '3:00 PM', '3:30 PM', '4:00 PM'
-        ]
-
-        # Filter out already booked slots
-        available_slots = [slot for slot in all_slots if slot not in booked_times]
-
-        return jsonify({'available_slots': available_slots})
     except ValueError:
-        return jsonify({'error': 'Invalid date format'}), 400
+        return jsonify({'error': 'Invalid date format. Use YYYY-MM-DD.'}), 400
+
+    if selected_date < date.today():
+        return jsonify({'slots': [], 'message': 'Cannot book past dates.'})
+
+    # Check doctor exists
+    doctor = Doctor.query.get(doctor_id)
+    if not doctor:
+        return jsonify({'error': 'Doctor not found'}), 404
+
+    slots = generate_available_slots(doctor_id, selected_date)
+    return jsonify({
+        'slots': slots,                          # list of {value, label}
+        'available': len(slots) > 0,
+        'doctor_id': doctor_id,
+        'date': date_str
+    })
+
+# ---------------------------------------------------------------------------
+# ADMIN — Doctor Availability Schedule CRUD
+# ---------------------------------------------------------------------------
+
+@app.route('/admin/doctor-availability/<int:doctor_id>', methods=['GET'])
+@login_required
+def admin_get_availability(doctor_id):
+    """Return the current availability schedule for a doctor as JSON."""
+    if current_user.user_type != 'admin':
+        return jsonify({'success': False, 'message': 'Access denied'}), 403
+
+    rows = DoctorAvailability.query.filter_by(doctor_id=doctor_id).all()
+    schedule = [
+        {
+            'id': r.id,
+            'day_of_week': r.day_of_week,
+            'start_time': r.start_time,
+            'end_time': r.end_time,
+            'slot_duration': r.slot_duration,
+            'is_active': r.is_active
+        }
+        for r in rows
+    ]
+    return jsonify({'success': True, 'schedule': schedule, 'doctor_id': doctor_id})
+
+
+@app.route('/admin/doctor-availability', methods=['POST'])
+@login_required
+def admin_set_availability():
+    """Create or update a single day's availability for a doctor.
+
+    POST body params:
+        doctor_id, day_of_week, start_time (HH:MM 24h),
+        end_time (HH:MM 24h), slot_duration (15/30/45/60), is_active (bool string)
+    """
+    if current_user.user_type != 'admin':
+        return jsonify({'success': False, 'message': 'Access denied'}), 403
+
+    VALID_DAYS = {'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'}
+    VALID_DURATIONS = {15, 30, 45, 60}
+
+    try:
+        doctor_id     = int(request.form.get('doctor_id', 0))
+        day           = request.form.get('day_of_week', '').strip().title()
+        start_time    = request.form.get('start_time', '').strip()
+        end_time      = request.form.get('end_time', '').strip()
+        slot_duration = int(request.form.get('slot_duration', 30))
+        is_active     = request.form.get('is_active', 'true').lower() != 'false'
+
+        if not doctor_id or not Doctor.query.get(doctor_id):
+            return jsonify({'success': False, 'message': 'Invalid doctor_id'}), 400
+        if day not in VALID_DAYS:
+            return jsonify({'success': False, 'message': f'Invalid day. Use full name e.g. Monday.'}), 400
+        if slot_duration not in VALID_DURATIONS:
+            return jsonify({'success': False, 'message': 'slot_duration must be 15, 30, 45, or 60'}), 400
+
+        for label, t in [('start_time', start_time), ('end_time', end_time)]:
+            try:
+                datetime.strptime(t, '%H:%M')
+            except ValueError:
+                return jsonify({'success': False, 'message': f'{label} must be HH:MM (24-hour)'}), 400
+
+        sh, sm = _parse_hhmm(start_time)
+        eh, em = _parse_hhmm(end_time)
+        if (sh, sm) >= (eh, em):
+            return jsonify({'success': False, 'message': 'start_time must be before end_time'}), 400
+
+        existing = DoctorAvailability.query.filter_by(
+            doctor_id=doctor_id, day_of_week=day
+        ).first()
+        if existing:
+            existing.start_time    = start_time
+            existing.end_time      = end_time
+            existing.slot_duration = slot_duration
+            existing.is_active     = is_active
+        else:
+            db.session.add(DoctorAvailability(
+                doctor_id=doctor_id, day_of_week=day,
+                start_time=start_time, end_time=end_time,
+                slot_duration=slot_duration, is_active=is_active
+            ))
+
+        db.session.commit()
+        return jsonify({'success': True, 'message': f'Availability for {day} saved.'})
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': f'Error: {str(e)}'}), 500
+
+
+@app.route('/admin/doctor-availability/<int:doctor_id>/<int:avail_id>', methods=['DELETE'])
+@login_required
+def admin_delete_availability(doctor_id, avail_id):
+    """Delete a single DoctorAvailability row."""
+    if current_user.user_type != 'admin':
+        return jsonify({'success': False, 'message': 'Access denied'}), 403
+    try:
+        row = DoctorAvailability.query.filter_by(
+            id=avail_id, doctor_id=doctor_id
+        ).first_or_404()
+        db.session.delete(row)
+        db.session.commit()
+        return jsonify({'success': True, 'message': 'Availability row deleted.'})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+
+# ---------------------------------------------------------------------------
+# DOCTOR — View Own Availability Schedule
+# ---------------------------------------------------------------------------
+
+@app.route('/doctor/my-availability', methods=['GET'])
+@login_required
+def doctor_my_availability():
+    """Return this doctor's active schedule as JSON (for display on dashboard)."""
+    if current_user.user_type != 'doctor':
+        return jsonify({'success': False, 'message': 'Access denied'}), 403
+
+    doctor = Doctor.query.get(current_user.doctor_id)
+    if not doctor:
+        return jsonify({'success': False, 'message': 'Doctor profile not found'}), 404
+
+    rows = DoctorAvailability.query.filter_by(
+        doctor_id=doctor.id, is_active=True
+    ).all()
+    schedule = [
+        {
+            'day_of_week':   r.day_of_week,
+            'start_time':    r.start_time,
+            'end_time':      r.end_time,
+            'slot_duration': r.slot_duration
+        }
+        for r in rows
+    ]
+    return jsonify({'success': True, 'schedule': schedule, 'doctor_id': doctor.id})
+
 
 @app.route('/user/upload-document', methods=['POST'])
+
 @login_required
 def upload_document():
     if current_user.user_type != 'patient':

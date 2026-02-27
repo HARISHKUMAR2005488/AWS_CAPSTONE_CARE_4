@@ -24,7 +24,7 @@
                 <span class="step-label">Confirm & Book</span>
             </div>
         </div>
-        
+
         <div class="doctor-summary">
             <div class="doctor-summary-info">
                 <h3>Doctor Details</h3>
@@ -46,9 +46,10 @@
                 </div>
             </div>
         </div>
-        
-        <form method="POST" action="{{ url_for('book_appointment', doctor_id=doctor.id) }}" class="booking-form" id="bookingForm" novalidate>
-            
+
+        <form method="POST" action="{{ url_for('book_appointment', doctor_id=doctor.id) }}" class="booking-form"
+            id="bookingForm" novalidate>
+
             <div class="form-section">
                 <h3 class="form-section-title">
                     <i class="fas fa-calendar-check"></i> Select Date & Time
@@ -60,26 +61,24 @@
                             Appointment Date <span class="form-required">*</span>
                         </label>
                         <input type="date" id="appointment_date" name="appointment_date" class="form-input" required
-                               min="{{ min_date }}"
-                               aria-label="Appointment Date"
-                               aria-required="true">
+                            min="{{ min_date }}" aria-label="Appointment Date" aria-required="true">
                         <span class="form-feedback"></span>
                     </div>
-                    
-                    <div class="form-group">
+
+                    <div class="form-group" id="time-slot-group">
                         <label for="appointment_time">
                             <i class="fas fa-clock"></i>
                             Preferred Time <span class="form-required">*</span>
                         </label>
-                        <input type="time" id="appointment_time" name="appointment_time" class="form-input" required
-                               min="09:00" max="17:00" step="1800"
-                               aria-label="Preferred Time"
-                               aria-required="true">
-                        <span class="form-feedback"></span>
-                        <span class="form-help">Select a time between 9:00 AM and 5:00 PM</span>
+                        <select id="appointment_time" name="appointment_time" class="form-input" required
+                            aria-label="Preferred Time" aria-required="true" disabled>
+                            <option value="">— Select date first —</option>
+                        </select>
+                        <span class="form-feedback" id="time-feedback"></span>
+                        <span class="form-help" id="time-help">Choose a date to see available time slots</span>
                     </div>
                 </div>
-                
+
                 <div class="availability-info">
                     <div class="info-item">
                         <i class="fas fa-info-circle"></i>
@@ -91,7 +90,7 @@
                     </div>
                 </div>
             </div>
-            
+
             <div class="form-section">
                 <h3 class="form-section-title">
                     <i class="fas fa-notes-medical"></i> Medical Information
@@ -101,16 +100,15 @@
                         <i class="fas fa-stethoscope"></i>
                         Symptoms / Reason for Visit <span class="form-required">*</span>
                     </label>
-                    <textarea id="symptoms" name="symptoms" class="form-input form-textarea" rows="4" 
-                              placeholder="Please describe your symptoms or reason for the appointment..."
-                              aria-label="Symptoms or Reason for Visit"
-                              aria-required="true" required></textarea>
+                    <textarea id="symptoms" name="symptoms" class="form-input form-textarea" rows="4"
+                        placeholder="Please describe your symptoms or reason for the appointment..."
+                        aria-label="Symptoms or Reason for Visit" aria-required="true" required></textarea>
                     <span class="form-help">Be as detailed as possible to help the doctor prepare for your visit</span>
                     <span class="form-feedback"></span>
                     <span class="form-char-count"><span id="charCount">0</span>/500 characters</span>
                 </div>
             </div>
-            
+
             <div class="form-section">
                 <h3 class="form-section-title">
                     <i class="fas fa-user-check"></i> Patient Information
@@ -142,7 +140,7 @@
                 </div>
                 <p class="info-note">
                     <i class="fas fa-exclamation-circle"></i>
-                    Please ensure your contact information is up to date. 
+                    Please ensure your contact information is up to date.
                     <a href="#" class="form-link">Update profile</a>
                 </p>
                 <!-- Hidden fields for form submission with auto-filled data -->
@@ -152,7 +150,7 @@
                 <input type="hidden" name="patient_age" value="{{ session.get('age', '') }}">
                 <input type="hidden" name="patient_gender" value="{{ session.get('gender', '') }}">
             </div>
-            
+
             <div class="form-section">
                 <h3 class="form-section-title">
                     <i class="fas fa-credit-card"></i> Payment Information
@@ -163,15 +161,14 @@
                         <span class="fee-amount">${{ doctor.consultation_fee }}</span>
                     </div>
                 </div>
-                
+
                 <div class="form-group">
                     <label for="payment_method">
                         <i class="fas fa-wallet"></i>
                         Payment Method <span class="form-required">*</span>
                     </label>
                     <select id="payment_method" name="payment_method" class="form-input" required
-                            aria-label="Payment Method"
-                            aria-required="true">
+                        aria-label="Payment Method" aria-required="true">
                         <option value="">Select payment method</option>
                         <option value="credit_card">Credit Card</option>
                         <option value="debit_card">Debit Card</option>
@@ -179,7 +176,7 @@
                     </select>
                     <span class="form-feedback"></span>
                 </div>
-                
+
                 <div id="cardPaymentFields" style="display: none;">
                     <div class="form-row">
                         <div class="form-group">
@@ -187,9 +184,8 @@
                                 <i class="fas fa-credit-card"></i>
                                 Card Number <span class="form-required">*</span>
                             </label>
-                            <input type="text" id="card_number" name="card_number" class="form-input" 
-                                   placeholder="1234 5678 9012 3456" maxlength="19"
-                                   aria-label="Card Number">
+                            <input type="text" id="card_number" name="card_number" class="form-input"
+                                placeholder="1234 5678 9012 3456" maxlength="19" aria-label="Card Number">
                             <span class="form-feedback"></span>
                         </div>
                         <div class="form-group">
@@ -197,22 +193,20 @@
                                 <i class="fas fa-user"></i>
                                 Card Holder Name <span class="form-required">*</span>
                             </label>
-                            <input type="text" id="card_holder" name="card_holder" class="form-input" 
-                                   placeholder="John Doe"
-                                   aria-label="Card Holder Name">
+                            <input type="text" id="card_holder" name="card_holder" class="form-input"
+                                placeholder="John Doe" aria-label="Card Holder Name">
                             <span class="form-feedback"></span>
                         </div>
                     </div>
-                    
+
                     <div class="form-row">
                         <div class="form-group">
                             <label for="expiry_date">
                                 <i class="fas fa-calendar"></i>
                                 Expiry Date <span class="form-required">*</span>
                             </label>
-                            <input type="text" id="expiry_date" name="expiry_date" class="form-input" 
-                                   placeholder="MM/YY" maxlength="5"
-                                   aria-label="Expiry Date">
+                            <input type="text" id="expiry_date" name="expiry_date" class="form-input"
+                                placeholder="MM/YY" maxlength="5" aria-label="Expiry Date">
                             <span class="form-feedback"></span>
                         </div>
                         <div class="form-group">
@@ -220,33 +214,31 @@
                                 <i class="fas fa-lock"></i>
                                 CVV <span class="form-required">*</span>
                             </label>
-                            <input type="password" id="cvv" name="cvv" class="form-input" 
-                                   placeholder="123" maxlength="3"
-                                   aria-label="CVV">
+                            <input type="password" id="cvv" name="cvv" class="form-input" placeholder="123"
+                                maxlength="3" aria-label="CVV">
                             <span class="form-feedback"></span>
                         </div>
                     </div>
                 </div>
-                
+
                 <div id="upiPaymentFields" style="display: none;">
                     <div class="form-group">
                         <label for="upi_id">
                             <i class="fas fa-mobile-alt"></i>
                             UPI ID <span class="form-required">*</span>
                         </label>
-                        <input type="text" id="upi_id" name="upi_id" class="form-input" 
-                               placeholder="yourname@upi"
-                               aria-label="UPI ID">
+                        <input type="text" id="upi_id" name="upi_id" class="form-input" placeholder="yourname@upi"
+                            aria-label="UPI ID">
                         <span class="form-feedback"></span>
                     </div>
                 </div>
-                
+
                 <div class="payment-note">
                     <i class="fas fa-shield-alt"></i>
                     Your payment information is secure and encrypted
                 </div>
             </div>
-            
+
             <div class="form-section">
                 <h3 class="form-section-title">
                     <i class="fas fa-file-invoice-dollar"></i> Transaction Fee
@@ -265,19 +257,19 @@
                         <span class="fee-value">${{ "%.2f"|format(doctor.consultation_fee|float + 2.0) }}</span>
                     </div>
                 </div>
-                
+
                 <div class="form-checkbox-group">
                     <input type="checkbox" id="confirm_terms" name="confirm_terms" required>
                     <label for="confirm_terms">
-                        I confirm that I have read and agree to the 
-                        <a href="#" class="form-link">Appointment Terms & Conditions</a> and 
+                        I confirm that I have read and agree to the
+                        <a href="#" class="form-link">Appointment Terms & Conditions</a> and
                         <a href="#" class="form-link">Payment Policy</a>
                         <span class="form-required">*</span>
                     </label>
                     <span class="form-feedback"></span>
                 </div>
             </div>
-            
+
             <div class="booking-actions">
                 <a href="{{ url_for('doctors') }}" class="btn btn-secondary btn-lg">
                     <i class="fas fa-arrow-left"></i> Cancel
@@ -293,416 +285,166 @@
 
 {% block scripts %}
 <script>
-// Helper function to generate time slots from start and end time
-function generateTimeSlots(startTime, endTime) {
-    const slots = [];
-    if (!startTime || !endTime) return slots;
-    
-    // Parse times (format: "HH:MM")
-    const [startHour, startMin] = startTime.split(':').map(Number);
-    const [endHour, endMin] = endTime.split(':').map(Number);
-    
-    let currentHour = startHour;
-    let currentMin = startMin;
-    
-    while (currentHour < endHour || (currentHour === endHour && currentMin < endMin)) {
-        // Format as HH:MM for 24-hour format
-        const timeStr = `${String(currentHour).padStart(2, '0')}:${String(currentMin).padStart(2, '0')}`;
-        slots.push(timeStr);
-        
-        // Add 30 minutes
-        currentMin += 30;
-        if (currentMin >= 60) {
-            currentMin -= 60;
-            currentHour += 1;
-        }
-    }
-    
-    return slots;
-}
-
-// Helper function to check if date is available based on doctor's schedule
-function isDateAvailable(date, availableDays) {
-    if (!availableDays || availableDays.length === 0) return true;
-    
-    const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
-    const dayOfWeek = dayNames[date.getDay()];
-    
-    return availableDays.includes(dayOfWeek);
-}
-
-document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function () {
+        const doctorId = {{ doctor.id }
+    };
     const dateInput = document.getElementById('appointment_date');
     const timeSelect = document.getElementById('appointment_time');
+    const timeFeedback = document.getElementById('time-feedback');
+    const timeHelp = document.getElementById('time-help');
     const symptomsInput = document.getElementById('symptoms');
     const charCountSpan = document.getElementById('charCount');
     const paymentMethodSelect = document.getElementById('payment_method');
     const cardPaymentFields = document.getElementById('cardPaymentFields');
     const upiPaymentFields = document.getElementById('upiPaymentFields');
-    
-    // Payment method change handler
-    paymentMethodSelect.addEventListener('change', function() {
-        const method = this.value;
-        
-        // Reset all payment fields
+
+    // -----------------------------------------------------------------------
+    // DATE → fetch available slots via /api/available-slots/<id>?date=YYYY-MM-DD
+    // -----------------------------------------------------------------------
+    dateInput.addEventListener('change', function () {
+        const dateVal = this.value;
+        if (!dateVal) {
+            resetTimeSelect('— Select date first —', true);
+            return;
+        }
+
+        // Client-side past-date guard
+        const chosen = new Date(dateVal + 'T00:00:00');
+        const today = new Date(); today.setHours(0, 0, 0, 0);
+        if (chosen < today) {
+            resetTimeSelect('Cannot book past dates', true);
+            timeFeedback.textContent = 'Please choose today or a future date.';
+            return;
+        }
+
+        resetTimeSelect('Loading slots…', true);
+        timeHelp.textContent = 'Fetching available slots…';
+        timeFeedback.textContent = '';
+
+        fetch(`/api/available-slots/${doctorId}?date=${dateVal}`)
+            .then(r => r.json())
+            .then(data => {
+                timeSelect.innerHTML = '';
+
+                if (!data.slots || data.slots.length === 0) {
+                    const opt = document.createElement('option');
+                    opt.value = '';
+                    opt.textContent = 'No slots available for this day';
+                    timeSelect.appendChild(opt);
+                    timeSelect.disabled = true;
+                    timeHelp.textContent = 'Doctor is not available on this date or all slots are booked.';
+                } else {
+                    const placeholder = document.createElement('option');
+                    placeholder.value = '';
+                    placeholder.textContent = '— Select a time slot —';
+                    timeSelect.appendChild(placeholder);
+
+                    data.slots.forEach(slot => {
+                        const opt = document.createElement('option');
+                        opt.value = slot.value;        // HH:MM 24-hour
+                        opt.textContent = slot.label;  // '9:00 AM'
+                        timeSelect.appendChild(opt);
+                    });
+
+                    timeSelect.disabled = false;
+                    timeHelp.textContent = `${data.slots.length} slot(s) available — select one`;
+                }
+            })
+            .catch(() => {
+                resetTimeSelect('Error loading slots — please retry', true);
+                timeHelp.textContent = 'Network error. Please try again.';
+            });
+    });
+
+    function resetTimeSelect(placeholder, disable) {
+        timeSelect.innerHTML = `<option value="">${placeholder}</option>`;
+        timeSelect.disabled = !!disable;
+    }
+
+    // -----------------------------------------------------------------------
+    // Payment method toggle
+    // -----------------------------------------------------------------------
+    paymentMethodSelect.addEventListener('change', function () {
         cardPaymentFields.style.display = 'none';
         upiPaymentFields.style.display = 'none';
-        
-        // Clear required attributes
-        document.querySelectorAll('#cardPaymentFields input, #upiPaymentFields input').forEach(input => {
-            input.removeAttribute('required');
-        });
-        
-        // Show relevant fields and set required
-        if (method === 'credit_card' || method === 'debit_card') {
+        document.querySelectorAll('#cardPaymentFields input, #upiPaymentFields input')
+            .forEach(i => i.removeAttribute('required'));
+
+        if (this.value === 'credit_card' || this.value === 'debit_card') {
             cardPaymentFields.style.display = 'block';
-            document.getElementById('card_number').setAttribute('required', 'required');
-            document.getElementById('card_holder').setAttribute('required', 'required');
-            document.getElementById('expiry_date').setAttribute('required', 'required');
-            document.getElementById('cvv').setAttribute('required', 'required');
-        } else if (method === 'upi') {
+            ['card_number', 'card_holder', 'expiry_date', 'cvv']
+                .forEach(id => document.getElementById(id).setAttribute('required', 'required'));
+        } else if (this.value === 'upi') {
             upiPaymentFields.style.display = 'block';
             document.getElementById('upi_id').setAttribute('required', 'required');
         }
     });
-    
+
     // Card number formatting
-    const cardNumberInput = document.getElementById('card_number');
-    cardNumberInput.addEventListener('input', function(e) {
-        let value = e.target.value.replace(/\s/g, '');
-        let formattedValue = value.match(/.{1,4}/g)?.join(' ') || value;
-        e.target.value = formattedValue;
+    document.getElementById('card_number').addEventListener('input', function (e) {
+        let v = e.target.value.replace(/\s/g, '');
+        e.target.value = v.match(/.{1,4}/g)?.join(' ') || v;
     });
-    
+
     // Expiry date formatting
-    const expiryDateInput = document.getElementById('expiry_date');
-    expiryDateInput.addEventListener('input', function(e) {
-        let value = e.target.value.replace(/\D/g, '');
-        if (value.length >= 2) {
-            value = value.slice(0, 2) + '/' + value.slice(2, 4);
-        }
-        e.target.value = value;
+    document.getElementById('expiry_date').addEventListener('input', function (e) {
+        let v = e.target.value.replace(/\D/g, '');
+        if (v.length >= 2) v = v.slice(0, 2) + '/' + v.slice(2, 4);
+        e.target.value = v;
     });
-    
-    // CVV validation (numbers only)
-    const cvvInput = document.getElementById('cvv');
-    cvvInput.addEventListener('input', function(e) {
+
+    // CVV numbers only
+    document.getElementById('cvv').addEventListener('input', function (e) {
         e.target.value = e.target.value.replace(/\D/g, '').slice(0, 3);
     });
-    
-    // Fetch doctor availability
-    const doctorId = {{ doctor.id }};
-    let doctorAvailability = {
-        available_days: [],
-        start_time: '09:00',
-        end_time: '17:00'
-    };
-    
-    fetch(`/api/doctor-availability/${doctorId}`)
-        .then(response => response.json())
-        .then(data => {
-            doctorAvailability = data;
-            console.log('Doctor availability loaded:', doctorAvailability);
-            
-            // Set up date input constraints
-            if (data.available_days && data.available_days.length > 0) {
-                // If doctor has specific available days, we'll validate on change
-                dateInput.addEventListener('change', validateDateAvailability);
-            }
-        })
-        .catch(error => console.error('Error fetching doctor availability:', error));
-    
-    function validateDateAvailability() {
-        if (dateInput.value && doctorAvailability.available_days.length > 0) {
-            const selectedDate = new Date(dateInput.value);
-            if (!isDateAvailable(selectedDate, doctorAvailability.available_days)) {
-                dateInput.setCustomValidity('Doctor is not available on this day');
-                alert(`Doctor is not available on ${selectedDate.toLocaleDateString('en-US', { weekday: 'long' })}. Available days: ${doctorAvailability.available_days_str}`);
-                dateInput.value = '';
-            } else {
-                dateInput.setCustomValidity('');
-            }
-        }
-    }
-    
-    // Update time slots when date changes
-    dateInput.addEventListener('change', function() {
-        if (this.value) {
-            const date = new Date(this.value);
-            
-            // Validate date is available
-            validateDateAvailability();
-            if (dateInput.validity.customError) {
-                return;
-            }
-            
-            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-            selectedDateSpan.textContent = date.toLocaleDateString('en-US', options);
-            selectedDateSpan.style.color = 'var(--dark)';
-            selectedDateSpan.style.fontWeight = '600';
-            
-            // Generate time slots based on doctor's available time range
-            const timeSlots = generateTimeSlots(doctorAvailability.start_time, doctorAvailability.end_time);
-            
-            // Clear current options
-            timeSelect.innerHTML = '<option value="">Select time slot</option>';
-            
-            // Add new options (convert 24-hour format to 12-hour for display)
-            timeSlots.forEach(slot => {
-                const [hour, min] = slot.split(':').map(Number);
-                const period = hour >= 12 ? 'PM' : 'AM';
-                const displayHour = hour % 12 || 12;
-                const displayTime = `${displayHour}:${String(min).padStart(2, '0')} ${period}`;
-                
-                const option = document.createElement('option');
-                option.value = slot;
-                option.textContent = displayTime;
-                timeSelect.appendChild(option);
-            });
-        } else {
-            selectedDateSpan.textContent = 'Not selected';
-            selectedDateSpan.style.color = 'var(--gray)';
-            selectedDateSpan.style.fontWeight = '400';
-            
-            // Reset time select
-            timeSelect.innerHTML = '<option value="">Select time slot</option>';
-            selectedTimeSpan.textContent = 'Not selected';
-            selectedTimeSpan.style.color = 'var(--gray)';
-        }
-    });
-    
-    // Update summary time in real-time
-    timeSelect.addEventListener('change', function() {
-        if (this.value) {
-            // Format time from 24-hour (HH:MM) to 12-hour format for display
-            const [hour, min] = this.value.split(':').map(Number);
-            const period = hour >= 12 ? 'PM' : 'AM';
-            const displayHour = hour % 12 || 12;
-            const displayTime = `${displayHour}:${String(min).padStart(2, '0')} ${period}`;
-            
-            selectedTimeSpan.textContent = displayTime;
-            selectedTimeSpan.style.color = 'var(--dark)';
-            selectedTimeSpan.style.fontWeight = '600';
-        } else {
-            selectedTimeSpan.textContent = 'Not selected';
-            selectedTimeSpan.style.color = 'var(--gray)';
-            selectedTimeSpan.style.fontWeight = '400';
-        }
-    });
-    
-    // Update character count and summary for symptoms
-    symptomsInput.addEventListener('input', function() {
+
+    // -----------------------------------------------------------------------
+    // Symptoms character counter
+    // -----------------------------------------------------------------------
+    symptomsInput.addEventListener('input', function () {
         const count = this.value.length;
         charCountSpan.textContent = count;
-        
-        // Update symptoms summary
-        if (this.value.trim()) {
-            selectedSymptomsSpan.textContent = this.value;
-            selectedSymptomsSpan.style.color = 'var(--dark)';
-        } else {
-            selectedSymptomsSpan.textContent = 'Not provided';
-            selectedSymptomsSpan.style.color = 'var(--gray)';
-        }
-        
-        if (count > 500) {
-            this.value = this.value.substring(0, 500);
-            charCountSpan.textContent = 500;
-            selectedSymptomsSpan.textContent = this.value;
-        }
-        
-        if (count > 450) {
-            charCountSpan.parentElement.style.color = '#EF4444';
-        } else {
-            charCountSpan.parentElement.style.color = 'var(--gray)';
-        }
+        if (count > 500) { this.value = this.value.substring(0, 500); charCountSpan.textContent = 500; }
+        charCountSpan.parentElement.style.color = count > 450 ? '#EF4444' : 'var(--gray)';
     });
-    
-    // Form validation
-    const form = document.querySelector('.booking-form');
-    form.addEventListener('submit', function(e) {
+
+    // -----------------------------------------------------------------------
+    // Form submit validation
+    // -----------------------------------------------------------------------
+    document.querySelector('.booking-form').addEventListener('submit', function (e) {
         if (!dateInput.value) {
-            e.preventDefault();
-            alert('Please select a date');
-            dateInput.focus();
-            return false;
+            e.preventDefault(); alert('Please select a date.'); dateInput.focus(); return;
         }
-        
         if (!timeSelect.value) {
-            e.preventDefault();
-            alert('Please select a time slot');
-            timeSelect.focus();
-            return false;
+            e.preventDefault(); alert('Please select a time slot.'); timeSelect.focus(); return;
         }
-        
         if (!symptomsInput.value.trim()) {
-            e.preventDefault();
-            alert('Please provide symptoms or reason for visit');
-            symptomsInput.focus();
-            return false;
+            e.preventDefault(); alert('Please provide symptoms or reason for visit.'); symptomsInput.focus(); return;
         }
-        
-        const selectedDate = new Date(dateInput.value);
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        
-        if (selectedDate < today) {
-            e.preventDefault();
-            alert('Please select a future date');
-            dateInput.focus();
-            return false;
-        }
-    });
-});
-    
-    // Fetch doctor availability
-    const doctorId = {{ doctor.id }};
-    let doctorAvailability = {
-        available_days: [],
-        start_time: '09:00',
-        end_time: '17:00'
-    };
-    
-    fetch(`/api/doctor-availability/${doctorId}`)
-        .then(response => response.json())
-        .then(data => {
-            doctorAvailability = data;
-            console.log('Doctor availability loaded:', doctorAvailability);
-            
-            // Set up date input constraints
-            if (data.available_days && data.available_days.length > 0) {
-                // If doctor has specific available days, we'll validate on change
-                dateInput.addEventListener('change', validateDateAvailability);
-            }
-        })
-        .catch(error => console.error('Error fetching doctor availability:', error));
-    
-    // Update time slots when date changes
-    dateInput.addEventListener('change', function() {
-        if (this.value) {
-            const date = new Date(this.value);
-            
-            // Validate date is available
-            validateDateAvailability();
-            if (dateInput.validity.customError) {
-                return;
-            }
-            
-            // Generate time slots based on doctor's available time range
-            const timeSlots = generateTimeSlots(doctorAvailability.start_time, doctorAvailability.end_time);
-            
-            // Clear current options
-            timeSelect.innerHTML = '<option value="">Select time slot</option>';
-            
-            // Add new options (convert 24-hour format to 12-hour for display)
-            timeSlots.forEach(slot => {
-                const [hour, min] = slot.split(':').map(Number);
-                const period = hour >= 12 ? 'PM' : 'AM';
-                const displayHour = hour % 12 || 12;
-                const displayTime = `${displayHour}:${String(min).padStart(2, '0')} ${period}`;
-                
-                const option = document.createElement('option');
-                option.value = slot;
-                option.textContent = displayTime;
-                timeSelect.appendChild(option);
-            });
-        } else {
-            // Reset time select
-            timeSelect.innerHTML = '<option value="">Select time slot</option>';
-        }
-    });
-    
-    // Update character count for symptoms
-    symptomsInput.addEventListener('input', function() {
-        const count = this.value.length;
-        charCountSpan.textContent = count;
-        
-        if (count > 500) {
-            this.value = this.value.substring(0, 500);
-            charCountSpan.textContent = 500;
-        }
-        
-        if (count > 450) {
-            charCountSpan.parentElement.style.color = '#EF4444';
-        } else {
-            charCountSpan.parentElement.style.color = 'var(--gray)';
-        }
-    });
-    
-    // Form validation
-    const form = document.querySelector('.booking-form');
-    form.addEventListener('submit', function(e) {
-        if (!dateInput.value) {
-            e.preventDefault();
-            alert('Please select a date');
-            dateInput.focus();
-            return false;
-        }
-        
-        if (!timeSelect.value) {
-            e.preventDefault();
-            alert('Please select a time slot');
-            timeSelect.focus();
-            return false;
-        }
-        
-        if (!symptomsInput.value.trim()) {
-            e.preventDefault();
-            alert('Please provide symptoms or reason for visit');
-            symptomsInput.focus();
-            return false;
-        }
-        
         if (!paymentMethodSelect.value) {
-            e.preventDefault();
-            alert('Please select a payment method');
-            paymentMethodSelect.focus();
-            return false;
+            e.preventDefault(); alert('Please select a payment method.'); paymentMethodSelect.focus(); return;
         }
-        
-        // Validate payment fields based on selected method
         if (paymentMethodSelect.value === 'credit_card' || paymentMethodSelect.value === 'debit_card') {
-            const cardNumber = document.getElementById('card_number').value.replace(/\s/g, '');
-            if (cardNumber.length < 13 || cardNumber.length > 19) {
-                e.preventDefault();
-                alert('Please enter a valid card number');
-                document.getElementById('card_number').focus();
-                return false;
+            const cardNo = document.getElementById('card_number').value.replace(/\s/g, '');
+            if (cardNo.length < 13 || cardNo.length > 19) {
+                e.preventDefault(); alert('Please enter a valid card number.'); return;
             }
-            
-            const expiryDate = document.getElementById('expiry_date').value;
-            if (!/^\d{2}\/\d{2}$/.test(expiryDate)) {
-                e.preventDefault();
-                alert('Please enter a valid expiry date (MM/YY)');
-                document.getElementById('expiry_date').focus();
-                return false;
+            if (!/^\d{2}\/\d{2}$/.test(document.getElementById('expiry_date').value)) {
+                e.preventDefault(); alert('Please enter a valid expiry date (MM/YY).'); return;
             }
-            
-            const cvv = document.getElementById('cvv').value;
-            if (cvv.length !== 3) {
-                e.preventDefault();
-                alert('Please enter a valid CVV');
-                document.getElementById('cvv').focus();
-                return false;
+            if (document.getElementById('cvv').value.length !== 3) {
+                e.preventDefault(); alert('Please enter a valid CVV.'); return;
             }
         } else if (paymentMethodSelect.value === 'upi') {
-            const upiId = document.getElementById('upi_id').value;
-            if (!upiId.includes('@')) {
-                e.preventDefault();
-                alert('Please enter a valid UPI ID');
-                document.getElementById('upi_id').focus();
-                return false;
+            if (!document.getElementById('upi_id').value.includes('@')) {
+                e.preventDefault(); alert('Please enter a valid UPI ID.'); return;
             }
         }
-        
-        const selectedDate = new Date(dateInput.value);
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        
-        if (selectedDate < today) {
-            e.preventDefault();
-            alert('Please select a future date');
-            dateInput.focus();
-            return false;
+        // Past-date double-check
+        const chosen = new Date(dateInput.value + 'T00:00:00');
+        const today = new Date(); today.setHours(0, 0, 0, 0);
+        if (chosen < today) {
+            e.preventDefault(); alert('Please select a future date.'); dateInput.focus(); return;
         }
     });
 });

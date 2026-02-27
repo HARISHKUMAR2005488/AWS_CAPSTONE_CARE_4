@@ -119,10 +119,10 @@
                         <i class="fas fa-comments"></i>
                         <span>Health Assistant</span>
                     </button>
-                    <button class="btn-header btn-header-primary" onclick="location.href='{{ url_for('doctors') }}'">
+                    <a href="{{ url_for('doctors') }}" class="btn-header btn-header-primary">
                         <i class="fas fa-calendar-plus"></i>
                         <span>Book Appointment</span>
-                    </button>
+                    </a>
                 </div>
             </div>
 
@@ -373,7 +373,8 @@
                                             {% if appointment.status == 'completed' %}
                                             <button class="btn btn-primary"
                                                 style="font-size:.72rem;padding:.25rem .6rem;border-radius:5px;"
-                                                onclick="viewPatientRecord({{ appointment.id }})"
+                                                data-appt-id="{{ appointment.id }}"
+                                                onclick="viewPatientRecord(this.dataset.apptId)"
                                                 title="View Medical Record">
                                                 <i class="fas fa-file-medical-alt"></i>
                                             </button>
@@ -422,8 +423,8 @@
             <div class="progress-info">
                 <p>{{ completed_tasks }} task completed out of {{ total_tasks }}</p>
                 <div class="progress-bar">
-                    <div class="progress-fill"
-                        style="width: {% if total_tasks > 0 %}{{ (completed_tasks / total_tasks * 100)|int }}%{% else %}0%{% endif %}">
+                    <div class="progress-fill" id="dashProgressFill"
+                        data-pct="{% if total_tasks > 0 %}{{ (completed_tasks / total_tasks * 100)|int }}{% else %}0{% endif %}">
                     </div>
                 </div>
             </div>
@@ -1195,9 +1196,17 @@
     </div>
 
     <script>
+        // Initialize progress bar width from data attribute (avoids Jinja2-in-style lint errors)
+        document.addEventListener('DOMContentLoaded', function () {
+            const progressFill = document.getElementById('dashProgressFill');
+            if (progressFill) {
+                progressFill.style.width = (progressFill.dataset.pct || '0') + '%';
+            }
+        });
+
         // Appointment Details Modal Functions
         function showAppointmentDetails() {
-            document.getElementById('appointmentDetailsModal').style.display = 'flex';
+            document.getElementById('appointmentDetailsModal').style.display = 'block';
         }
 
         function closeAppointmentDetailsModal() {
@@ -1221,7 +1230,7 @@
             const modal = document.getElementById('rxPatientModal');
             const body = document.getElementById('rxPatientBody');
             body.innerHTML = '<p style="text-align:center;color:var(--gray);"><i class="fas fa-spinner fa-spin"></i> Loading record…</p>';
-            modal.style.display = 'flex';
+            modal.style.display = 'block';
 
             fetch(`/appointment/${appointmentId}/prescription`)
                 .then(r => r.json())

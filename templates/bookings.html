@@ -415,8 +415,7 @@
             <p style="color:var(--gray);font-size:.9rem;"><i class="fas fa-spinner fa-spin"></i> Loading record…</p>
         </div>`;
 
-        modal.style.display = 'flex';
-        modal.classList.add('active');
+        modal.style.display = 'block';
 
         // Fetch prescription record
         fetch(`/appointment/${appointmentId}/prescription`)

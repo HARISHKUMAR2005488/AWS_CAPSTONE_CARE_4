@@ -887,9 +887,27 @@
                             </div>
                             {% endif %}
                         </div>
+
+                        <!-- Medical Record action button -->
+                        <div class="request-actions"
+                            style="padding:.75rem 1rem;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:.5rem;">
+                            {% if appointment.prescription %}
+                            <span class="status-badge status-completed" style="font-size:.75rem;padding:.25rem .65rem;">
+                                <i class="fas fa-file-medical"></i> Record exists
+                            </span>
+                            {% endif %}
+                            <button class="btn btn-primary btn-sm" style="font-size:.82rem;padding:.4rem .9rem;"
+                                onclick="openPrescriptionModal({{ appointment.id }}, '{{ appointment.patient.username }}')"
+                                title="Add / View Medical Record">
+                                <i class="fas fa-file-medical-alt"></i>
+                                {% if appointment.prescription %}View / Edit Record{% else %}Add Medical Record{% endif
+                                %}
+                            </button>
+                        </div>
                     </div>
                     {% endfor %}
                 </div>
+
                 {% else %}
                 <div class="empty-state large">
                     <i class="fas fa-check-circle"></i>
@@ -1357,38 +1375,126 @@
         document.getElementById(modalId).style.display = 'none';
     }
 
-    // Prescription Modal Functions
-    function openPrescriptionModal(appointmentId, patientName) {
-        const prescription = prompt(`Enter prescription for ${patientName}:`);
-        if (prescription && prescription.trim()) {
-            addPrescription(appointmentId, prescription.trim());
-        }
-    }
+    // Medical Record / Prescription Modal
+    let _rxAppointmentId = null;
 
-    function addPrescription(appointmentId, prescription) {
-        fetch('/doctor/add-prescription', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                appointment_id: appointmentId,
-                prescription: prescription
-            })
-        })
-            .then(response => response.json())
+    function openPrescriptionModal(appointmentId, patientName) {
+        _rxAppointmentId = appointmentId;
+        const modal = document.getElementById('prescriptionModal');
+        const title = document.getElementById('rxModalTitle');
+        const body = document.getElementById('rxModalBody');
+        const msg = document.getElementById('rxModalMsg');
+
+        title.textContent = `Medical Record — ${patientName}`;
+        body.innerHTML = '<p style="color:var(--gray);text-align:center;"><i class="fas fa-spinner fa-spin"></i> Loading…</p>';
+        msg.textContent = '';
+        modal.style.display = 'flex';
+
+        fetch(`/appointment/${appointmentId}/prescription`)
+            .then(r => r.json())
             .then(data => {
-                if (data.success) {
-                    alert('Prescription added successfully!');
-                    location.reload();
+                if (!data.success) {
+                    body.innerHTML = `<p style="color:red">${data.message}</p>`;
+                    return;
+                }
+                const rec = data.record;
+                const canCreate = data.can_create;
+                const canEdit = data.can_edit;
+
+                if (rec) {
+                    // Show existing record (editable)
+                    body.innerHTML = `
+                    <div class="form-section">
+                        <div class="form-group">
+                            <label>Diagnosis <span class="required">*</span></label>
+                            <textarea id="rx_diagnosis" rows="3" class="form-control" style="width:100%;padding:.5rem;border:1px solid var(--border);border-radius:6px;">${rec.diagnosis}</textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Prescription <span class="required">*</span></label>
+                            <textarea id="rx_prescription" rows="4" class="form-control" style="width:100%;padding:.5rem;border:1px solid var(--border);border-radius:6px;">${rec.prescription}</textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Notes (optional)</label>
+                            <textarea id="rx_notes" rows="2" class="form-control" style="width:100%;padding:.5rem;border:1px solid var(--border);border-radius:6px;">${rec.notes || ''}</textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Follow-up Date (optional)</label>
+                            <input type="date" id="rx_followup" style="width:100%;padding:.5rem;border:1px solid var(--border);border-radius:6px;" value="${rec.follow_up_date || ''}">
+                        </div>
+                        <small style="color:var(--gray);">Created: ${rec.created_at}</small>
+                    </div>
+                    <div class="modal-actions" style="display:flex;gap:.5rem;justify-content:flex-end;margin-top:1rem;">
+                        <button class="btn btn-secondary" onclick="document.getElementById('prescriptionModal').style.display='none'">Close</button>
+                        ${canEdit ? '<button class="btn btn-primary" onclick="submitPrescription(true)"><i class="fas fa-save"></i> Save Changes</button>' : ''}
+                    </div>`;
+                } else if (canCreate) {
+                    // Show create form
+                    body.innerHTML = `
+                    <div class="form-section">
+                        <div class="form-group">
+                            <label>Diagnosis <span class="required">*</span></label>
+                            <textarea id="rx_diagnosis" rows="3" placeholder="Enter diagnosis..." style="width:100%;padding:.5rem;border:1px solid var(--border);border-radius:6px;"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Prescription <span class="required">*</span></label>
+                            <textarea id="rx_prescription" rows="4" placeholder="Enter prescribed medicines & instructions..." style="width:100%;padding:.5rem;border:1px solid var(--border);border-radius:6px;"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Notes (optional)</label>
+                            <textarea id="rx_notes" rows="2" placeholder="Additional notes..." style="width:100%;padding:.5rem;border:1px solid var(--border);border-radius:6px;"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Follow-up Date (optional)</label>
+                            <input type="date" id="rx_followup" style="width:100%;padding:.5rem;border:1px solid var(--border);border-radius:6px;">
+                        </div>
+                    </div>
+                    <div class="modal-actions" style="display:flex;gap:.5rem;justify-content:flex-end;margin-top:1rem;">
+                        <button class="btn btn-secondary" onclick="document.getElementById('prescriptionModal').style.display='none'">Cancel</button>
+                        <button class="btn btn-primary" onclick="submitPrescription(false)"><i class="fas fa-plus"></i> Create Record</button>
+                    </div>`;
                 } else {
-                    alert('Error: ' + (data.message || 'Failed to add prescription'));
+                    body.innerHTML = '<p style="color:var(--gray);">No medical record for this appointment.</p>';
                 }
             })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('An error occurred while adding prescription');
-            });
+            .catch(() => { body.innerHTML = '<p style="color:red;">Failed to load record.</p>'; });
+    }
+
+    function submitPrescription(isEdit) {
+        const fd = new FormData();
+        fd.append('diagnosis', document.getElementById('rx_diagnosis').value.trim());
+        fd.append('prescription', document.getElementById('rx_prescription').value.trim());
+        fd.append('notes', document.getElementById('rx_notes').value.trim());
+        const followup = document.getElementById('rx_followup').value;
+        if (followup) fd.append('follow_up_date', followup);
+
+        const msg = document.getElementById('rxModalMsg');
+        msg.textContent = '';
+
+        const method = isEdit ? 'PATCH' : 'POST';
+        // PATCH expects JSON because FormData doesn't work with PATCH in all browsers
+        const opts = isEdit
+            ? {
+                method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(Object.fromEntries(fd))
+            }
+            : { method: 'POST', body: fd };
+
+        fetch(`/appointment/${_rxAppointmentId}/prescription`, opts)
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    msg.style.color = 'green';
+                    msg.textContent = data.message;
+                    setTimeout(() => {
+                        document.getElementById('prescriptionModal').style.display = 'none';
+                        location.reload();
+                    }, 1200);
+                } else {
+                    msg.style.color = 'red';
+                    msg.textContent = data.message || 'Failed to save.';
+                }
+            })
+            .catch(() => { msg.style.color = 'red'; msg.textContent = 'Network error.'; });
     }
 
     // Complete Appointment Function
@@ -2116,4 +2222,20 @@
     }
 
 </script>
+
+<!-- Medical Record / Prescription Modal -->
+<div id="prescriptionModal" class="modal" style="display:none;align-items:center;justify-content:center;">
+    <div class="modal-content" style="max-width:600px;width:95%;max-height:90vh;overflow-y:auto;">
+        <div class="modal-header">
+            <h3 id="rxModalTitle"><i class="fas fa-file-medical-alt"></i> Medical Record</h3>
+            <button class="close-modal"
+                onclick="document.getElementById('prescriptionModal').style.display='none'">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div id="rxModalBody"></div>
+            <p id="rxModalMsg" style="text-align:center;font-weight:600;margin-top:.5rem;"></p>
+        </div>
+    </div>
+</div>
+
 {% endblock %}

@@ -366,9 +366,19 @@
                                             <h5>{{ appointment.doctor_name }}</h5>
                                             <p>{{ appointment.appointment_date.strftime('%b %d, %Y') }}</p>
                                         </div>
-                                        <span class="status-badge-sm status-{{ appointment.status|lower }}">
-                                            {{ appointment.status|title }}
-                                        </span>
+                                        <div style="display:flex;gap:.4rem;align-items:center;">
+                                            <span class="status-badge-sm status-{{ appointment.status|lower }}">
+                                                {{ appointment.status|title }}
+                                            </span>
+                                            {% if appointment.status == 'completed' %}
+                                            <button class="btn btn-primary"
+                                                style="font-size:.72rem;padding:.25rem .6rem;border-radius:5px;"
+                                                onclick="viewPatientRecord({{ appointment.id }})"
+                                                title="View Medical Record">
+                                                <i class="fas fa-file-medical-alt"></i>
+                                            </button>
+                                            {% endif %}
+                                        </div>
                                     </div>
                                     {% endfor %}
                                 </div>
@@ -1200,8 +1210,61 @@
             if (event.target == modal) {
                 closeAppointmentDetailsModal();
             }
+            const rxModal = document.getElementById('rxPatientModal');
+            if (event.target == rxModal) {
+                rxModal.style.display = 'none';
+            }
+        }
+
+        // Patient Medical Record View
+        function viewPatientRecord(appointmentId) {
+            const modal = document.getElementById('rxPatientModal');
+            const body = document.getElementById('rxPatientBody');
+            body.innerHTML = '<p style="text-align:center;color:var(--gray);"><i class="fas fa-spinner fa-spin"></i> Loading record…</p>';
+            modal.style.display = 'flex';
+
+            fetch(`/appointment/${appointmentId}/prescription`)
+                .then(r => r.json())
+                .then(data => {
+                    if (!data.success) {
+                        body.innerHTML = `<p style="color:red;">${data.message || 'Could not load record.'}</p>`;
+                        return;
+                    }
+                    const rec = data.record;
+                    if (!rec) {
+                        body.innerHTML = '<p style="color:var(--gray);">No medical record has been created for this appointment yet.</p>';
+                        return;
+                    }
+                    body.innerHTML = `
+                    <div class="summary-row"><span><strong>Diagnosis</strong></span><span>${rec.diagnosis}</span></div>
+                    <div class="summary-row"><span><strong>Prescription</strong></span><span>${rec.prescription}</span></div>
+                    ${rec.notes ? `<div class="summary-row"><span><strong>Notes</strong></span><span>${rec.notes}</span></div>` : ''}
+                    ${rec.follow_up_date ? `<div class="summary-row"><span><strong>Follow-up Date</strong></span><span>${rec.follow_up_date}</span></div>` : ''}
+                    <div class="summary-row"><span><strong>Created</strong></span><span>${rec.created_at}</span></div>
+                    <div style="margin-top:1rem;text-align:right;">
+                        <a href="/appointment/${appointmentId}/prescription/pdf"
+                            class="btn btn-primary" style="font-size:.85rem;padding:.45rem .9rem;" download>
+                            <i class="fas fa-download"></i> Download PDF
+                        </a>
+                    </div>`;
+                })
+                .catch(() => { body.innerHTML = '<p style="color:red;">Network error. Please try again.</p>'; });
         }
     </script>
+
+    <!-- Patient Medical Record Modal (read-only) -->
+    <div id="rxPatientModal" class="modal" style="display:none;align-items:center;justify-content:center;z-index:9999;">
+        <div class="modal-content" style="max-width:550px;width:95%;max-height:90vh;overflow-y:auto;">
+            <div class="modal-header">
+                <h3><i class="fas fa-file-medical-alt"></i> Medical Record</h3>
+                <button onclick="document.getElementById('rxPatientModal').style.display='none'"
+                    style="background:none;border:none;font-size:1.4rem;cursor:pointer;line-height:1;">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="rxPatientBody"></div>
+            </div>
+        </div>
+    </div>
 
     <script src="{{ url_for('static', filename='js/user-dashboard.js') }}"></script>
 </body>

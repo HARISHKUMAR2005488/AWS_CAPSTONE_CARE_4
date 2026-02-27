@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, send_from_directory
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, send_from_directory, Response
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
@@ -7,7 +7,7 @@ import json
 import os
 
 from config import Config
-from database import db, User, Doctor, Appointment, TimeSlot, MedicalRecord, Feedback, DoctorAvailability
+from database import db, User, Doctor, Appointment, TimeSlot, MedicalRecord, Feedback, DoctorAvailability, Prescription
 
 # ---------------------------------------------------------------------------
 # APPOINTMENT STATUS LIFECYCLE
@@ -916,7 +916,287 @@ def doctor_my_availability():
     return jsonify({'success': True, 'schedule': schedule, 'doctor_id': doctor.id})
 
 
+# ===========================================================================
+# MEDICAL RECORD / PRESCRIPTION ROUTES
+# ===========================================================================
+
+@app.route('/appointment/<int:appointment_id>/prescription', methods=['POST'])
+@login_required
+def create_prescription(appointment_id):
+    """Doctor creates a medical record for a COMPLETED appointment.
+    Rules:
+    - Caller must be a doctor.
+    - Appointment must belong to this doctor.
+    - Appointment status must be 'completed'.
+    - No duplicate record allowed (unique constraint + pre-flight check).
+    """
+    if current_user.user_type != 'doctor':
+        return jsonify({'success': False, 'message': 'Access denied — doctors only.'}), 403
+
+    appointment = Appointment.query.get_or_404(appointment_id)
+
+    # Verify ownership
+    doctor = Doctor.query.get(current_user.doctor_id)
+    if not doctor or appointment.doctor_id != doctor.id:
+        return jsonify({'success': False, 'message': 'This appointment does not belong to you.'}), 403
+
+    # Appointment must be completed
+    if appointment.status != 'completed':
+        return jsonify({
+            'success': False,
+            'message': f"Medical records can only be created for completed appointments (current: '{appointment.status}')."
+        }), 400
+
+    # Duplicate check
+    existing = Prescription.query.filter_by(appointment_id=appointment_id).first()
+    if existing:
+        return jsonify({'success': False, 'message': 'A medical record already exists for this appointment.'}), 409
+
+    # Validate required fields
+    diagnosis    = request.form.get('diagnosis', '').strip()
+    prescription = request.form.get('prescription', '').strip()
+    notes        = request.form.get('notes', '').strip() or None
+    follow_up_str = request.form.get('follow_up_date', '').strip()
+
+    if not diagnosis:
+        return jsonify({'success': False, 'message': 'Diagnosis is required.'}), 400
+    if not prescription:
+        return jsonify({'success': False, 'message': 'Prescription is required.'}), 400
+
+    follow_up_date = None
+    if follow_up_str:
+        try:
+            follow_up_date = datetime.strptime(follow_up_str, '%Y-%m-%d').date()
+        except ValueError:
+            return jsonify({'success': False, 'message': 'Invalid follow-up date format (YYYY-MM-DD).'}), 400
+
+    try:
+        rec = Prescription(
+            appointment_id = appointment_id,
+            patient_id     = appointment.patient_id,
+            doctor_user_id = current_user.id,
+            diagnosis      = diagnosis,
+            prescription   = prescription,
+            notes          = notes,
+            follow_up_date = follow_up_date,
+        )
+        db.session.add(rec)
+        db.session.commit()
+        return jsonify({'success': True, 'message': 'Medical record created successfully.', 'record': rec.to_dict()})
+    except Exception as e:
+        db.session.rollback()
+        app.logger.error(f'Error creating prescription for appt {appointment_id}: {e}')
+        return jsonify({'success': False, 'message': 'Failed to save record. Please try again.'}), 500
+
+
+@app.route('/appointment/<int:appointment_id>/prescription', methods=['GET'])
+@login_required
+def get_prescription(appointment_id):
+    """Return the medical record for an appointment as JSON.
+    Access:
+    - Doctor: only their own appointments.
+    - Patient: only their own appointments.
+    - Admin: any appointment.
+    """
+    appointment = Appointment.query.get_or_404(appointment_id)
+
+    # Role-based access
+    if current_user.user_type == 'doctor':
+        doctor = Doctor.query.get(current_user.doctor_id)
+        if not doctor or appointment.doctor_id != doctor.id:
+            return jsonify({'success': False, 'message': 'Access denied.'}), 403
+        can_edit = appointment.status == 'completed'
+    elif current_user.user_type == 'patient':
+        if appointment.patient_id != current_user.id:
+            return jsonify({'success': False, 'message': 'Access denied.'}), 403
+        can_edit = False
+    elif current_user.user_type == 'admin':
+        can_edit = False
+    else:
+        return jsonify({'success': False, 'message': 'Access denied.'}), 403
+
+    rec = Prescription.query.filter_by(appointment_id=appointment_id).first()
+    return jsonify({
+        'success':    True,
+        'record':     rec.to_dict() if rec else None,
+        'can_edit':   can_edit and rec is not None,
+        'can_create': can_edit and rec is None,
+    })
+
+
+@app.route('/appointment/<int:appointment_id>/prescription', methods=['PATCH'])
+@login_required
+def update_prescription(appointment_id):
+    """Doctor updates an existing medical record (their own appointments only)."""
+    if current_user.user_type != 'doctor':
+        return jsonify({'success': False, 'message': 'Access denied — doctors only.'}), 403
+
+    appointment = Appointment.query.get_or_404(appointment_id)
+    doctor = Doctor.query.get(current_user.doctor_id)
+    if not doctor or appointment.doctor_id != doctor.id:
+        return jsonify({'success': False, 'message': 'This appointment does not belong to you.'}), 403
+
+    rec = Prescription.query.filter_by(
+        appointment_id=appointment_id,
+        doctor_user_id=current_user.id
+    ).first()
+    if not rec:
+        return jsonify({'success': False, 'message': 'No record found to update.'}), 404
+
+    data = request.get_json(silent=True) or {}
+    # Also accept form data
+    if not data:
+        data = request.form.to_dict()
+
+    diagnosis    = data.get('diagnosis', '').strip()
+    prescription = data.get('prescription', '').strip()
+    notes        = data.get('notes', '').strip() or None
+    follow_up_str = data.get('follow_up_date', '').strip()
+
+    if diagnosis:
+        rec.diagnosis = diagnosis
+    if prescription:
+        rec.prescription = prescription
+    rec.notes = notes
+
+    if follow_up_str:
+        try:
+            rec.follow_up_date = datetime.strptime(follow_up_str, '%Y-%m-%d').date()
+        except ValueError:
+            return jsonify({'success': False, 'message': 'Invalid follow-up date format.'}), 400
+    elif 'follow_up_date' in data and follow_up_str == '':
+        rec.follow_up_date = None
+
+    try:
+        db.session.commit()
+        return jsonify({'success': True, 'message': 'Medical record updated.', 'record': rec.to_dict()})
+    except Exception as e:
+        db.session.rollback()
+        app.logger.error(f'Error updating prescription {rec.id}: {e}')
+        return jsonify({'success': False, 'message': 'Failed to update record.'}), 500
+
+
+@app.route('/appointment/<int:appointment_id>/prescription/pdf', methods=['GET'])
+@login_required
+def download_prescription_pdf(appointment_id):
+    """Generate and stream a PDF summary of the medical record.
+    Access: patient (own appointment) or admin.
+    """
+    if current_user.user_type not in ('patient', 'admin'):
+        flash('Only patients and admins can download medical records.', 'warning')
+        return redirect(url_for('user_dashboard'))
+
+    appointment = Appointment.query.get_or_404(appointment_id)
+
+    # Patient can only download their own
+    if current_user.user_type == 'patient' and appointment.patient_id != current_user.id:
+        flash('Access denied.', 'danger')
+        return redirect(url_for('user_dashboard'))
+
+    rec = Prescription.query.filter_by(appointment_id=appointment_id).first()
+    if not rec:
+        flash('No medical record found for this appointment.', 'warning')
+        return redirect(url_for('user_dashboard'))
+
+    try:
+        from reportlab.lib.pagesizes import A4
+        from reportlab.lib import colors
+        from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+        from reportlab.lib.units import cm
+        from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, HRFlowable
+        from reportlab.lib.enums import TA_CENTER, TA_LEFT
+        import io
+
+        buffer = io.BytesIO()
+        doc = SimpleDocTemplate(buffer, pagesize=A4,
+                                rightMargin=2*cm, leftMargin=2*cm,
+                                topMargin=2*cm, bottomMargin=2*cm)
+        styles = getSampleStyleSheet()
+        story  = []
+
+        header_style = ParagraphStyle('Header', parent=styles['Title'],
+                                      fontSize=18, textColor=colors.HexColor('#1E3A5F'), spaceAfter=4)
+        sub_style    = ParagraphStyle('Sub', parent=styles['Normal'],
+                                      fontSize=10, textColor=colors.grey)
+        label_style  = ParagraphStyle('Label', parent=styles['Normal'],
+                                      fontSize=10, textColor=colors.HexColor('#1E3A5F'),
+                                      fontName='Helvetica-Bold', spaceBefore=10)
+        value_style  = ParagraphStyle('Value', parent=styles['Normal'],
+                                      fontSize=11, leading=15)
+
+        # Header
+        story.append(Paragraph('Care 4 U Hospital', header_style))
+        story.append(Paragraph('Medical Record / Prescription', sub_style))
+        story.append(HRFlowable(width='100%', thickness=1, color=colors.HexColor('#1E3A5F'), spaceAfter=10))
+
+        # Appointment info table
+        patient_user = User.query.get(appointment.patient_id)
+        doctor_user  = User.query.get(rec.doctor_user_id)
+        doctor_obj   = appointment.doctor
+
+        info = [
+            ['Appointment ID', f'#{appointment.id}',
+             'Date', appointment.appointment_date.strftime('%B %d, %Y')],
+            ['Patient', patient_user.username if patient_user else '—',
+             'Time', appointment.appointment_time],
+            ['Doctor', f'Dr. {doctor_obj.name}' if doctor_obj else '—',
+             'Specialization', doctor_obj.specialization if doctor_obj else '—'],
+            ['Record Created', rec.created_at.strftime('%b %d, %Y %I:%M %p'), '', ''],
+        ]
+        t = Table(info, colWidths=[3.5*cm, 6*cm, 3.5*cm, 5*cm])
+        t.setStyle(TableStyle([
+            ('BACKGROUND', (0,0), (0,-1), colors.HexColor('#EEF2FF')),
+            ('BACKGROUND', (2,0), (2,-2), colors.HexColor('#EEF2FF')),
+            ('FONTNAME',   (0,0), (-1,-1), 'Helvetica'),
+            ('FONTSIZE',   (0,0), (-1,-1), 9),
+            ('GRID',       (0,0), (-1,-1), 0.5, colors.lightgrey),
+            ('VALIGN',     (0,0), (-1,-1), 'MIDDLE'),
+            ('PADDING',    (0,0), (-1,-1), 6),
+        ]))
+        story.append(t)
+        story.append(Spacer(1, 12))
+
+        # Clinical sections
+        for label, content in [
+            ('Diagnosis',     rec.diagnosis),
+            ('Prescription',  rec.prescription),
+            ('Notes',         rec.notes or 'None'),
+        ]:
+            story.append(Paragraph(label, label_style))
+            story.append(Paragraph(content.replace('\n', '<br/>'), value_style))
+
+        if rec.follow_up_date:
+            story.append(Paragraph('Follow-up Date', label_style))
+            story.append(Paragraph(rec.follow_up_date.strftime('%B %d, %Y'), value_style))
+
+        story.append(Spacer(1, 20))
+        story.append(HRFlowable(width='100%', thickness=0.5, color=colors.grey))
+        story.append(Paragraph(
+            f'Generated on {datetime.utcnow().strftime("%B %d, %Y")} — Care 4 U Hospital',
+            ParagraphStyle('Footer', parent=styles['Normal'], fontSize=8,
+                           textColor=colors.grey, alignment=TA_CENTER, spaceBefore=6)
+        ))
+
+        doc.build(story)
+        buffer.seek(0)
+        filename = f'medical_record_appointment_{appointment_id}.pdf'
+        return Response(
+            buffer.read(),
+            mimetype='application/pdf',
+            headers={'Content-Disposition': f'attachment; filename="{filename}"'}
+        )
+
+    except ImportError:
+        flash('PDF generation is not available (reportlab not installed).', 'warning')
+        return redirect(url_for('user_dashboard'))
+    except Exception as e:
+        app.logger.error(f'PDF generation error for appt {appointment_id}: {e}')
+        flash('Failed to generate PDF. Please try again.', 'danger')
+        return redirect(url_for('user_dashboard'))
+
+
 @app.route('/user/upload-document', methods=['POST'])
+
 
 @login_required
 def upload_document():

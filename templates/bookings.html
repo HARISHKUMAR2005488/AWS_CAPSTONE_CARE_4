@@ -378,41 +378,74 @@
     }
 
     function viewAppointmentDetails(appointmentId) {
-        // In a real application, this would fetch details via AJAX
         const modal = document.getElementById('detailsModal');
         const detailsDiv = document.getElementById('appointmentDetails');
 
-        // Simulated details
-        detailsDiv.innerHTML = `
-        <div class="appointment-details">
-            <h4>Appointment #${appointmentId}</h4>
-            <div class="detail-section">
-                <h5>Patient Information</h5>
-                <p><strong>Name:</strong> John Doe</p>
-                <p><strong>Email:</strong> john@example.com</p>
-                <p><strong>Phone:</strong> +1 234-567-8900</p>
-            </div>
-            <div class="detail-section">
-                <h5>Doctor Information</h5>
-                <p><strong>Name:</strong> Dr. Sarah Johnson</p>
-                <p><strong>Specialization:</strong> Cardiology</p>
-                <p><strong>Consultation Fee:</strong> $150</p>
-            </div>
-            <div class="detail-section">
-                <h5>Appointment Details</h5>
-                <p><strong>Date:</strong> December 15, 2024</p>
-                <p><strong>Time:</strong> 10:00 AM</p>
-                <p><strong>Status:</strong> <span class="status-badge confirmed">Confirmed</span></p>
-                <p><strong>Symptoms:</strong> Chest pain and shortness of breath</p>
-            </div>
-            <div class="detail-section">
-                <h5>Notes</h5>
-                <textarea rows="3" placeholder="Add notes here..."></textarea>
-            </div>
-        </div>
-    `;
+        // Find the row in the table to pull basic data
+        const rows = document.querySelectorAll('.appointments-table tbody tr');
+        let rowData = null;
+        rows.forEach(row => {
+            const idCell = row.querySelector('td:first-child');
+            if (idCell && idCell.textContent.trim() === `#${appointmentId}`) {
+                const cells = row.querySelectorAll('td');
+                rowData = {
+                    patient: cells[1] ? cells[1].innerText.trim() : '—',
+                    doctor: cells[2] ? cells[2].innerText.trim() : '—',
+                    datetime: cells[3] ? cells[3].innerText.trim() : '—',
+                    status: cells[4] ? cells[4].innerText.trim() : '—',
+                    symptoms: cells[5] ? cells[5].innerText.trim() : '—',
+                };
+            }
+        });
 
-        modal.style.display = 'block';
+        // Render base info immediately
+        detailsDiv.innerHTML = `
+        <div class="form-section">
+            <h4><i class="fas fa-info-circle"></i> Appointment #${appointmentId}</h4>
+            ${rowData ? `
+            <div class="summary-row"><span>Patient</span><strong>${rowData.patient}</strong></div>
+            <div class="summary-row"><span>Doctor</span><strong>${rowData.doctor}</strong></div>
+            <div class="summary-row"><span>Date &amp; Time</span><strong>${rowData.datetime}</strong></div>
+            <div class="summary-row"><span>Status</span><strong>${rowData.status}</strong></div>
+            <div class="summary-row"><span>Symptoms</span><strong>${rowData.symptoms}</strong></div>
+            ` : ''}
+        </div>
+        <div id="rxRecordSection" class="form-section" style="margin-top:.5rem;">
+            <h4><i class="fas fa-file-medical-alt"></i> Medical Record</h4>
+            <p style="color:var(--gray);font-size:.9rem;"><i class="fas fa-spinner fa-spin"></i> Loading record…</p>
+        </div>`;
+
+        modal.style.display = 'flex';
+        modal.classList.add('active');
+
+        // Fetch prescription record
+        fetch(`/appointment/${appointmentId}/prescription`)
+            .then(r => r.json())
+            .then(data => {
+                const rxSection = document.getElementById('rxRecordSection');
+                if (!data.success) {
+                    rxSection.innerHTML = `<h4><i class="fas fa-file-medical-alt"></i> Medical Record</h4>
+                        <p style="color:var(--gray);">Not accessible.</p>`;
+                    return;
+                }
+                const rec = data.record;
+                if (rec) {
+                    rxSection.innerHTML = `<h4><i class="fas fa-file-medical-alt"></i> Medical Record</h4>
+                        <div class="summary-row"><span>Diagnosis</span><strong>${rec.diagnosis}</strong></div>
+                        <div class="summary-row"><span>Prescription</span><strong>${rec.prescription}</strong></div>
+                        ${rec.notes ? `<div class="summary-row"><span>Notes</span><strong>${rec.notes}</strong></div>` : ''}
+                        ${rec.follow_up_date ? `<div class="summary-row"><span>Follow-up Date</span><strong>${rec.follow_up_date}</strong></div>` : ''}
+                        <div class="summary-row"><span>Created</span><strong>${rec.created_at}</strong></div>`;
+                } else {
+                    rxSection.innerHTML = `<h4><i class="fas fa-file-medical-alt"></i> Medical Record</h4>
+                        <p style="color:var(--gray);font-size:.9rem;"><em>No medical record for this appointment yet.</em></p>`;
+                }
+            })
+            .catch(() => {
+                const rxSection = document.getElementById('rxRecordSection');
+                if (rxSection) rxSection.innerHTML = `<h4><i class="fas fa-file-medical-alt"></i> Medical Record</h4>
+                    <p style="color:var(--gray);">Could not load record.</p>`;
+            });
     }
 
     function editAppointment(appointmentId) {

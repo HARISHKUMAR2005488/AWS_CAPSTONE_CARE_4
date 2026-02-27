@@ -130,3 +130,60 @@ class Feedback(db.Model):
     
     def __repr__(self):
         return f'<Feedback {self.id} - Rating: {self.rating}>'
+
+
+class Prescription(db.Model):
+    """Medical record / prescription created by a doctor for a completed appointment.
+    One record per appointment (appointment_id is unique).
+    doctor_id references users.id (the doctor's login user), NOT doctors.id.
+    """
+    __tablename__ = 'prescriptions'
+    id = db.Column(db.Integer, primary_key=True)
+    # One-to-one with Appointment
+    appointment_id = db.Column(
+        db.Integer,
+        db.ForeignKey('appointments.id'),
+        nullable=False,
+        unique=True
+    )
+    # Patient user id (for fast patient-scoped queries)
+    patient_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    # Doctor user id (the User who created this, not Doctor.id)
+    doctor_user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    # Clinical content
+    diagnosis     = db.Column(db.Text, nullable=False)
+    prescription  = db.Column(db.Text, nullable=False)
+    notes         = db.Column(db.Text, nullable=True)
+    follow_up_date = db.Column(db.Date, nullable=True)
+    created_at    = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at    = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Relationships
+    appointment  = db.relationship(
+        'Appointment',
+        backref=db.backref('prescription', uselist=False, lazy=True)
+    )
+    patient = db.relationship(
+        'User',
+        foreign_keys=[patient_id],
+        backref=db.backref('prescriptions_received', lazy=True)
+    )
+    doctor_user = db.relationship(
+        'User',
+        foreign_keys=[doctor_user_id],
+        backref=db.backref('prescriptions_written', lazy=True)
+    )
+
+    def to_dict(self):
+        return {
+            'id':             self.id,
+            'appointment_id': self.appointment_id,
+            'diagnosis':      self.diagnosis,
+            'prescription':   self.prescription,
+            'notes':          self.notes or '',
+            'follow_up_date': self.follow_up_date.isoformat() if self.follow_up_date else None,
+            'created_at':     self.created_at.strftime('%b %d, %Y %I:%M %p'),
+        }
+
+    def __repr__(self):
+        return f'<Prescription appt={self.appointment_id}>'

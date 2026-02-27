@@ -1,0 +1,1555 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard - Care_4_U Hospitals{% endblock %}
+
+{% block content %}
+<div class="admin-container">
+    <!-- Dashboard Header -->
+    <div class="dashboard-header">
+        <h1><i class="fas fa-chart-line"></i> Admin Dashboard</h1>
+        <p class="welcome-message">Welcome back, {{ current_user.username }}!</p>
+    </div>
+
+    <!-- Admin Profile Card -->
+    <div class="admin-profile-card">
+        <div class="admin-profile-wrapper">
+            <div class="profile-section">
+                <div class="profile-avatar">
+                    {% if current_user.profile_picture %}
+                    <img src="{{ url_for('serve_profile_picture', filename=current_user.profile_picture.split('/')[-1]) }}"
+                        alt="{{ current_user.username }}">
+                    {% else %}
+                    <i class="fas fa-user-shield"></i>
+                    {% endif %}
+                    <button class="btn-upload-profile" onclick="document.getElementById('adminProfilePictureInput').click()"
+                        title="Upload Profile Picture">
+                        <i class="fas fa-camera"></i>
+                    </button>
+                </div>
+                <input type="file" id="adminProfilePictureInput" accept="image/*" style="display: none;"
+                    onchange="uploadAdminProfilePicture()">
+                <div class="profile-info">
+                    <h3>{{ current_user.username }}</h3>
+                    <p>{{ current_user.email }}</p>
+                    <p class="admin-role">Administrator</p>
+                </div>
+            </div>
+            
+            <!-- Stats Cards inside Profile -->
+            <div class="stats-cards">
+                <div class="stat-card">
+                    <div class="stat-icon patients">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3>{{ total_patients }}</h3>
+                        <p>Total Patients</p>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon doctors">
+                        <i class="fas fa-user-md"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3>{{ total_doctors }}</h3>
+                        <p>Active Doctors</p>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon appointments">
+                        <i class="fas fa-calendar-check"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3>{{ total_appointments }}</h3>
+                        <p>Total Appointments</p>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon pending">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3>{{ pending_appointments }}</h3>
+                        <p>Pending Approvals</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="quick-actions">
+        <h2><i class="fas fa-bolt"></i> Quick Actions</h2>
+        <div class="action-buttons">
+            <button class="action-btn" data-action="view-reports">
+                <i class="fas fa-chart-bar"></i>
+                <span>View Reports</span>
+            </button>
+            <button class="action-btn" data-action="system-settings">
+                <i class="fas fa-cog"></i>
+                <span>System Settings</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Users List (Categorized by Role) -->
+    <div class="recent-section">
+        <div class="section-header">
+            <h2><i class="fas fa-users"></i> Manage Users</h2>
+            <button class="btn btn-primary" data-action="add-user">
+                <i class="fas fa-user-plus"></i> Add User
+            </button>
+        </div>
+
+        <!-- Search and Filter Controls -->
+        <div class="table-controls">
+            <div class="search-box">
+                <i class="fas fa-search"></i>
+                <input type="text" id="userSearch" placeholder="Search by name, email, or phone..." onkeyup="filterUsers()">
+            </div>
+            <div class="filter-group">
+                <button class="filter-btn active" onclick="filterByRole('all')">All</button>
+                <button class="filter-btn" onclick="filterByRole('admin')">Admins</button>
+                <button class="filter-btn" onclick="filterByRole('doctor')">Doctors</button>
+                <button class="filter-btn" onclick="filterByRole('user')">Patients</button>
+            </div>
+            <button class="export-btn" onclick="exportTableToCSV('users')">
+                <i class="fas fa-download"></i> Export
+            </button>
+        </div>
+
+        {% if users %}
+        <!-- Admins Section -->
+        {% set admins = users|selectattr('role', 'equalto', 'admin')|list %}
+        {% if admins %}
+        <h3 style="margin-top: 20px; color: #e74c3c;"><i class="fas fa-user-shield"></i> Administrators</h3>
+        <div class="appointments-table">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Username</th>
+                        <th>Contact</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in admins %}
+                    <tr>
+                        <td>
+                            <div class="patient-cell">
+                                <strong>{{ user.username }}</strong>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="patient-cell">
+                                <small>{{ user.email or 'N/A' }}</small>
+                                <small>{{ user.phone or 'N/A' }}</small>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="action-buttons">
+                                <button class="btn-sm btn-primary" onclick="openEditUser(this)"
+                                    data-username="{{ user.username }}" data-email="{{ user.email }}"
+                                    data-phone="{{ user.phone }}" data-role="{{ user.role }}">
+                                    Edit
+                                </button>
+                                <button class="btn-sm btn-danger" onclick="deleteUser('{{ user.username }}')">
+                                    Remove
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+
+        <!-- Doctors Section -->
+        {% set doctors_users = users|selectattr('role', 'equalto', 'doctor')|list %}
+        {% if doctors_users %}
+        <h3 style="margin-top: 20px; color: #3498db;"><i class="fas fa-user-md"></i> Doctors</h3>
+        <div class="appointments-table">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Username</th>
+                        <th>Contact</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in doctors_users %}
+                    <tr>
+                        <td>
+                            <div class="patient-cell">
+                                <strong>{{ user.username }}</strong>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="patient-cell">
+                                <small>{{ user.email or 'N/A' }}</small>
+                                <small>{{ user.phone or 'N/A' }}</small>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="action-buttons">
+                                <button class="btn-sm btn-primary" onclick="openEditUser(this)"
+                                    data-username="{{ user.username }}" data-email="{{ user.email }}"
+                                    data-phone="{{ user.phone }}" data-role="{{ user.role }}">
+                                    Edit
+                                </button>
+                                <button class="btn-sm btn-danger" onclick="deleteUser('{{ user.username }}')">
+                                    Remove
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+
+        <!-- Patients Section -->
+        {% set patients = users|selectattr('role', 'equalto', 'user')|list %}
+        {% if patients %}
+        <h3 style="margin-top: 20px; color: #27ae60;"><i class="fas fa-user"></i> Patients</h3>
+        <div class="appointments-table">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Username</th>
+                        <th>Contact</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in patients %}
+                    <tr>
+                        <td>
+                            <div class="patient-cell">
+                                <strong>{{ user.username }}</strong>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="patient-cell">
+                                <small>{{ user.email or 'N/A' }}</small>
+                                <small>{{ user.phone or 'N/A' }}</small>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="action-buttons">
+                                <button class="btn-sm btn-primary" onclick="openEditUser(this)"
+                                    data-username="{{ user.username }}" data-email="{{ user.email }}"
+                                    data-phone="{{ user.phone }}" data-role="{{ user.role }}">
+                                    Edit
+                                </button>
+                                <button class="btn-sm btn-danger" onclick="deleteUser('{{ user.username }}')">
+                                    Remove
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+        {% else %}
+        <div class="no-data">
+            <i class="fas fa-users"></i>
+            <p>No users available</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Add User Modal -->
+    <div id="addUserModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Add New User</h3>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="addUserForm">
+                    <div class="form-section">
+                        <h4>User Information</h4>
+                        <div class="form-group">
+                            <label for="user_username">Username <span class="required">*</span></label>
+                            <input type="text" id="user_username" name="username" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="user_password">Password <span class="required">*</span></label>
+                            <input type="password" id="user_password" name="password" required>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="user_email">Email</label>
+                                <input type="email" id="user_email" name="email">
+                            </div>
+                            <div class="form-group">
+                                <label for="user_phone">Phone</label>
+                                <input type="tel" id="user_phone" name="phone">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="user_role">Role <span class="required">*</span></label>
+                            <select id="user_role" name="role" required>
+                                <option value="user">Patient</option>
+                                <option value="doctor">Doctor</option>
+                                <option value="admin">Admin</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Doctor-Specific Fields (Add User) -->
+                    <div class="form-section" id="add_doctor_fields" style="display: none;">
+                        <h4>Doctor Information</h4>
+                        <div class="form-group">
+                            <label for="add_user_specialization">Specialization</label>
+                            <input type="text" id="add_user_specialization" name="specialization" placeholder="e.g., Cardiology">
+                        </div>
+                        <div class="form-group">
+                            <label for="add_user_qualifications">Qualifications</label>
+                            <input type="text" id="add_user_qualifications" name="qualifications" placeholder="e.g., MBBS, MD">
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="add_user_experience">Experience (years)</label>
+                                <input type="number" id="add_user_experience" name="experience" min="0">
+                            </div>
+                            <div class="form-group">
+                                <label for="add_user_consultation_fee">Consultation Fee</label>
+                                <input type="number" id="add_user_consultation_fee" name="consultation_fee" min="0" step="0.01">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="add_user_available_days">Available Days</label>
+                                <input type="text" id="add_user_available_days" name="available_days" placeholder="e.g., Mon-Fri">
+                            </div>
+                            <div class="form-group">
+                                <label for="add_user_available_time">Available Time</label>
+                                <input type="text" id="add_user_available_time" name="available_time" placeholder="e.g., 9:00 AM - 5:00 PM">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-actions">
+                        <button type="button" class="btn btn-secondary close-modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-plus"></i> Add User
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit User Modal -->
+    <div id="editUserModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Edit User</h3>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="editUserForm">
+                    <input type="hidden" id="edit_user_original_username" name="original_username">
+                    <div class="form-section">
+                        <h4>Basic Information</h4>
+                        <div class="form-group">
+                            <label for="edit_user_username_display">Username</label>
+                            <input type="text" id="edit_user_username_display" name="username" readonly
+                                style="background-color: #f0f0f0; cursor: not-allowed;">
+                        </div>
+                        <div class="form-group">
+                            <label for="edit_user_fullname">Full Name</label>
+                            <input type="text" id="edit_user_fullname" name="fullname" placeholder="Enter full name">
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="edit_user_email">Email</label>
+                                <input type="email" id="edit_user_email" name="email">
+                            </div>
+                            <div class="form-group">
+                                <label for="edit_user_phone">Phone</label>
+                                <input type="tel" id="edit_user_phone" name="phone">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="edit_user_age">Age</label>
+                                <input type="number" id="edit_user_age" name="age" min="0" max="150">
+                            </div>
+                            <div class="form-group">
+                                <label for="edit_user_gender">Gender</label>
+                                <select id="edit_user_gender" name="gender">
+                                    <option value="">Select Gender</option>
+                                    <option value="male">Male</option>
+                                    <option value="female">Female</option>
+                                    <option value="other">Other</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="edit_user_address">Address</label>
+                            <textarea id="edit_user_address" name="address" rows="2"
+                                placeholder="Enter address"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="edit_user_role">Role</label>
+                            <select id="edit_user_role" name="role">
+                                <option value="user">Patient</option>
+                                <option value="doctor">Doctor</option>
+                                <option value="admin">Admin</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Doctor-Specific Fields -->
+                    <div class="form-section" id="doctor_fields" style="display: none;">
+                        <h4>Doctor Information</h4>
+                        <div class="form-group">
+                            <label for="edit_user_specialization">Specialization</label>
+                            <input type="text" id="edit_user_specialization" name="specialization"
+                                placeholder="e.g., Cardiology">
+                        </div>
+                        <div class="form-group">
+                            <label for="edit_user_qualifications">Qualifications</label>
+                            <input type="text" id="edit_user_qualifications" name="qualifications"
+                                placeholder="e.g., MBBS, MD">
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="edit_user_experience">Experience (years)</label>
+                                <input type="number" id="edit_user_experience" name="experience" min="0">
+                            </div>
+                            <div class="form-group">
+                                <label for="edit_user_consultation_fee">Consultation Fee</label>
+                                <input type="number" id="edit_user_consultation_fee" name="consultation_fee" min="0"
+                                    step="0.01">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="edit_user_available_days">Available Days</label>
+                                <input type="text" id="edit_user_available_days" name="available_days"
+                                    placeholder="e.g., Mon-Fri">
+                            </div>
+                            <div class="form-group">
+                                <label for="edit_user_available_time">Available Time</label>
+                                <input type="text" id="edit_user_available_time" name="available_time"
+                                    placeholder="e.g., 9:00 AM - 5:00 PM">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Patient-Specific Fields -->
+                    <div class="form-section" id="patient_fields" style="display: none;">
+                        <h4>Medical Information</h4>
+                        <div class="form-group">
+                            <label for="edit_user_blood_group">Blood Group</label>
+                            <select id="edit_user_blood_group" name="blood_group">
+                                <option value="">Select Blood Group</option>
+                                <option value="A+">A+</option>
+                                <option value="A-">A-</option>
+                                <option value="B+">B+</option>
+                                <option value="B-">B-</option>
+                                <option value="AB+">AB+</option>
+                                <option value="AB-">AB-</option>
+                                <option value="O+">O+</option>
+                                <option value="O-">O-</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="edit_user_medical_history">Medical History</label>
+                            <textarea id="edit_user_medical_history" name="medical_history" rows="3"
+                                placeholder="Enter medical history, allergies, chronic conditions, etc."></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="edit_user_emergency_contact">Emergency Contact</label>
+                            <input type="tel" id="edit_user_emergency_contact" name="emergency_contact"
+                                placeholder="Emergency contact number">
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <h4>Security</h4>
+                        <div class="form-group">
+                            <label for="edit_user_password">New Password (leave blank to keep current)</label>
+                            <input type="password" id="edit_user_password" name="password">
+                        </div>
+                    </div>
+
+                    <script>
+                        // Show/hide role-specific fields
+                        document.getElementById('edit_user_role').addEventListener('change', function () {
+                            const role = this.value;
+                            document.getElementById('doctor_fields').style.display = role === 'doctor' ? 'block' : 'none';
+                            document.getElementById('patient_fields').style.display = role === 'user' ? 'block' : 'none';
+                        });
+                    </script>
+                    <div class="modal-actions">
+                        <button type="button" class="btn btn-secondary close-modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Save Changes
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Doctor Modal -->
+    <div id="addDoctorModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Add New Doctor</h3>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="addDoctorForm">
+                    <!-- Login Credentials -->
+                    <div class="form-section">
+                        <h4>Login Credentials</h4>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="username">Username <span class="required">*</span></label>
+                                <input type="text" id="username" name="username" placeholder="doctor_username" required
+                                    minlength="3">
+                                <small class="form-help">Used for login (minimum 3 characters)</small>
+                            </div>
+                            <div class="form-group">
+                                <label for="password">Temporary Password <span class="required">*</span></label>
+                                <input type="password" id="password" name="password" placeholder="Enter password"
+                                    required minlength="6">
+                                <small class="form-help">Doctor can change this later (minimum 6 characters)</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Personal Information -->
+                    <div class="form-section">
+                        <h4>Personal Information</h4>
+                        <div class="form-group">
+                            <label for="doctor_name">Full Name <span class="required">*</span></label>
+                            <input type="text" id="doctor_name" name="name" placeholder="Dr. John Doe" required>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="email">Email <span class="required">*</span></label>
+                                <input type="email" id="email" name="email" placeholder="doctor@example.com" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="phone">Phone <span class="required">*</span></label>
+                                <input type="tel" id="phone" name="phone" placeholder="+1 234 567 8900" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Professional Details -->
+                    <div class="form-section">
+                        <h4>Professional Details</h4>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="specialization">Specialization <span class="required">*</span></label>
+                                <input type="text" id="specialization" name="specialization" placeholder="Cardiology"
+                                    required>
+                            </div>
+                            <div class="form-group">
+                                <label for="qualifications">Qualifications <span class="required">*</span></label>
+                                <input type="text" id="qualifications" name="qualifications" placeholder="MBBS, MD"
+                                    required>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="experience">Experience (Years) <span class="required">*</span></label>
+                                <input type="number" id="experience" name="experience" min="0" placeholder="5" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="consultation_fee">Consultation Fee ($) <span
+                                        class="required">*</span></label>
+                                <input type="number" step="0.01" id="consultation_fee" name="consultation_fee" min="0"
+                                    placeholder="50.00" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Availability -->
+                    <div class="form-section">
+                        <h4>Availability</h4>
+                        <div class="form-group">
+                            <label for="available_days">Available Days <span class="required">*</span></label>
+                            <input type="text" id="available_days" name="available_days"
+                                placeholder="Monday, Wednesday, Friday" required>
+                            <small class="form-help">Enter days separated by commas</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="available_time">Available Time <span class="required">*</span></label>
+                            <input type="text" id="available_time" name="available_time" placeholder="9:00 AM - 5:00 PM"
+                                required>
+                            <small class="form-help">Enter available time range</small>
+                        </div>
+                    </div>
+
+                    <div class="modal-actions">
+                        <button type="button" class="btn btn-secondary close-modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-plus"></i> Add Doctor
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Doctor Modal -->
+    <div id="editDoctorModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Edit Doctor</h3>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="editDoctorForm">
+                    <input type="hidden" id="edit_doctor_id" name="doctor_id">
+                    <!-- Personal Information -->
+                    <div class="form-section">
+                        <h4>Personal Information</h4>
+                        <div class="form-group">
+                            <label for="edit_doctor_name">Full Name <span class="required">*</span></label>
+                            <input type="text" id="edit_doctor_name" name="name" required>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="edit_email">Email <span class="required">*</span></label>
+                                <input type="email" id="edit_email" name="email" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="edit_phone">Phone <span class="required">*</span></label>
+                                <input type="tel" id="edit_phone" name="phone" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Professional Details -->
+                    <div class="form-section">
+                        <h4>Professional Details</h4>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="edit_specialization">Specialization <span class="required">*</span></label>
+                                <input type="text" id="edit_specialization" name="specialization" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="edit_qualifications">Qualifications <span class="required">*</span></label>
+                                <input type="text" id="edit_qualifications" name="qualifications" required>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="edit_experience">Experience (Years) <span class="required">*</span></label>
+                                <input type="number" id="edit_experience" name="experience" min="0" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="edit_consultation_fee">Consultation Fee ($) <span
+                                        class="required">*</span></label>
+                                <input type="number" step="0.01" id="edit_consultation_fee" name="consultation_fee"
+                                    min="0" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Availability -->
+                    <div class="form-section">
+                        <h4>Availability</h4>
+                        <div class="form-group">
+                            <label for="edit_available_days">Available Days <span class="required">*</span></label>
+                            <input type="text" id="edit_available_days" name="available_days" required>
+                            <small class="form-help">Enter days separated by commas</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="edit_available_time">Available Time <span class="required">*</span></label>
+                            <input type="text" id="edit_available_time" name="available_time" required>
+                            <small class="form-help">Enter available time range</small>
+                        </div>
+                    </div>
+
+                    <div class="modal-actions">
+                        <button type="button" class="btn btn-secondary close-modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Save Changes
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Appointment Details Modal -->
+    <div id="appointmentDetailsModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Appointment Details</h3>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-section">
+                    <h4>Appointment Information</h4>
+                    <div class="summary-row">
+                        <span>Appointment ID</span>
+                        <strong id="detailId">-</strong>
+                    </div>
+                    <div class="summary-row">
+                        <span>Patient Name</span>
+                        <strong id="detailPatient">-</strong>
+                    </div>
+                    <div class="summary-row">
+                        <span>Doctor Name</span>
+                        <strong id="detailDoctor">-</strong>
+                    </div>
+                    <div class="summary-row">
+                        <span>Date</span>
+                        <strong id="detailDate">-</strong>
+                    </div>
+                    <div class="summary-row">
+                        <span>Time</span>
+                        <strong id="detailTime">-</strong>
+                    </div>
+                    <div class="summary-row">
+                        <span>Status</span>
+                        <strong id="detailStatus">-</strong>
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button class="btn btn-secondary close-modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reports Modal -->
+    <div id="reportsModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Reports</h3>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-section">
+                    <h4>Current Metrics</h4>
+                    <div class="summary-row">
+                        <span>Total Patients</span>
+                        <strong>{{ total_patients }}</strong>
+                    </div>
+                    <div class="summary-row">
+                        <span>Active Doctors</span>
+                        <strong>{{ total_doctors }}</strong>
+                    </div>
+                    <div class="summary-row">
+                        <span>Total Appointments</span>
+                        <strong>{{ total_appointments }}</strong>
+                    </div>
+                    <div class="summary-row">
+                        <span>Pending Approvals</span>
+                        <strong>{{ pending_appointments }}</strong>
+                    </div>
+                </div>
+                <div class="form-section">
+                    <h4>Export</h4>
+                    <p>Download appointment data for external analysis.</p>
+                    <div class="modal-actions">
+                        <button class="btn btn-secondary close-modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settingsModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>System Settings</h3>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-section">
+                    <h4>Platform</h4>
+                    <div class="form-group">
+                        <label>Maintenance Mode</label>
+                        <div class="terms">
+                            <input type="checkbox" disabled>
+                            <span>Coming soon — manage downtime announcements</span>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Notifications</label>
+                        <div class="terms">
+                            <input type="checkbox" checked disabled>
+                            <span>Email confirmations enabled</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-section">
+                    <h4>Data & Privacy</h4>
+                    <p>Use admin tools to update settings. This panel is for quick visibility; saving changes will be
+                        added later.</p>
+                    <div class="modal-actions">
+                        <button class="btn btn-secondary close-modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Appointments (Upcoming) - Moved to bottom before footer -->
+    <div class="recent-section">
+        <div class="section-header">
+            <h2><i class="fas fa-calendar-alt"></i> Upcoming Appointments</h2>
+        </div>
+
+        {% if recent_appointments %}
+        <div class="appointments-table">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Patient</th>
+                        <th>Doctor</th>
+                        <th>Date & Time</th>
+                        <th>Symptoms</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for appointment in recent_appointments %}
+                    <tr>
+                        <td>#{{ appointment.id }}</td>
+                        <td>
+                            <div class="patient-cell">
+                                <strong>{{ appointment.patient.username }}</strong>
+                                <small>{{ appointment.patient.email or 'N/A' }}</small>
+                            </div>
+                        </td>
+                        <td>{{ appointment.doctor.name }}</td>
+                        <td>
+                            <div class="datetime-cell">
+                                <span class="date">{{ appointment.appointment_date.strftime('%b %d, %Y') }}</span>
+                                <span class="time">{{ appointment.appointment_time }}</span>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="symptoms-text">{{ appointment.symptoms[:50] }}{% if appointment.symptoms|length
+                                > 50 %}...{% endif %}</span>
+                        </td>
+                        <td>
+                            <span class="status-badge {{ appointment.status }}">
+                                {{ 'Approved' if appointment.status == 'confirmed' else appointment.status|title }}
+                            </span>
+                        </td>
+                        <td>
+                            <div class="action-buttons">
+                                {% if appointment.status == 'pending' %}
+                                <button class="btn-sm btn-success"
+                                    onclick="updateAppointment('{{ appointment.id }}', 'confirmed')">
+                                    Confirm
+                                </button>
+                                <button class="btn-sm btn-danger"
+                                    onclick="updateAppointment('{{ appointment.id }}', 'cancelled')">
+                                    Cancel
+                                </button>
+                                {% endif %}
+                                <button class="btn-sm btn-info" onclick="viewDetails('{{ appointment.id }}')">
+                                    Details
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="no-data">
+            <i class="fas fa-calendar-times"></i>
+            <p>No upcoming appointments</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Upload Admin Profile Picture
+    function uploadAdminProfilePicture() {
+        const fileInput = document.getElementById('adminProfilePictureInput');
+        if (!fileInput.files.length) return;
+
+        const formData = new FormData();
+        formData.append('profile_picture', fileInput.files[0]);
+
+        fetch('/upload-profile-picture', {
+            method: 'POST',
+            body: formData
+        })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Profile picture updated successfully');
+                    location.reload();
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            })
+            .catch(err => {
+                console.error('Error:', err);
+                alert('Upload failed. Please try again.');
+            });
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        // Modal functionality (supports multiple modals)
+        const modals = document.querySelectorAll('.modal');
+        const addDoctorBtn = document.querySelector('[data-action="add-doctor"]');
+        const reportsBtn = document.querySelector('[data-action="view-reports"]');
+        const settingsBtn = document.querySelector('[data-action="system-settings"]');
+        const closeBtns = document.querySelectorAll('.close-modal');
+        const editDoctorForm = document.getElementById('editDoctorForm');
+
+        const openModal = (modalId) => {
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.style.display = 'flex';
+                modal.classList.add('active');
+            }
+        };
+
+        const closeModal = (modal) => {
+            modal.style.display = 'none';
+            modal.classList.remove('active');
+        };
+
+        addDoctorBtn?.addEventListener('click', () => openModal('addDoctorModal'));
+        reportsBtn?.addEventListener('click', () => openModal('reportsModal'));
+        settingsBtn?.addEventListener('click', () => openModal('settingsModal'));
+
+        closeBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                modals.forEach(modal => closeModal(modal));
+            });
+        });
+
+        window.addEventListener('click', (e) => {
+            modals.forEach(modal => {
+                if (e.target === modal) {
+                    closeModal(modal);
+                }
+            });
+        });
+
+        // Edit Doctor Form submit
+        if (editDoctorForm) {
+            editDoctorForm.addEventListener('submit', function (e) {
+                e.preventDefault();
+                const doctorId = document.getElementById('edit_doctor_id').value;
+                const formData = new FormData(this);
+
+                fetch(`/admin/update-doctor/${doctorId}`, {
+                    method: 'POST',
+                    body: formData
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            alert('Doctor updated successfully!');
+                            closeModal(document.getElementById('editDoctorModal'));
+                            location.reload();
+                        } else {
+                            alert('Error: ' + data.message);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('An error occurred. Please try again.');
+                    });
+            });
+        }
+
+        // Add Doctor Form
+        const addDoctorForm = document.getElementById('addDoctorForm');
+        addDoctorForm.addEventListener('submit', function (e) {
+            e.preventDefault();
+
+            const formData = new FormData(this);
+
+            fetch('{{ url_for("add_doctor") }}', {
+                method: 'POST',
+                body: formData
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Doctor added successfully!');
+                        closeModal(document.getElementById('addDoctorModal'));
+                        location.reload(); // Reload to show new doctor
+                    } else {
+                        alert('Error: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('An error occurred. Please try again.');
+                });
+        });
+
+        // ===== USER MANAGEMENT =====
+        const addUserBtn = document.querySelector('[data-action="add-user"]');
+        const addUserForm = document.getElementById('addUserForm');
+        const editUserForm = document.getElementById('editUserForm');
+
+        addUserBtn?.addEventListener('click', () => openModal('addUserModal'));
+
+        // Add User Form
+        if (addUserForm) {
+            addUserForm.addEventListener('submit', function (e) {
+                e.preventDefault();
+                const formData = new FormData(this);
+
+                fetch('/admin/add-user', {
+                    method: 'POST',
+                    body: formData
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            alert('User created successfully!');
+                            closeModal(document.getElementById('addUserModal'));
+                            location.reload();
+                        } else {
+                            alert('Error: ' + data.message);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('An error occurred. Please try again.');
+                    });
+            });
+        }
+
+        const addUserRoleSelect = document.getElementById('user_role');
+        const addDoctorFields = document.getElementById('add_doctor_fields');
+        if (addUserRoleSelect && addDoctorFields) {
+            const toggleAddDoctorFields = function () {
+                addDoctorFields.style.display = addUserRoleSelect.value === 'doctor' ? 'block' : 'none';
+            };
+            addUserRoleSelect.addEventListener('change', toggleAddDoctorFields);
+            toggleAddDoctorFields();
+        }
+
+        // Edit User Form
+        if (editUserForm) {
+            editUserForm.addEventListener('submit', function (e) {
+                e.preventDefault();
+                const username = document.getElementById('edit_user_original_username').value;
+                const formData = new FormData(this);
+
+                fetch(`/admin/update-user/${username}`, {
+                    method: 'POST',
+                    body: formData
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            alert('User updated successfully!');
+                            closeModal(document.getElementById('editUserModal'));
+                            location.reload();
+                        } else {
+                            alert('Error: ' + data.message);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('An error occurred. Please try again.');
+                    });
+            });
+        }
+    });
+
+    // Update appointment status
+    function updateAppointment(appointmentId, status) {
+        if (!confirm(`Are you sure you want to ${status} this appointment?`)) {
+            return;
+        }
+
+        console.log(`Updating appointment ${appointmentId} to status ${status}`);
+
+        const formData = new FormData();
+        formData.append('status', status);
+
+        fetch(`/admin/update-appointment/${appointmentId}`, {
+            method: 'POST',
+            body: formData
+        })
+            .then(response => {
+                console.log('Response status:', response.status);
+                return response.json();
+            })
+            .then(data => {
+                console.log('Response data:', data);
+                if (data.success) {
+                    alert('Appointment updated successfully!');
+                    location.reload();
+                } else {
+                    alert('Error: ' + (data.message || 'Unknown error'));
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred. Please try again.');
+            });
+    }
+
+    // Delete doctor
+    function deleteDoctor(doctorId) {
+        if (!confirm('Remove this doctor? This cannot be undone.')) {
+            return;
+        }
+
+        fetch(`/admin/delete-doctor/${doctorId}`, {
+            method: 'POST'
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(data.message || 'Doctor removed successfully');
+                    location.reload();
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred. Please try again.');
+            });
+    }
+
+    // Open edit doctor modal and populate fields
+    function openEditDoctor(button) {
+        const modal = document.getElementById('editDoctorModal');
+        if (!modal) return;
+
+        document.getElementById('edit_doctor_id').value = button.dataset.id || '';
+        document.getElementById('edit_doctor_name').value = button.dataset.name || '';
+        document.getElementById('edit_specialization').value = button.dataset.specialization || '';
+        document.getElementById('edit_qualifications').value = button.dataset.qualifications || '';
+        document.getElementById('edit_experience').value = button.dataset.experience || '';
+        document.getElementById('edit_email').value = button.dataset.email || '';
+        document.getElementById('edit_phone').value = button.dataset.phone || '';
+        document.getElementById('edit_consultation_fee').value = button.dataset.fee || '';
+        document.getElementById('edit_available_days').value = button.dataset.days || '';
+        document.getElementById('edit_available_time').value = button.dataset.time || '';
+
+        modal.style.display = 'flex';
+        modal.classList.add('active');
+    }
+
+    // View appointment details
+    function viewDetails(appointmentId) {
+        console.log(`Opening details for appointment: ${appointmentId}`);
+
+        // Find the appointment row in the table
+        const rows = document.querySelectorAll('.appointments-table tbody tr');
+        let appointmentData = null;
+
+        rows.forEach(row => {
+            const firstCell = row.querySelector('td');
+            if (firstCell && firstCell.textContent.includes(appointmentId)) {
+                const cells = row.querySelectorAll('td');
+                // Updated cell indices to match new table structure
+                // ID, Patient, Doctor, DateTime, Symptoms, Status, Actions
+                const patientCell = cells[1].querySelectorAll('*');
+                const patientName = patientCell.length > 0 ? patientCell[0].textContent.trim() : cells[1].textContent.trim();
+
+                const dateTimeCell = cells[3];
+                const dateElements = dateTimeCell.querySelectorAll('span');
+                const date = dateElements.length > 0 ? dateElements[0].textContent.trim() : cells[3].textContent.split('\n')[0].trim();
+                const time = dateElements.length > 1 ? dateElements[1].textContent.trim() : cells[3].textContent.split('\n')[1]?.trim() || '-';
+                const symptoms = cells[4] ? cells[4].textContent.trim() : '-';
+
+                appointmentData = {
+                    id: appointmentId,
+                    patient: patientName,
+                    doctor: cells[2].textContent.trim(),
+                    date: date,
+                    time: time,
+                    symptoms: symptoms,
+                    status: cells[5].textContent.trim()
+                };
+            }
+        });
+
+        if (appointmentData) {
+            console.log('Appointment data found:', appointmentData);
+            // Populate modal fields
+            document.getElementById('detailId').textContent = appointmentData.id;
+            document.getElementById('detailPatient').textContent = appointmentData.patient;
+            document.getElementById('detailDoctor').textContent = appointmentData.doctor;
+            document.getElementById('detailDate').textContent = appointmentData.date;
+            document.getElementById('detailTime').textContent = appointmentData.time;
+            document.getElementById('detailStatus').textContent = appointmentData.status;
+
+            // Open modal
+            const modal = document.getElementById('appointmentDetailsModal');
+            if (modal) {
+                modal.style.display = 'flex';
+                modal.classList.add('active');
+            }
+        } else {
+            console.error('Appointment not found:', appointmentId);
+            alert('Could not find appointment details');
+        }
+    }
+
+    // ===== USER MANAGEMENT FUNCTIONS =====
+    function openEditUser(button) {
+        const modal = document.getElementById('editUserModal');
+        if (!modal) return;
+
+        const username = button.dataset.username || '';
+        const role = button.dataset.role || 'user';
+
+        // Basic fields
+        document.getElementById('edit_user_original_username').value = username;
+        document.getElementById('edit_user_username_display').value = username;
+        document.getElementById('edit_user_fullname').value = button.dataset.fullname || '';
+        document.getElementById('edit_user_email').value = button.dataset.email || '';
+        document.getElementById('edit_user_phone').value = button.dataset.phone || '';
+        document.getElementById('edit_user_age').value = button.dataset.age || '';
+        document.getElementById('edit_user_gender').value = button.dataset.gender || '';
+        document.getElementById('edit_user_address').value = button.dataset.address || '';
+        document.getElementById('edit_user_role').value = role;
+        document.getElementById('edit_user_password').value = ''; // Clear password field
+
+        // Doctor-specific fields
+        document.getElementById('edit_user_specialization').value = button.dataset.specialization || '';
+        document.getElementById('edit_user_qualifications').value = button.dataset.qualifications || '';
+        document.getElementById('edit_user_experience').value = button.dataset.experience || '';
+        document.getElementById('edit_user_consultation_fee').value = button.dataset.consultation_fee || '';
+        document.getElementById('edit_user_available_days').value = button.dataset.available_days || '';
+        document.getElementById('edit_user_available_time').value = button.dataset.available_time || '';
+
+        // Patient-specific fields
+        document.getElementById('edit_user_blood_group').value = button.dataset.blood_group || '';
+        document.getElementById('edit_user_medical_history').value = button.dataset.medical_history || '';
+        document.getElementById('edit_user_emergency_contact').value = button.dataset.emergency_contact || '';
+
+        // Show/hide role-specific sections
+        document.getElementById('doctor_fields').style.display = role === 'doctor' ? 'block' : 'none';
+        document.getElementById('patient_fields').style.display = role === 'user' ? 'block' : 'none';
+
+        modal.style.display = 'flex';
+        modal.classList.add('active');
+    }
+
+    function deleteUser(username) {
+        if (!confirm(`Are you sure you want to delete user "${username}"? This action cannot be undone.`)) {
+            return;
+        }
+
+        fetch(`/admin/delete-user/${username}`, {
+            method: 'POST'
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(data.message || 'User deleted successfully');
+                    location.reload();
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred. Please try again.');
+            });
+    }
+
+    // ===== ENHANCED UX FEATURES =====
+    
+    // Search/Filter Users
+    let currentRoleFilter = 'all';
+    
+    function filterUsers() {
+        const searchTerm = document.getElementById('userSearch').value.toLowerCase();
+        const tables = document.querySelectorAll('.appointments-table table');
+        
+        tables.forEach(table => {
+            const tbody = table.querySelector('tbody');
+            if (!tbody) return;
+            
+            const rows = tbody.querySelectorAll('tr');
+            let visibleCount = 0;
+            
+            rows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                const matchesSearch = text.includes(searchTerm);
+                const sectionRole = getSectionRole(table);
+                const matchesRole = currentRoleFilter === 'all' || sectionRole === currentRoleFilter;
+                
+                if (matchesSearch && matchesRole) {
+                    row.style.display = '';
+                    visibleCount++;
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+            
+            // Show/hide entire section if no matches
+            const section = table.closest('.appointments-table');
+            if (section) {
+                const header = section.previousElementSibling;
+                if (visibleCount === 0 && searchTerm) {
+                    section.style.display = 'none';
+                    if (header && header.tagName === 'H3') header.style.display = 'none';
+                } else {
+                    section.style.display = '';
+                    if (header && header.tagName === 'H3') header.style.display = '';
+                }
+            }
+        });
+    }
+    
+    function getSectionRole(table) {
+        const section = table.closest('.appointments-table');
+        const header = section ? section.previousElementSibling : null;
+        if (!header || header.tagName !== 'H3') return 'user';
+        
+        const headerText = header.textContent.toLowerCase();
+        if (headerText.includes('administrator')) return 'admin';
+        if (headerText.includes('doctor')) return 'doctor';
+        return 'user';
+    }
+    
+    function filterByRole(role) {
+        currentRoleFilter = role;
+        
+        // Update active button
+        document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+        event.target.classList.add('active');
+        
+        // Apply filter
+        filterUsers();
+    }
+    
+    // Sort Table
+    function sortTable(table, columnIndex, ascending = true) {
+        const tbody = table.querySelector('tbody');
+        const rows = Array.from(tbody.querySelectorAll('tr'));
+        
+        rows.sort((a, b) => {
+            const aText = a.cells[columnIndex].textContent.trim();
+            const bText = b.cells[columnIndex].textContent.trim();
+            
+            // Try numeric comparison first
+            const aNum = parseFloat(aText);
+            const bNum = parseFloat(bText);
+            
+            if (!isNaN(aNum) && !isNaN(bNum)) {
+                return ascending ? aNum - bNum : bNum - aNum;
+            }
+            
+            // Fall back to string comparison
+            return ascending ? aText.localeCompare(bText) : bText.localeCompare(aText);
+        });
+        
+        rows.forEach(row => tbody.appendChild(row));
+    }
+    
+    // Make table headers sortable
+    document.addEventListener('DOMContentLoaded', function() {
+        const tables = document.querySelectorAll('.appointments-table table');
+        
+        tables.forEach(table => {
+            const headers = table.querySelectorAll('thead th');
+            
+            headers.forEach((header, index) => {
+                // Skip action column
+                if (header.textContent.toLowerCase().includes('action')) return;
+                
+                header.classList.add('sortable');
+                let ascending = true;
+                
+                header.addEventListener('click', function() {
+                    // Reset other headers
+                    headers.forEach(h => {
+                        h.classList.remove('sorted-asc', 'sorted-desc');
+                    });
+                    
+                    // Sort table
+                    sortTable(table, index, ascending);
+                    
+                    // Update header state
+                    this.classList.add(ascending ? 'sorted-asc' : 'sorted-desc');
+                    ascending = !ascending;
+                });
+            });
+        });
+    });
+    
+    // Export Table to CSV
+    function exportTableToCSV(type) {
+        const tables = document.querySelectorAll('.appointments-table table');
+        let csvContent = '';
+        
+        tables.forEach((table, idx) => {
+            const rows = table.querySelectorAll('tr');
+            const sectionHeader = table.closest('.appointments-table').previousElementSibling;
+            
+            if (sectionHeader && sectionHeader.tagName === 'H3') {
+                csvContent += sectionHeader.textContent.trim() + '\n';
+            }
+            
+            rows.forEach(row => {
+                const cols = row.querySelectorAll('th, td');
+                const rowData = Array.from(cols).map(col => {
+                    return '"' + col.textContent.trim().replace(/"/g, '""') + '"';
+                });
+                csvContent += rowData.join(',') + '\n';
+            });
+            
+            csvContent += '\n';
+        });
+        
+        // Download CSV
+        const blob = new Blob([csvContent], { type: 'text/csv' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `care4u_${type}_${new Date().toISOString().split('T')[0]}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+        
+        showToast('Export successful!', 'success');
+    }
+    
+    // Toast Notifications
+    function showToast(message, type = 'success') {
+        const container = getOrCreateToastContainer();
+        
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+        toast.innerHTML = `
+            <i class="toast-icon fas ${type === 'success' ? 'fa-check-circle' : type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle'}"></i>
+            <span class="toast-message">${message}</span>
+            <button class="toast-close" onclick="this.parentElement.remove()">&times;</button>
+        `;
+        
+        container.appendChild(toast);
+        
+        // Auto remove after 5 seconds
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            setTimeout(() => toast.remove(), 300);
+        }, 5000);
+    }
+    
+    function getOrCreateToastContainer() {
+        let container = document.querySelector('.toast-container');
+        if (!container) {
+            container = document.createElement('div');
+            container.className = 'toast-container';
+            document.body.appendChild(container);
+        }
+        return container;
+    }
+    
+    // Loading Overlay
+    function showLoading() {
+        let overlay = document.querySelector('.loading-overlay');
+        if (!overlay) {
+            overlay = document.createElement('div');
+            overlay.className = 'loading-overlay';
+            overlay.innerHTML = '<div class="spinner"></div>';
+            document.body.appendChild(overlay);
+        }
+        overlay.classList.add('active');
+    }
+    
+    function hideLoading() {
+        const overlay = document.querySelector('.loading-overlay');
+        if (overlay) {
+            overlay.classList.remove('active');
+        }
+    }
+    
+    // Animate stat cards on load
+    document.addEventListener('DOMContentLoaded', function() {
+        const statCards = document.querySelectorAll('.stat-info h3');
+        
+        statCards.forEach(card => {
+            const targetValue = parseInt(card.textContent);
+            if (isNaN(targetValue)) return;
+            
+            let currentValue = 0;
+            const increment = Math.ceil(targetValue / 50);
+            const duration = 1500; // 1.5 seconds
+            const stepTime = duration / (targetValue / increment);
+            
+            card.textContent = '0';
+            
+            const counter = setInterval(() => {
+                currentValue += increment;
+                if (currentValue >= targetValue) {
+                    card.textContent = targetValue;
+                    clearInterval(counter);
+                } else {
+                    card.textContent = currentValue;
+                }
+            }, stepTime);
+        });
+    });
+    
+    // Keyboard shortcuts
+    document.addEventListener('keydown', function(e) {
+        // Ctrl/Cmd + K: Focus search
+        if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+            e.preventDefault();
+            const searchBox = document.getElementById('userSearch');
+            if (searchBox) searchBox.focus();
+        }
+        
+        // Esc: Close modals
+        if (e.key === 'Escape') {
+            document.querySelectorAll('.modal').forEach(modal => {
+                modal.style.display = 'none';
+                modal.classList.remove('active');
+            });
+        }
+    });
+    
+    // Enhanced form submissions with loading states
+    const originalFetch = window.fetch;
+    window.fetch = function(...args) {
+        showLoading();
+        return originalFetch.apply(this, args).finally(() => {
+            hideLoading();
+        });
+    };
+
+</script>
+{% endblock %}

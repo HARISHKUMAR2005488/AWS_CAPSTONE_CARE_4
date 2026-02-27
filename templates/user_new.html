@@ -1,0 +1,1158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Care_4_U Hospitals</title>
+
+    <!-- SF Pro Display Font -->
+    <style>
+        @font-face {
+            font-family: 'SF Pro Display';
+            src: local('SF Pro Display'), local('SFProDisplay-Regular'),
+                 url('https://sf.abarba.me/SF-Pro-Display-Regular.otf') format('opentype');
+            font-weight: 400;
+            font-style: normal;
+        }
+        @font-face {
+            font-family: 'SF Pro Display';
+            src: local('SF Pro Display'), local('SFProDisplay-Light'),
+                 url('https://sf.abarba.me/SF-Pro-Display-Light.otf') format('opentype');
+            font-weight: 300;
+            font-style: normal;
+        }
+        @font-face {
+            font-family: 'SF Pro Display';
+            src: local('SF Pro Display'), local('SFProDisplay-Medium'),
+                 url('https://sf.abarba.me/SF-Pro-Display-Medium.otf') format('opentype');
+            font-weight: 500;
+            font-style: normal;
+        }
+        @font-face {
+            font-family: 'SF Pro Display';
+            src: local('SF Pro Display'), local('SFProDisplay-Bold'),
+                 url('https://sf.abarba.me/SF-Pro-Display-Bold.otf') format('opentype');
+            font-weight: 700;
+            font-style: normal;
+        }
+    </style>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="dashboard-layout">
+        <!-- Left Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <i class="fas fa-heart"></i>
+                    <div class="logo-text">
+                        <h2>Care_4_U</h2>
+                        <p>We care about you</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="user-profile">
+                <div class="user-avatar">
+                    {% if current_user.profile_picture %}
+                        <img src="{{ url_for('serve_profile_picture', filename=current_user.profile_picture.split('/')[-1]) }}" alt="{{ current_user.username }}">
+                    {% else %}
+                        <i class="fas fa-user-circle"></i>
+                    {% endif %}
+                </div>
+                <div class="user-info">
+                    <h3>{{ current_user.username }}</h3>
+                    <p>{{ current_user.email }}</p>
+                </div>
+            </div>
+
+            <nav class="sidebar-nav">
+                <a href="#" class="nav-item active" id="nav-dashboard" onclick="showDashboardSection(event)">
+                    <i class="fas fa-th-large"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="{{ url_for('doctors') }}" class="nav-item">
+                    <i class="fas fa-calendar-check"></i>
+                    <span>Appointment</span>
+                </a>
+                
+            </nav>
+
+            <div class="sidebar-footer">
+                <a href="#" class="footer-item" onclick="showAccountSection(event)">
+                    <i class="fas fa-user-cog"></i>
+                    <span>Account</span>
+                </a>
+                <a href="#" class="footer-item" onclick="showSettingsModal(event)">
+                    <i class="fas fa-cog"></i>
+                    <span>Settings</span>
+                </a>
+                <a href="#" class="footer-item" onclick="showHelpCenter(event)">
+                    <i class="fas fa-question-circle"></i>
+                    <span>Help center</span>
+                </a>
+                <a href="{{ url_for('logout') }}" class="footer-item">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Logout</span>
+                </a>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Header -->
+            <div class="dashboard-header">
+                <div class="header-left">
+                    <h1 class="page-title">Patient Dashboard</h1>
+                    <p class="page-subtitle">Welcome back, {{ current_user.username }}</p>
+                </div>
+                <div class="header-right">
+                    <button class="btn-header btn-header-secondary" onclick="toggleChatBox()">
+                        <i class="fas fa-comments"></i>
+                        <span>Health Assistant</span>
+                    </button>
+                    <button class="btn-header btn-header-primary" onclick="location.href='{{ url_for('doctors') }}'">
+                        <i class="fas fa-calendar-plus"></i>
+                        <span>Book Appointment</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Dashboard Content -->
+            <div class="dashboard-content">
+                <!-- Welcome Card -->
+                <div class="welcome-card">
+                    <div class="welcome-content">
+                        <div class="welcome-icon">
+                            <i class="fas fa-hand-holding-medical"></i>
+                        </div>
+                        <div class="welcome-text">
+                            <h2>Hello, {{ current_user.username }}!</h2>
+                            <p>Your health, our priority. How are you feeling today?</p>
+                        </div>
+                    </div>
+                    <div class="welcome-decoration">
+                        <i class="fas fa-heartbeat"></i>
+                    </div>
+                </div>
+
+                <!-- Appointment Summary Stats -->
+                <div class="stats-grid">
+                    <div class="stat-card stat-card-blue">
+                        <div class="stat-icon">
+                            <i class="fas fa-calendar-alt"></i>
+                        </div>
+                        <div class="stat-details">
+                            <h3>{{ appointments|length }}</h3>
+                            <p>Total Appointments</p>
+                        </div>
+                    </div>
+                    <div class="stat-card stat-card-green">
+                        <div class="stat-icon">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <div class="stat-details">
+                            <h3>{{ completed_tasks }}</h3>
+                            <p>Completed</p>
+                        </div>
+                    </div>
+                    <div class="stat-card stat-card-orange">
+                        <div class="stat-icon">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div class="stat-details">
+                            <h3>{{ total_tasks - completed_tasks }}</h3>
+                            <p>Upcoming</p>
+                        </div>
+                    </div>
+                    <div class="stat-card stat-card-purple">
+                        <div class="stat-icon">
+                            <i class="fas fa-user-md"></i>
+                        </div>
+                        <div class="stat-details">
+                            <h3>{% if assigned_doctor %}1{% else %}0{% endif %}</h3>
+                            <p>Assigned Doctor</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Main Grid Layout -->
+                <div class="main-grid">
+                    <!-- Left Column -->
+                    <div class="main-column-left">
+                        <!-- Upcoming Appointment Card -->
+                        <div class="dashboard-card upcoming-appointment-card">
+                            <div class="card-header-new">
+                                <h3><i class="fas fa-calendar-check"></i> Next Appointment</h3>
+                            </div>
+                            <div class="card-body">
+                                {% if appointments and appointments|length > 0 %}
+                                    {% set next_appointment = appointments[0] %}
+                                    <div class="appointment-preview">
+                                        <div class="appointment-date-badge">
+                                            <div class="date-day">{{ next_appointment.appointment_date.strftime('%d') }}</div>
+                                            <div class="date-month">{{ next_appointment.appointment_date.strftime('%b') }}</div>
+                                        </div>
+                                        <div class="appointment-details">
+                                            <h4>{{ next_appointment.doctor_name }}</h4>
+                                            <p class="appointment-specialty">
+                                                <i class="fas fa-stethoscope"></i>
+                                                {% if next_appointment.specialization %}{{ next_appointment.specialization }}{% else %}General Physician{% endif %}
+                                            </p>
+                                            <p class="appointment-time">
+                                                <i class="fas fa-clock"></i>
+                                                {% if next_appointment.appointment_time %}{{ next_appointment.appointment_time }}{% else %}Not scheduled{% endif %}
+                                            </p>
+                                            <span class="status-badge status-{{ next_appointment.status|lower }}">
+                                                {{ next_appointment.status|title }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div class="card-actions">
+                                        <button onclick="showAppointmentDetails()" class="btn btn-primary btn-block">
+                                            <i class="fas fa-eye"></i> View Details
+                                        </button>
+                                        <a href="{{ url_for('download_appointment_summary', appointment_id=next_appointment.id) }}" class="btn btn-secondary btn-block" target="_blank" rel="noopener">
+                                            <i class="fas fa-file-pdf"></i> Download Summary
+                                        </a>
+                                    </div>
+                                {% else %}
+                                    <div class="empty-state">
+                                        <i class="fas fa-calendar-times"></i>
+                                        <p>No upcoming appointments</p>
+                                        <a href="{{ url_for('doctors') }}" class="btn btn-primary btn-sm">
+                                            <i class="fas fa-plus"></i> Book Appointment
+                                        </a>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Health Data Card -->
+                        <div class="dashboard-card health-data-card">
+                            <div class="card-header-new">
+                                <h3><i class="fas fa-heartbeat"></i> Health Information</h3>
+                                <button class="btn-icon-action" onclick="toggleHealthInfoEdit()" title="Update Health Data">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                            </div>
+                            <div class="card-body">
+                                <div class="health-metrics">
+                                    <div class="health-metric">
+                                        <div class="metric-icon metric-icon-blue">
+                                            <i class="fas fa-weight"></i>
+                                        </div>
+                                        <div class="metric-info">
+                                            <label>Weight</label>
+                                            <p id="displayWeight">-- kg</p>
+                                        </div>
+                                    </div>
+                                    <div class="health-metric">
+                                        <div class="metric-icon metric-icon-green">
+                                            <i class="fas fa-ruler-vertical"></i>
+                                        </div>
+                                        <div class="metric-info">
+                                            <label>Height</label>
+                                            <p id="displayHeight">-- m</p>
+                                        </div>
+                                    </div>
+                                    <div class="health-metric">
+                                        <div class="metric-icon metric-icon-red">
+                                            <i class="fas fa-tint"></i>
+                                        </div>
+                                        <div class="metric-info">
+                                            <label>Blood Group</label>
+                                            <p id="displayBloodGroup">--</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right Column -->
+                    <div class="main-column-right">
+                        <!-- Quick Actions -->
+                        <div class="dashboard-card quick-actions-card">
+                            <div class="card-header-new">
+                                <h3><i class="fas fa-bolt"></i> Quick Actions</h3>
+                            </div>
+                            <div class="card-body">
+                                <div class="quick-actions-grid">
+                                    <button onclick="showUploadModal()" class="quick-action-item quick-action-purple">
+                                        <div class="quick-action-icon">
+                                            <i class="fas fa-file-medical"></i>
+                                        </div>
+                                        <span>Medical History</span>
+                                    </button>
+                                    <button onclick="toggleChatBox()" class="quick-action-item quick-action-orange">
+                                        <div class="quick-action-icon">
+                                            <i class="fas fa-ambulance"></i>
+                                        </div>
+                                        <span>Emergency Help</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Assigned Doctor -->
+                        {% if assigned_doctor %}
+                        <div class="dashboard-card doctor-profile-card">
+                            <div class="card-header-new">
+                                <h3><i class="fas fa-user-md"></i> Your Doctor</h3>
+                            </div>
+                            <div class="card-body">
+                                <div class="doctor-profile">
+                                    <div class="doctor-avatar-large">
+                                        {% if assigned_doctor.profile_image %}
+                                            <img src="{{ url_for('serve_profile_picture', filename=assigned_doctor.profile_image.split('/')[-1]) }}" alt="{{ assigned_doctor.name }}">
+                                        {% else %}
+                                            <i class="fas fa-user-md"></i>
+                                        {% endif %}
+                                    </div>
+                                    <div class="doctor-profile-info">
+                                        <h4>{{ assigned_doctor.name }}</h4>
+                                        <p class="doctor-specialty"><i class="fas fa-stethoscope"></i> {{ assigned_doctor.specialization }}</p>
+                                        {% if assigned_doctor.experience %}
+                                        <p class="doctor-experience"><i class="fas fa-award"></i> {{ assigned_doctor.experience }} years experience</p>
+                                        {% endif %}
+                                    </div>
+                                    <div class="doctor-contact-actions">
+                                        <button class="btn btn-outline btn-sm" onclick="messageDoctor()">
+                                            <i class="fas fa-comment"></i> Message
+                                        </button>
+                                        <button class="btn btn-outline btn-sm" onclick="callDoctor()">
+                                            <i class="fas fa-phone"></i> Call
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <!-- Recent Activity -->
+                        <div class="dashboard-card recent-activity-card">
+                            <div class="card-header-new">
+                                <h3><i class="fas fa-history"></i> Recent Activity</h3>
+                                <a href="{{ url_for('my_appointments') }}" class="link-view-all">View All</a>
+                            </div>
+                            <div class="card-body">
+                                {% if appointments and appointments|length > 0 %}
+                                    <div class="activity-list">
+                                        {% for appointment in appointments[:3] %}
+                                        <div class="activity-item">
+                                            <div class="activity-icon activity-icon-{{ appointment.status|lower }}">
+                                                <i class="fas fa-{% if appointment.status == 'completed' %}check{% elif appointment.status == 'approved' %}clock{% else %}calendar{% endif %}"></i>
+                                            </div>
+                                            <div class="activity-details">
+                                                <h5>{{ appointment.doctor_name }}</h5>
+                                                <p>{{ appointment.appointment_date.strftime('%b %d, %Y') }}</p>
+                                            </div>
+                                            <span class="status-badge-sm status-{{ appointment.status|lower }}">
+                                                {{ appointment.status|title }}
+                                            </span>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                {% else %}
+                                    <div class="empty-state-small">
+                                        <i class="fas fa-inbox"></i>
+                                        <p>No recent activity</p>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Floating Reminder Button -->
+    <button class="floating-reminder-btn" onclick="toggleReminderBox()" title="Reminders">
+        <i class="fas fa-bell"></i>
+    </button>
+
+    <!-- Floating Reminder Box -->
+    <div class="floating-reminder-box" id="floatingReminderBox" style="display: none;">
+        <div class="reminder-header-floating">
+            <h4><i class="fas fa-bell"></i> Reminders</h4>
+            <button class="btn-icon-reminder" onclick="toggleReminderBox()" title="Close">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="reminder-content-floating">
+            <div class="week-selector">
+                <span>Show:</span>
+                <select id="weekSelector">
+                    <option>This week</option>
+                    <option>This month</option>
+                    <option>All</option>
+                </select>
+            </div>
+
+            <div class="progress-info">
+                <p>{{ completed_tasks }} task completed out of {{ total_tasks }}</p>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: {% if total_tasks > 0 %}{{ (completed_tasks / total_tasks * 100)|int }}%{% else %}0%{% endif %}"></div>
+                </div>
+            </div>
+
+            <div class="reminders-list">
+                {% for appointment in appointments[:7] %}
+                <div class="reminder-item {% if appointment.status == 'completed' %}completed{% endif %}">
+                    <div class="reminder-icon">
+                        <i class="fas fa-{% if 'drug' in appointment.symptoms.lower() %}pills{% elif 'test' in appointment.symptoms.lower() %}vial{% elif 'consultation' in appointment.symptoms.lower() %}user-md{% else %}calendar-check{% endif %}"></i>
+                    </div>
+                    <div class="reminder-content">
+                        <h4>{{ appointment.symptoms[:30] }}...</h4>
+                        <p>{% if appointment.appointment_time %}{{ appointment.appointment_time }}, {% endif %}{{ appointment.appointment_date.strftime('%d.%m.%Y') }}</p>
+                    </div>
+                    <a href="{{ url_for('my_appointments') }}" class="change-btn-sm">
+                        <i class="fas fa-pen"></i> Change
+                    </a>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Floating Chat Button -->
+    <button class="floating-chat-btn" onclick="toggleChatBox()" title="Chat with Health Assistant">
+        <i class="fas fa-robot"></i>
+    </button>
+
+    <!-- Floating Chat Box -->
+    <div class="floating-chat-box" id="floatingChatBox" style="display: none;">
+        <div class="chat-header-floating">
+            <div class="chat-header-title">
+                <i class="fas fa-robot"></i>
+                <div>
+                    <h4>Health Assistant</h4>
+                    <span class="chat-status"><i class="fas fa-circle"></i> Online</span>
+                </div>
+            </div>
+            <div class="chat-header-actions">
+                <button class="btn-icon-chat" onclick="clearChat()" title="Clear chat">
+                    <i class="fas fa-trash-alt"></i>
+                </button>
+                <button class="btn-icon-chat" onclick="toggleChatBox()" title="Close">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+        <div id="chatMessagesFloating" class="chat-messages-floating">
+            <div class="message bot-message">
+                <div class="message-content">
+                    <strong>Health Assistant:</strong>
+                    <p>Hello! I'm your AI health assistant. I can help you with:</p>
+                    <ul>
+                        <li>Analyzing your symptoms</li>
+                        <li>Recommending appropriate specialists</li>
+                        <li>Answering health-related questions</li>
+                        <li>Providing health tips and guidance</li>
+                        <li>Helping you book appointments</li>
+                    </ul>
+                    <p><strong>How can I assist you today?</strong></p>
+                </div>
+            </div>
+        </div>
+        <div class="chat-input-floating">
+            <form id="chatFormFloating" onsubmit="sendChatMessageFloating(event)">
+                <textarea id="chatInputFloating" placeholder="Type your message or describe your symptoms..." rows="2" required></textarea>
+                <button type="submit" class="btn-send" title="Send message">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </form>
+            <div class="chat-suggestions">
+                <button class="suggestion-chip" onclick="fillChatInput('How do I book an appointment?')">
+                    <i class="fas fa-calendar"></i> Book appointment
+                </button>
+                <button class="suggestion-chip" onclick="fillChatInput('I have a headache and fever')">
+                    <i class="fas fa-thermometer"></i> Common symptoms
+                </button>
+                <button class="suggestion-chip" onclick="fillChatInput('Emergency symptoms')">
+                    <i class="fas fa-exclamation-triangle"></i> Emergency
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Account Section (Hidden by default) -->
+    <div id="accountSection" class="content-section" style="display: none;">
+        <div class="section-header">
+            <h2><i class="fas fa-user-cog"></i> Account Settings</h2>
+            <button class="btn-close-section" onclick="showDashboardSection(event)" title="Back to Dashboard">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <div class="account-settings-container">
+            <!-- Profile Section -->
+            <div class="dashboard-card">
+                <div class="card-header-new">
+                    <h3><i class="fas fa-user"></i> Profile Information</h3>
+                </div>
+                <div class="card-body">
+                    <div class="account-profile-preview">
+                        <div class="profile-avatar-small">
+                            {% if current_user.profile_picture %}
+                                <img src="{{ url_for('serve_profile_picture', filename=current_user.profile_picture.split('/')[-1]) }}" alt="{{ current_user.username }}">
+                            {% else %}
+                                <div class="avatar-placeholder">
+                                    <i class="fas fa-user"></i>
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="profile-details">
+                            <h5>{{ current_user.username }}</h5>
+                            <p>{{ current_user.email }}</p>
+                            <span class="badge-small"><i class="fas fa-user-injured"></i> {{ current_user.user_type|title }}</span>
+                        </div>
+                        <button class="btn btn-primary" onclick="showEditProfileModal()">
+                            <i class="fas fa-edit"></i> Edit Profile
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Personal Information Section -->
+            <div class="dashboard-card">
+                <div class="card-header-new">
+                    <h3><i class="fas fa-id-card"></i> Personal Information</h3>
+                </div>
+                <div class="card-body">
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <label><i class="fas fa-user"></i> Username</label>
+                        <p>{{ current_user.username }}</p>
+                    </div>
+                </div>
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <label><i class="fas fa-envelope"></i> Email Address</label>
+                        <p>{{ current_user.email or 'Not set' }}</p>
+                    </div>
+                </div>
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <label><i class="fas fa-phone"></i> Phone Number</label>
+                        <p>{{ current_user.phone or 'Not set' }}</p>
+                    </div>
+                </div>
+                </div>
+            </div>
+
+            <!-- Security Section -->
+            <div class="dashboard-card">
+                <div class="card-header-new">
+                    <h3><i class="fas fa-shield-alt"></i> Security</h3>
+                </div>
+                <div class="card-body">
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <label>Password</label>
+                        <p>Last changed: Recently</p>
+                    </div>
+                    <button class="btn btn-secondary btn-sm" onclick="showChangePasswordModal()">
+                        <i class="fas fa-key"></i> Change Password
+                    </button>
+                </div>
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <label>Two-Factor Authentication</label>
+                        <p>Add an extra layer of security to your account</p>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="twoFactorAuth" disabled>
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                </div>
+            </div>
+
+            <!-- Account Statistics Section -->
+            <div class="dashboard-card">
+                <div class="card-header-new">
+                    <h3><i class="fas fa-chart-line"></i> Account Statistics</h3>
+                </div>
+                <div class="card-body">
+                <div class="stats-grid-compact">
+                    <div class="stat-item-compact">
+                        <div class="stat-icon-small" style="background: #E8F5FF; color: #0284C7;">
+                            <i class="fas fa-calendar-check"></i>
+                        </div>
+                        <div>
+                            <h5>{{ appointments|length }}</h5>
+                            <p>Total Appointments</p>
+                        </div>
+                    </div>
+                    <div class="stat-item-compact">
+                        <div class="stat-icon-small" style="background: #FFF4E6; color: #F59E0B;">
+                            <i class="fas fa-file-medical"></i>
+                        </div>
+                        <div>
+                            <h5>0</h5>
+                            <p>Medical Records</p>
+                        </div>
+                    </div>
+                    <div class="stat-item-compact">
+                        <div class="stat-icon-small" style="background: #F3E8FF; color: #9333EA;">
+                            <i class="fas fa-user-md"></i>
+                        </div>
+                        <div>
+                            <h5>{% if assigned_doctor %}1{% else %}0{% endif %}</h5>
+                            <p>Assigned Doctor</p>
+                        </div>
+                    </div>
+                    <div class="stat-item-compact">
+                        <div class="stat-icon-small" style="background: #DCFCE7; color: #16A34A;">
+                            <i class="fas fa-heartbeat"></i>
+                        </div>
+                        <div>
+                            <h5>Active</h5>
+                            <p>Account Status</p>
+                        </div>
+                    </div>
+                </div>
+                </div>
+            </div>
+
+            <!-- Preferences Section -->
+            <div class="dashboard-card">
+                <div class="card-header-new">
+                    <h3><i class="fas fa-cog"></i> Preferences</h3>
+                </div>
+                <div class="card-body">
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <label>Email Notifications</label>
+                        <p>Receive appointment reminders via email</p>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="emailNotifAccount" checked>
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <label>SMS Notifications</label>
+                        <p>Get SMS alerts for appointments</p>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="smsNotifAccount">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <label>Share Health Data</label>
+                        <p>Allow doctors to view your health records</p>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="shareDataAccount" checked>
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                </div>
+            </div>
+
+            <!-- Danger Zone Section -->
+            <div class="dashboard-card danger-zone-card">
+                <div class="card-header-new">
+                    <h3><i class="fas fa-exclamation-triangle"></i> Danger Zone</h3>
+                </div>
+                <div class="card-body">
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <label>Delete Account</label>
+                        <p>Permanently delete your account and all associated data</p>
+                    </div>
+                    <button class="btn btn-danger btn-sm" onclick="confirmDeleteAccount()">
+                        <i class="fas fa-trash"></i> Delete Account
+                    </button>
+                </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Help Center Section (Hidden by default) -->
+    <div id="helpSection" class="content-section" style="display: none;">
+        <div class="section-header">
+            <h2><i class="fas fa-question-circle"></i> Help Center</h2>
+            <button class="btn-close-section" onclick="showDashboardSection(event)" title="Back to Dashboard">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <div class="help-settings-container">
+            <!-- Search Section -->
+            <div class="dashboard-card">
+                <div class="card-body">
+                    <div class="help-search-box">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="helpSearch" placeholder="Search for help articles..." onkeyup="filterHelpTopics()">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Getting Started Section -->
+            <div class="dashboard-card">
+                <div class="card-header-new">
+                    <h3><i class="fas fa-rocket"></i> Getting Started</h3>
+                </div>
+                <div class="card-body">
+                <div class="faq-item-settings" onclick="toggleFAQ(this)">
+                    <div class="setting-info">
+                        <label>How do I book an appointment?</label>
+                        <p class="faq-answer-text" style="display: none;">Navigate to the Appointment section from the sidebar, browse available doctors, select your preferred doctor, choose a date and time, and confirm your booking.</p>
+                    </div>
+                    <i class="fas fa-chevron-down faq-toggle-icon"></i>
+                </div>
+                <div class="faq-item-settings" onclick="toggleFAQ(this)">
+                    <div class="setting-info">
+                        <label>How do I update my health information?</label>
+                        <p class="faq-answer-text" style="display: none;">Click the edit icon on your dashboard's health information card. You can update your weight, height, blood group, and other health metrics.</p>
+                    </div>
+                    <i class="fas fa-chevron-down faq-toggle-icon"></i>
+                </div>
+                </div>
+            </div>
+
+            <!-- Medical Records Section -->
+            <div class="dashboard-card">
+                <div class="card-header-new">
+                    <h3><i class="fas fa-file-medical"></i> Medical Records</h3>
+                </div>
+                <div class="card-body">
+                <div class="faq-item-settings" onclick="toggleFAQ(this)">
+                    <div class="setting-info">
+                        <label>How do I upload medical documents?</label>
+                        <p class="faq-answer-text" style="display: none;">Click the "Upload" button in the Medical Records section, select your file (PDF, JPG, or PNG), add a description, and click upload. Your documents are securely stored and accessible anytime.</p>
+                    </div>
+                    <i class="fas fa-chevron-down faq-toggle-icon"></i>
+                </div>
+                <div class="faq-item-settings" onclick="toggleFAQ(this)">
+                    <div class="setting-info">
+                        <label>Can I delete my medical records?</label>
+                        <p class="faq-answer-text" style="display: none;">For security and compliance reasons, medical records cannot be deleted by users. Please contact support if you have concerns about specific documents.</p>
+                    </div>
+                    <i class="fas fa-chevron-down faq-toggle-icon"></i>
+                </div>
+                </div>
+            </div>
+
+            <!-- Health Assistant Section -->
+            <div class="dashboard-card">
+                <div class="card-header-new">
+                    <h3><i class="fas fa-robot"></i> AI Health Assistant</h3>
+                </div>
+                <div class="card-body">
+                <div class="faq-item-settings" onclick="toggleFAQ(this)">
+                    <div class="setting-info">
+                        <label>How does the AI Health Assistant work?</label>
+                        <p class="faq-answer-text" style="display: none;">The Health Assistant uses AI to analyze your symptoms and recommend appropriate specialists. Simply describe your symptoms in the chat, and it will provide guidance and suggestions.</p>
+                    </div>
+                    <i class="fas fa-chevron-down faq-toggle-icon"></i>
+                </div>
+                <div class="faq-item-settings" onclick="toggleFAQ(this)">
+                    <div class="setting-info">
+                        <label>Is my chat history saved?</label>
+                        <p class="faq-answer-text" style="display: none;">Chat history is stored locally in your browser session. You can clear it anytime by clearing your browser data.</p>
+                    </div>
+                    <i class="fas fa-chevron-down faq-toggle-icon"></i>
+                </div>
+                </div>
+            </div>
+
+            <!-- Contact Support Section -->
+            <div class="dashboard-card">
+                <div class="card-header-new">
+                    <h3><i class="fas fa-headset"></i> Contact Support</h3>
+                </div>
+                <div class="card-body">
+                <div class="contact-grid">
+                    <div class="contact-item">
+                        <div class="contact-icon" style="background: #E8F5FF; color: #0284C7;">
+                            <i class="fas fa-envelope"></i>
+                        </div>
+                        <div class="contact-details">
+                            <h5>Email Support</h5>
+                            <p>support@care4u.com</p>
+                            <span>Response within 24 hours</span>
+                        </div>
+                    </div>
+                    <div class="contact-item">
+                        <div class="contact-icon" style="background: #DCFCE7; color: #16A34A;">
+                            <i class="fas fa-phone"></i>
+                        </div>
+                        <div class="contact-details">
+                            <h5>Phone Support</h5>
+                            <p>1-800-CARE-4-U</p>
+                            <span>Mon-Fri, 9 AM - 6 PM</span>
+                        </div>
+                    </div>
+                    <div class="contact-item">
+                        <div class="contact-icon" style="background: #FFF4E6; color: #F59E0B;">
+                            <i class="fas fa-comment-dots"></i>
+                        </div>
+                        <div class="contact-details">
+                            <h5>Live Chat</h5>
+                            <p>Available Now</p>
+                            <button class="btn btn-sm btn-primary" onclick="toggleChatBox()">
+                                <i class="fas fa-comments"></i> Start Chat
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                </div>
+            </div>
+
+            <!-- Quick Links Section -->
+            <div class="dashboard-card">
+                <div class="card-header-new">
+                    <h3><i class="fas fa-link"></i> Quick Links</h3>
+                </div>
+                <div class="card-body">
+                <div class="quick-links-grid">
+                    <a href="#" class="quick-link-item" onclick="showDashboardSection(event)">
+                        <i class="fas fa-home"></i>
+                        <span>Dashboard</span>
+                    </a>
+                    <a href="{{ url_for('doctors') }}" class="quick-link-item">
+                        <i class="fas fa-calendar-check"></i>
+                        <span>Book Appointment</span>
+                    </a>
+                    <a href="#" class="quick-link-item" onclick="showAccountSection(event)">
+                        <i class="fas fa-user-cog"></i>
+                        <span>Account Settings</span>
+                    </a>
+                    <a href="#" class="quick-link-item" onclick="showSettingsModal(event)">
+                        <i class="fas fa-cog"></i>
+                        <span>Preferences</span>
+                    </a>
+                </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <!-- Upload Document Modal -->
+    <div id="uploadModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Upload Medical Document</h3>
+                <button class="close-modal" onclick="closeUploadModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="uploadForm" enctype="multipart/form-data">
+                    <div class="form-group">
+                        <label for="documentFile">Select File (PDF, JPG, PNG)</label>
+                        <input type="file" id="documentFile" name="document" accept=".pdf,.jpg,.jpeg,.png" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="documentDescription">Description</label>
+                        <textarea id="documentDescription" name="description" rows="3" placeholder="Brief description of the document..."></textarea>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">Upload</button>
+                        <button type="button" class="btn btn-secondary" onclick="closeUploadModal()">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <!-- Edit Health Info Modal -->
+    <div id="healthModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Update Your Health Data</h3>
+                <button class="close-modal" onclick="closeHealthModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="healthInfoForm">
+                    <div class="form-group">
+                        <label for="weightInput">Weight (kg)</label>
+                        <input type="number" id="weightInput" step="0.1" placeholder="Enter your weight">
+                    </div>
+                    <div class="form-group">
+                        <label for="heightInput">Height (m)</label>
+                        <input type="number" id="heightInput" step="0.01" placeholder="Enter your height">
+                    </div>
+                    <div class="form-group">
+                        <label for="bloodGroupInput">Blood Group</label>
+                        <select id="bloodGroupInput">
+                            <option value="">Select Blood Group</option>
+                            <option value="A+">A+</option>
+                            <option value="A-">A-</option>
+                            <option value="B+">B+</option>
+                            <option value="B-">B-</option>
+                            <option value="AB+">AB+</option>
+                            <option value="AB-">AB-</option>
+                            <option value="O+">O+</option>
+                            <option value="O-">O-</option>
+                        </select>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">Save</button>
+                        <button type="button" class="btn btn-secondary" onclick="closeHealthModal()">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settingsModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Settings</h3>
+                <button class="close-modal" onclick="closeSettingsModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="settings-section">
+                    <h4><i class="fas fa-bell"></i> Notifications</h4>
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <label>Email Notifications</label>
+                            <p>Receive appointment reminders via email</p>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="emailNotif" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <label>SMS Notifications</label>
+                            <p>Get SMS alerts for appointments</p>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="smsNotif">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="settings-section">
+                    <h4><i class="fas fa-shield-alt"></i> Privacy</h4>
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <label>Share Health Data</label>
+                            <p>Allow doctors to view your health records</p>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="shareData" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="settings-section">
+                    <h4><i class="fas fa-palette"></i> Appearance</h4>
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <label>Theme</label>
+                            <p>Choose your preferred theme</p>
+                        </div>
+                        <select id="themeSelect" class="setting-select">
+                            <option value="light">Light</option>
+                            <option value="dark">Dark (Coming Soon)</option>
+                            <option value="auto">Auto (Coming Soon)</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-actions">
+                    <button class="btn btn-primary" onclick="saveSettings()">Save Settings</button>
+                    <button class="btn btn-secondary" onclick="closeSettingsModal()">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Profile Modal -->
+    <div id="editProfileModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Edit Profile</h3>
+                <button class="close-modal" onclick="closeEditProfileModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="editProfileForm">
+                    <div class="form-group">
+                        <label for="editEmail">Email</label>
+                        <input type="email" id="editEmail" value="{{ current_user.email or session.get('email', '') }}" placeholder="Enter your email">
+                    </div>
+                    <div class="form-group">
+                        <label for="editPhone">Phone Number</label>
+                        <input type="tel" id="editPhone" value="{{ current_user.phone or session.get('phone', '') }}" placeholder="Enter your phone number">
+                    </div>
+                    <div class="form-group">
+                        <label for="editFullName">Full Name</label>
+                        <input type="text" id="editFullName" value="{{ session.get('full_name', '') }}" placeholder="Enter your full name">
+                    </div>
+                    <div class="form-group">
+                        <label for="editAge">Age</label>
+                        <input type="number" id="editAge" min="1" max="150" value="{{ session.get('age', '') }}" placeholder="Enter your age">
+                    </div>
+                    <div class="form-group">
+                        <label for="editGender">Gender</label>
+                        <select id="editGender">
+                            <option value="">Select Gender</option>
+                            <option value="Male" {% if session.get('gender') == 'Male' %}selected{% endif %}>Male</option>
+                            <option value="Female" {% if session.get('gender') == 'Female' %}selected{% endif %}>Female</option>
+                            <option value="Other" {% if session.get('gender') == 'Other' %}selected{% endif %}>Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="editProfilePicture">Profile Picture</label>
+                        <input type="file" id="editProfilePicture" accept="image/*">
+                        <small>Upload a new profile picture (JPG, PNG)</small>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">Update Profile</button>
+                        <button type="button" class="btn btn-secondary" onclick="closeEditProfileModal()">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Change Password Modal -->
+    <div id="changePasswordModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Change Password</h3>
+                <button class="close-modal" onclick="closeChangePasswordModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="changePasswordForm">
+                    <div class="form-group">
+                        <label for="currentPassword">Current Password</label>
+                        <input type="password" id="currentPassword" placeholder="Enter current password" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="newPassword">New Password</label>
+                        <input type="password" id="newPassword" placeholder="Enter new password" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="confirmPassword">Confirm New Password</label>
+                        <input type="password" id="confirmPassword" placeholder="Confirm new password" required>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">Change Password</button>
+                        <button type="button" class="btn btn-secondary" onclick="closeChangePasswordModal()">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Appointment Details Modal -->
+    <div id="appointmentDetailsModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-calendar-check"></i> Appointment Details</h3>
+                <button class="close-modal" onclick="closeAppointmentDetailsModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                {% if appointments and appointments|length > 0 %}
+                    {% set next_appointment = appointments[0] %}
+                    <div class="appointment-full-details">
+                        <div class="detail-section">
+                            <h4><i class="fas fa-user-md"></i> Doctor Information</h4>
+                            <div class="detail-row">
+                                <label>Doctor Name:</label>
+                                <span>{{ next_appointment.doctor_name }}</span>
+                            </div>
+                            <div class="detail-row">
+                                <label>Specialization:</label>
+                                <span>{% if next_appointment.specialization %}{{ next_appointment.specialization }}{% else %}General Physician{% endif %}</span>
+                            </div>
+                        </div>
+                        
+                        <div class="detail-section">
+                            <h4><i class="fas fa-calendar-alt"></i> Appointment Schedule</h4>
+                            <div class="detail-row">
+                                <label>Date:</label>
+                                <span>{{ next_appointment.appointment_date.strftime('%B %d, %Y') }}</span>
+                            </div>
+                            <div class="detail-row">
+                                <label>Time:</label>
+                                <span>{% if next_appointment.appointment_time %}{{ next_appointment.appointment_time }}{% else %}Not scheduled{% endif %}</span>
+                            </div>
+                            <div class="detail-row">
+                                <label>Status:</label>
+                                <span class="status-badge status-{{ next_appointment.status|lower }}">
+                                    {{ next_appointment.status|title }}
+                                </span>
+                            </div>
+                        </div>
+                        
+                        {% if next_appointment.symptoms or next_appointment.reason %}
+                        <div class="detail-section">
+                            <h4><i class="fas fa-notes-medical"></i> Reason for Visit</h4>
+                            <div class="detail-row">
+                                <p>{{ next_appointment.symptoms or next_appointment.reason }}</p>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        {% if next_appointment.notes or next_appointment.medical_notes %}
+                        <div class="detail-section">
+                            <h4><i class="fas fa-file-medical"></i> Medical Notes</h4>
+                            <div class="detail-row">
+                                <p>{{ next_appointment.notes or next_appointment.medical_notes }}</p>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        <div class="modal-footer-actions">
+                            {% if next_appointment.status|lower == 'pending' %}
+                            <a href="{{ url_for('cancel_appointment', appointment_id=next_appointment.id) }}" 
+                               class="btn btn-danger"
+                               onclick="return confirm('Are you sure you want to cancel this appointment?')">
+                                <i class="fas fa-times-circle"></i> Cancel Appointment
+                            </a>
+                            {% endif %}
+                            <button class="btn btn-secondary" onclick="closeAppointmentDetailsModal()">
+                                <i class="fas fa-arrow-left"></i> Close
+                            </button>
+                        </div>
+                    </div>
+                {% else %}
+                    <p class="text-center">No appointment details available.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Appointment Details Modal Functions
+        function showAppointmentDetails() {
+            document.getElementById('appointmentDetailsModal').style.display = 'flex';
+        }
+
+        function closeAppointmentDetailsModal() {
+            document.getElementById('appointmentDetailsModal').style.display = 'none';
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('appointmentDetailsModal');
+            if (event.target == modal) {
+                closeAppointmentDetailsModal();
+            }
+        }
+    </script>
+
+    <script src="{{ url_for('static', filename='js/user-dashboard.js') }}"></script>
+</body>
+</html>

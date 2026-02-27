@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+
+{% block title %}Home - Care_4_U Hospitals{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero">
+    <div class="container">
+        <div class="hero-content">
+            <h1>Professional<br>Family Health Care</h1>
+            <p>Create your medical website using Care_4_U Hospitals</p>
+            <div class="hero-icons">
+                <a href="{{ url_for('doctors') }}" class="icon-circle" title="Find Doctors">
+                    <i class="fas fa-user-md"></i>
+                </a>
+                <a href="{{ url_for('signup') if not current_user.is_authenticated else url_for('doctors') }}"
+                    class="icon-circle" title="Book Appointment">
+                    <i class="fas fa-calendar-check"></i>
+                </a>
+                <a href="{{ url_for('about') }}" class="icon-circle" title="About Us">
+                    <i class="fas fa-hospital"></i>
+                </a>
+            </div>
+        </div>
+        <div class="hero-image">
+            <img src="{{ url_for('static', filename='images/Doctorconsultation.png') }}" alt="Doctor consultation">
+        </div>
+    </div>
+</section>
+
+<!-- Info Cards Section -->
+<section class="info-cards-section">
+    <div class="container">
+        <div class="info-cards-grid">
+            <!-- Emergency Service -->
+            <div class="info-card mint-card">
+                <h3>1-800-600-380</h3>
+                <h4>EMERGENCY SERVICE</h4>
+                <p>Aliquam erat volutpat. Nullam imperdiet sapien felis, non lobortis odio mattis in. Quisque dapibus
+                    aliquet dictum.</p>
+                <a href="#" class="btn-card">See More</a>
+            </div>
+
+            <!-- Appointment -->
+            <div class="info-card white-card">
+                <div class="card-icon"><i class="far fa-calendar-alt"></i></div>
+                <h4>DO YOU WANT TO MAKE AN APPOINTMENT</h4>
+                <p>Aliquam erat volutpat. Nullam imperdiet sapien felis, non lobortis odio mattis in. Quisque dapibus
+                    aliquet dictum.</p>
+                <a href="{{ url_for('doctors') }}" class="btn-card">Book Now</a>
+            </div>
+
+            <!-- Opening Hours -->
+            <div class="info-card mint-card">
+                <div class="card-icon"><i class="far fa-clock"></i></div>
+                <h4>OPENING HOURS</h4>
+                <ul class="opening-hours-list">
+                    <li><span>Monday - Friday</span> <span>8:00 - 20:00</span></li>
+                    <li><span>Saturday</span> <span>9:00 - 18:00</span></li>
+                </ul>
+                <a href="{{ url_for('about') }}" class="btn-card">Contact Us</a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Statistics Section -->
+<section class="stats-section">
+    <div class="container">
+        <h2 class="section-title">Our Achievements</h2>
+        <div class="stats-container">
+            <div class="stat-box">
+                <div class="stat-icon">
+                    <i class="fas fa-user-md"></i>
+                </div>
+                <h3 class="stat-number">50+</h3>
+                <p class="stat-label">Expert Doctors</p>
+            </div>
+            <div class="stat-box">
+                <div class="stat-icon">
+                    <i class="fas fa-smile"></i>
+                </div>
+                <h3 class="stat-number">10,000+</h3>
+                <p class="stat-label">Happy Patients</p>
+            </div>
+            <div class="stat-box">
+                <div class="stat-icon">
+                    <i class="fas fa-headset"></i>
+                </div>
+                <h3 class="stat-number">24/7</h3>
+                <p class="stat-label">Online Support</p>
+            </div>
+            <div class="stat-box">
+                <div class="stat-icon">
+                    <i class="fas fa-stethoscope"></i>
+                </div>
+                <h3 class="stat-number">15+</h3>
+                <p class="stat-label">Specialties</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Specialties Section -->
+<section class="specialties-section">
+    <div class="container">
+        <h2 class="section-title">Medical Specialties We Offer</h2>
+        <p class="section-subtitle">Comprehensive healthcare services across multiple medical fields</p>
+        <div class="specialties-container">
+            <div class="specialty-box">
+                <div class="specialty-icon cardiology">
+                    <i class="fas fa-heart"></i>
+                </div>
+                <div class="specialty-content">
+                    <h3>Cardiology</h3>
+                    <p>Heart care and cardiovascular diseases</p>
+                </div>
+            </div>
+            <div class="specialty-box">
+                <div class="specialty-icon neurology">
+                    <i class="fas fa-brain"></i>
+                </div>
+                <div class="specialty-content">
+                    <h3>Neurology</h3>
+                    <p>Brain and nervous system disorders</p>
+                </div>
+            </div>
+            <div class="specialty-box">
+                <div class="specialty-icon pediatrics">
+                    <i class="fas fa-baby"></i>
+                </div>
+                <div class="specialty-content">
+                    <h3>Pediatrics</h3>
+                    <p>Child healthcare and development</p>
+                </div>
+            </div>
+            <div class="specialty-box">
+                <div class="specialty-icon orthopedics">
+                    <i class="fas fa-bone"></i>
+                </div>
+                <div class="specialty-content">
+                    <h3>Orthopedics</h3>
+                    <p>Bone and joint treatment</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

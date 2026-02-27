@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block title %}Login - Care_4_U Hospitals{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <div class="auth-card">
+        <h2>Welcome Back!</h2>
+        <p class="auth-subtitle">Sign in to access your account</p>
+        
+        <form method="POST" action="{{ url_for('login') }}" class="auth-form" novalidate>
+            <div class="form-group">
+                <label for="username">
+                    <i class="fas fa-user"></i>
+                    Username <span class="form-required">*</span>
+                </label>
+                <input type="text" id="username" name="username" class="form-input" required 
+                       placeholder="Enter your username" 
+                       aria-label="Username"
+                       aria-required="true">
+                <span class="form-feedback"></span>
+            </div>
+            
+            <div class="form-group">
+                <label for="password">
+                    <i class="fas fa-lock"></i>
+                    Password <span class="form-required">*</span>
+                </label>
+                <div class="password-input-wrapper">
+                    <input type="password" id="password" name="password" class="form-input" required 
+                           placeholder="Enter your password"
+                           aria-label="Password"
+                           aria-required="true">
+                    <button type="button" class="password-toggle" id="togglePassword" aria-label="Toggle password visibility">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                </div>
+                <span class="form-feedback"></span>
+            </div>
+            
+            <div class="form-actions">
+                <div class="form-checkbox">
+                    <input type="checkbox" id="remember" name="remember">
+                    <label for="remember">Remember me</label>
+                </div>
+                <a href="#" class="form-link forgot-password">Forgot Password?</a>
+            </div>
+            
+            <button type="submit" class="btn btn-primary btn-block btn-lg">Sign In</button>
+        </form>
+        
+        <div class="auth-footer">
+            <p>Don't have an account? <a href="{{ url_for('signup') }}">Create one now</a></p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}{% endblock %}

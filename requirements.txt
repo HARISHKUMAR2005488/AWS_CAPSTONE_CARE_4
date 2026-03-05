@@ -1,8 +1,30 @@
+# ============================================================
+# Care_4_U Hospital App — Python Dependencies
+# Install everything at once with:
+#   pip install -r requirements.txt
+# ============================================================
+
+# --- Flask Core ---
 Flask==2.3.3
 Werkzeug==2.3.7
+
+# --- Flask Extensions (used by app.py + database.py) ---
+Flask-SQLAlchemy==3.0.5
+Flask-Login==0.6.3
+
+# --- AWS SDK ---
 boto3==1.28.57
 botocore==1.31.57
+
+# --- PDF Generation ---
+reportlab==4.2.5
+
+# --- Environment Variables ---
 python-dotenv==1.0.0
+
+# --- HTTP / Networking ---
 requests==2.31.0
 urllib3==1.26.16
-reportlab==4.2.5
+
+# --- WSGI Server (for EC2 / production deployment) ---
+gunicorn==21.2.0

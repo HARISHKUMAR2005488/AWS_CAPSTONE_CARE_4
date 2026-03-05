@@ -293,7 +293,8 @@
             availableDaysHidden.value = selected.join(',');
         }
         dayChips.forEach(chip => {
-            chip.addEventListener('click', () => {
+            chip.addEventListener('click', (e) => {
+                e.preventDefault();  // prevent label→checkbox double-fire
                 chip.classList.toggle('selected');
                 chip.querySelector('input').checked = chip.classList.contains('selected');
                 updateDays();

@@ -46,6 +46,16 @@
                 </div>
 
                 <div class="form-group">
+                    <label for="date_of_birth">
+                        <i class="fas fa-calendar-alt"></i>
+                        Date of Birth
+                    </label>
+                    <input type="date" id="date_of_birth" name="date_of_birth" class="form-input"
+                        aria-label="Date of Birth" max="{{ now.strftime('%Y-%m-%d') if now is defined else '' }}">
+                    <span class="form-help">Optional — used for medical records</span>
+                </div>
+
+                <div class="form-group">
                     <label for="role">
                         <i class="fas fa-user-shield"></i>
                         Account Type <span class="form-required">*</span>
@@ -122,25 +132,39 @@
                     </div>
                 </div>
 
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="available_days">
-                            <i class="fas fa-calendar"></i>
-                            Available Days <span class="form-required">*</span>
-                        </label>
-                        <input type="text" id="available_days" name="available_days" class="form-input"
-                            placeholder="Mon, Wed, Fri" aria-label="Available Days">
-                        <span class="form-help">Comma-separated days (e.g., Mon,Tue,Thu)</span>
+                <div class="form-group">
+                    <label><i class="fas fa-calendar"></i> Available Days <span class="form-required">*</span></label>
+                    <div class="day-picker" id="dayPicker">
+                        <label class="day-chip"><input type="checkbox" value="Mon"> Mon</label>
+                        <label class="day-chip"><input type="checkbox" value="Tue"> Tue</label>
+                        <label class="day-chip"><input type="checkbox" value="Wed"> Wed</label>
+                        <label class="day-chip"><input type="checkbox" value="Thu"> Thu</label>
+                        <label class="day-chip"><input type="checkbox" value="Fri"> Fri</label>
+                        <label class="day-chip"><input type="checkbox" value="Sat"> Sat</label>
+                        <label class="day-chip"><input type="checkbox" value="Sun"> Sun</label>
                     </div>
-                    <div class="form-group">
-                        <label for="available_time">
-                            <i class="fas fa-hourglass-start"></i>
-                            Available Time <span class="form-required">*</span>
-                        </label>
-                        <input type="text" id="available_time" name="available_time" class="form-input"
-                            placeholder="9:00 AM - 5:00 PM" aria-label="Available Time">
-                        <span class="form-help">Format: 9:00 AM - 5:00 PM</span>
+                    <input type="hidden" id="available_days" name="available_days">
+                    <span class="form-help">Click to select your working days</span>
+                </div>
+
+                <div class="form-group">
+                    <label><i class="fas fa-clock"></i> Available Hours <span class="form-required">*</span></label>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="time_start">From</label>
+                            <select id="time_start" class="form-input form-select" aria-label="Start Time">
+                                <option value="">Start time</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="time_end">To</label>
+                            <select id="time_end" class="form-input form-select" aria-label="End Time">
+                                <option value="">End time</option>
+                            </select>
+                        </div>
                     </div>
+                    <input type="hidden" id="available_time" name="available_time">
+                    <span class="form-help" id="timePreview">Select start and end times</span>
                 </div>
             </div>
 
@@ -209,9 +233,45 @@
 {% endblock %}
 
 {% block scripts %}
+<style>
+    .day-picker {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 6px;
+    }
+
+    .day-chip {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 14px;
+        border: 2px solid var(--border, #ddd);
+        border-radius: 20px;
+        cursor: pointer;
+        font-size: 0.875rem;
+        font-weight: 500;
+        transition: all 0.2s;
+        user-select: none;
+    }
+
+    .day-chip input[type="checkbox"] {
+        display: none;
+    }
+
+    .day-chip:hover {
+        border-color: var(--primary, #2563eb);
+        color: var(--primary, #2563eb);
+    }
+
+    .day-chip.selected {
+        background: var(--primary, #2563eb);
+        border-color: var(--primary, #2563eb);
+        color: #fff;
+    }
+</style>
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        // Form validation
         const form = document.getElementById('signupForm');
         const password = document.getElementById('password');
         const confirmPassword = document.getElementById('confirm_password');
@@ -219,14 +279,61 @@
         const doctorFields = document.getElementById('doctorFields');
         const adminFields = document.getElementById('adminFields');
 
-        const requiredDoctorFields = [
-            'specialization',
-            'experience',
-            'consultation_fee',
-            'available_days',
-            'available_time'
-        ];
+        // ── DOB: restrict to past dates ──────────────────────────────
+        const dobInput = document.getElementById('date_of_birth');
+        if (dobInput) dobInput.max = new Date().toISOString().split('T')[0];
 
+        // ── Day chips ────────────────────────────────────────────────
+        const dayChips = document.querySelectorAll('.day-chip');
+        const availableDaysHidden = document.getElementById('available_days');
+        function updateDays() {
+            const selected = [...dayChips]
+                .filter(c => c.classList.contains('selected'))
+                .map(c => c.querySelector('input').value);
+            availableDaysHidden.value = selected.join(',');
+        }
+        dayChips.forEach(chip => {
+            chip.addEventListener('click', () => {
+                chip.classList.toggle('selected');
+                chip.querySelector('input').checked = chip.classList.contains('selected');
+                updateDays();
+            });
+        });
+
+        // ── Time dropdowns ───────────────────────────────────────────
+        const timeStart = document.getElementById('time_start');
+        const timeEnd = document.getElementById('time_end');
+        const availableTimeHidden = document.getElementById('available_time');
+        const timePreview = document.getElementById('timePreview');
+
+        function buildTimeOptions(select, defaultHour) {
+            for (let h = 0; h < 24; h++) {
+                for (let m of [0, 30]) {
+                    const period = h < 12 ? 'AM' : 'PM';
+                    const dh = h % 12 || 12;
+                    const label = `${dh}:${m === 0 ? '00' : '30'} ${period}`;
+                    const opt = document.createElement('option');
+                    opt.value = label;
+                    opt.textContent = label;
+                    if (h === defaultHour && m === 0) opt.selected = true;
+                    select.appendChild(opt);
+                }
+            }
+        }
+        buildTimeOptions(timeStart, 9);   // default 9:00 AM
+        buildTimeOptions(timeEnd, 17);  // default 5:00 PM
+
+        function updateTime() {
+            if (timeStart.value && timeEnd.value) {
+                availableTimeHidden.value = `${timeStart.value} - ${timeEnd.value}`;
+                timePreview.textContent = `Schedule: ${timeStart.value} – ${timeEnd.value}`;
+            }
+        }
+        timeStart.addEventListener('change', updateTime);
+        timeEnd.addEventListener('change', updateTime);
+        updateTime(); // set initial value
+
+        // ── Role toggle ──────────────────────────────────────────────
         const toggleRoleFields = () => {
             doctorFields.style.display = role.value === 'doctor' ? 'block' : 'none';
             adminFields.style.display = role.value === 'admin' ? 'block' : 'none';
@@ -234,40 +341,29 @@
         toggleRoleFields();
         role.addEventListener('change', toggleRoleFields);
 
+        // ── Submit validation ────────────────────────────────────────
         form.addEventListener('submit', function (e) {
             if (password.value !== confirmPassword.value) {
-                e.preventDefault();
-                alert('Passwords do not match!');
-                confirmPassword.focus();
-                return;
+                e.preventDefault(); alert('Passwords do not match!'); confirmPassword.focus(); return;
             }
-
             if (password.value.length < 6) {
-                e.preventDefault();
-                alert('Password must be at least 6 characters long!');
-                password.focus();
-                return;
+                e.preventDefault(); alert('Password must be at least 6 characters long!'); password.focus(); return;
             }
-
             if (role.value === 'doctor') {
-                for (const fieldId of requiredDoctorFields) {
-                    const field = document.getElementById(fieldId);
-                    if (!field.value.trim()) {
-                        e.preventDefault();
-                        alert('Please complete all doctor details.');
-                        field.focus();
-                        return;
+                if (!availableDaysHidden.value) {
+                    e.preventDefault(); alert('Please select at least one available day.'); return;
+                }
+                for (const id of ['specialization', 'experience', 'consultation_fee']) {
+                    const f = document.getElementById(id);
+                    if (!f.value.trim()) {
+                        e.preventDefault(); alert('Please complete all doctor details.'); f.focus(); return;
                     }
                 }
             }
-
             if (role.value === 'admin') {
                 const adminKey = document.getElementById('admin_key');
                 if (!adminKey.value.trim()) {
-                    e.preventDefault();
-                    alert('Admin access key is required for admin accounts.');
-                    adminKey.focus();
-                    return;
+                    e.preventDefault(); alert('Admin access key is required.'); adminKey.focus(); return;
                 }
             }
         });

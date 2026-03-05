@@ -105,20 +105,19 @@
                         <td>
                             <div class="action-buttons">
                                 {% if appointment.status == 'pending' %}
-                                <button class="btn-action btn-success"
-                                    onclick="updateStatus({{ appointment.id }}, 'approved')"
-                                    title="Approve Appointment">
+                                <button class="btn-action btn-success" data-id="{{ appointment.id }}"
+                                    onclick="updateStatus(this.dataset.id, 'approved')" title="Approve Appointment">
                                     <i class="fas fa-check"></i>
                                 </button>
-                                <button class="btn-action btn-danger"
-                                    onclick="updateStatus({{ appointment.id }}, 'rejected')" title="Reject Appointment">
+                                <button class="btn-action btn-danger" data-id="{{ appointment.id }}"
+                                    onclick="updateStatus(this.dataset.id, 'rejected')" title="Reject Appointment">
                                     <i class="fas fa-times"></i>
                                 </button>
                                 {% endif %}
 
                                 {% if appointment.status in ['approved', 'confirmed'] %}
-                                <button class="btn-action btn-primary"
-                                    onclick="updateStatus({{ appointment.id }}, 'completed')" title="Mark as Completed">
+                                <button class="btn-action btn-primary" data-id="{{ appointment.id }}"
+                                    onclick="updateStatus(this.dataset.id, 'completed')" title="Mark as Completed">
                                     <i class="fas fa-check-double"></i>
                                 </button>
                                 <!-- Admin cancel for approved -->
@@ -131,8 +130,8 @@
                                 </form>
                                 {% endif %}
 
-                                <button class="btn-action btn-info"
-                                    onclick="viewAppointmentDetails({{ appointment.id }})" title="View Details">
+                                <button class="btn-action btn-info" data-id="{{ appointment.id }}"
+                                    onclick="viewAppointmentDetails(this.dataset.id)" title="View Details">
                                     <i class="fas fa-eye"></i>
                                 </button>
                             </div>

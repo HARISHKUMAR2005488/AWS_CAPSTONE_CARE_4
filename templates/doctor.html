@@ -37,7 +37,6 @@
         left: 0;
         right: 0;
     }
-    }
 
     /* Patient Details Styles */
     .patients-view .appointments-table {
@@ -403,6 +402,7 @@
         line-height: 1.4;
         display: -webkit-box;
         -webkit-line-clamp: 2;
+        line-clamp: 2;
         -webkit-box-orient: vertical;
         overflow: hidden;
     }
@@ -459,7 +459,7 @@
                     <p>{{ doctor.specialization }}</p>
                 </div>
             </div>
-            <button class="btn-logout" onclick="location.href='{{ url_for('logout') }}'">
+            <button class="btn-logout" data-href="{{ url_for('logout') }}" onclick="location.href=this.dataset.href">
                 <i class="fas fa-sign-out-alt"></i> Logout
             </button>
         </div>
@@ -897,7 +897,8 @@
                             </span>
                             {% endif %}
                             <button class="btn btn-primary btn-sm" style="font-size:.82rem;padding:.4rem .9rem;"
-                                onclick="openPrescriptionModal({{ appointment.id }}, '{{ appointment.patient.username }}')"
+                                data-id="{{ appointment.id }}"
+                                onclick="openPrescriptionModal(this.dataset.id, '{{ appointment.patient.username }}')"
                                 title="Add / View Medical Record">
                                 <i class="fas fa-file-medical-alt"></i>
                                 {% if appointment.prescription %}View / Edit Record{% else %}Add Medical Record{% endif

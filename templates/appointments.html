@@ -49,6 +49,7 @@
 
         <form method="POST" action="{{ url_for('book_appointment', doctor_id=doctor.id) }}" class="booking-form"
             id="bookingForm" novalidate>
+            <input type="hidden" id="doctorIdValue" value="{{ doctor.id }}">
 
             <div class="form-section">
                 <h3 class="form-section-title">
@@ -286,167 +287,166 @@
 {% block scripts %}
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        const doctorId = {{ doctor.id }
-    };
-    const dateInput = document.getElementById('appointment_date');
-    const timeSelect = document.getElementById('appointment_time');
-    const timeFeedback = document.getElementById('time-feedback');
-    const timeHelp = document.getElementById('time-help');
-    const symptomsInput = document.getElementById('symptoms');
-    const charCountSpan = document.getElementById('charCount');
-    const paymentMethodSelect = document.getElementById('payment_method');
-    const cardPaymentFields = document.getElementById('cardPaymentFields');
-    const upiPaymentFields = document.getElementById('upiPaymentFields');
+        const doctorId = document.getElementById('doctorIdValue').value;
+        const dateInput = document.getElementById('appointment_date');
+        const timeSelect = document.getElementById('appointment_time');
+        const timeFeedback = document.getElementById('time-feedback');
+        const timeHelp = document.getElementById('time-help');
+        const symptomsInput = document.getElementById('symptoms');
+        const charCountSpan = document.getElementById('charCount');
+        const paymentMethodSelect = document.getElementById('payment_method');
+        const cardPaymentFields = document.getElementById('cardPaymentFields');
+        const upiPaymentFields = document.getElementById('upiPaymentFields');
 
-    // -----------------------------------------------------------------------
-    // DATE → fetch available slots via /api/available-slots/<id>?date=YYYY-MM-DD
-    // -----------------------------------------------------------------------
-    dateInput.addEventListener('change', function () {
-        const dateVal = this.value;
-        if (!dateVal) {
-            resetTimeSelect('— Select date first —', true);
-            return;
-        }
+        // -----------------------------------------------------------------------
+        // DATE → fetch available slots via /api/available-slots/<id>?date=YYYY-MM-DD
+        // -----------------------------------------------------------------------
+        dateInput.addEventListener('change', function () {
+            const dateVal = this.value;
+            if (!dateVal) {
+                resetTimeSelect('— Select date first —', true);
+                return;
+            }
 
-        // Client-side past-date guard
-        const chosen = new Date(dateVal + 'T00:00:00');
-        const today = new Date(); today.setHours(0, 0, 0, 0);
-        if (chosen < today) {
-            resetTimeSelect('Cannot book past dates', true);
-            timeFeedback.textContent = 'Please choose today or a future date.';
-            return;
-        }
+            // Client-side past-date guard
+            const chosen = new Date(dateVal + 'T00:00:00');
+            const today = new Date(); today.setHours(0, 0, 0, 0);
+            if (chosen < today) {
+                resetTimeSelect('Cannot book past dates', true);
+                timeFeedback.textContent = 'Please choose today or a future date.';
+                return;
+            }
 
-        resetTimeSelect('Loading slots…', true);
-        timeHelp.textContent = 'Fetching available slots…';
-        timeFeedback.textContent = '';
+            resetTimeSelect('Loading slots…', true);
+            timeHelp.textContent = 'Fetching available slots…';
+            timeFeedback.textContent = '';
 
-        fetch(`/api/available-slots/${doctorId}?date=${dateVal}`)
-            .then(r => r.json())
-            .then(data => {
-                timeSelect.innerHTML = '';
+            fetch(`/api/available-slots/${doctorId}?date=${dateVal}`)
+                .then(r => r.json())
+                .then(data => {
+                    timeSelect.innerHTML = '';
 
-                if (!data.slots || data.slots.length === 0) {
-                    const opt = document.createElement('option');
-                    opt.value = '';
-                    opt.textContent = 'No slots available for this day';
-                    timeSelect.appendChild(opt);
-                    timeSelect.disabled = true;
-                    timeHelp.textContent = 'Doctor is not available on this date or all slots are booked.';
-                } else {
-                    const placeholder = document.createElement('option');
-                    placeholder.value = '';
-                    placeholder.textContent = '— Select a time slot —';
-                    timeSelect.appendChild(placeholder);
-
-                    data.slots.forEach(slot => {
+                    if (!data.slots || data.slots.length === 0) {
                         const opt = document.createElement('option');
-                        opt.value = slot.value;        // HH:MM 24-hour
-                        opt.textContent = slot.label;  // '9:00 AM'
+                        opt.value = '';
+                        opt.textContent = 'No slots available for this day';
                         timeSelect.appendChild(opt);
-                    });
+                        timeSelect.disabled = true;
+                        timeHelp.textContent = 'Doctor is not available on this date or all slots are booked.';
+                    } else {
+                        const placeholder = document.createElement('option');
+                        placeholder.value = '';
+                        placeholder.textContent = '— Select a time slot —';
+                        timeSelect.appendChild(placeholder);
 
-                    timeSelect.disabled = false;
-                    timeHelp.textContent = `${data.slots.length} slot(s) available — select one`;
+                        data.slots.forEach(slot => {
+                            const opt = document.createElement('option');
+                            opt.value = slot.value;        // HH:MM 24-hour
+                            opt.textContent = slot.label;  // '9:00 AM'
+                            timeSelect.appendChild(opt);
+                        });
+
+                        timeSelect.disabled = false;
+                        timeHelp.textContent = `${data.slots.length} slot(s) available — select one`;
+                    }
+                })
+                .catch(() => {
+                    resetTimeSelect('Error loading slots — please retry', true);
+                    timeHelp.textContent = 'Network error. Please try again.';
+                });
+        });
+
+        function resetTimeSelect(placeholder, disable) {
+            timeSelect.innerHTML = `<option value="">${placeholder}</option>`;
+            timeSelect.disabled = !!disable;
+        }
+
+        // -----------------------------------------------------------------------
+        // Payment method toggle
+        // -----------------------------------------------------------------------
+        paymentMethodSelect.addEventListener('change', function () {
+            cardPaymentFields.style.display = 'none';
+            upiPaymentFields.style.display = 'none';
+            document.querySelectorAll('#cardPaymentFields input, #upiPaymentFields input')
+                .forEach(i => i.removeAttribute('required'));
+
+            if (this.value === 'credit_card' || this.value === 'debit_card') {
+                cardPaymentFields.style.display = 'block';
+                ['card_number', 'card_holder', 'expiry_date', 'cvv']
+                    .forEach(id => document.getElementById(id).setAttribute('required', 'required'));
+            } else if (this.value === 'upi') {
+                upiPaymentFields.style.display = 'block';
+                document.getElementById('upi_id').setAttribute('required', 'required');
+            }
+        });
+
+        // Card number formatting
+        document.getElementById('card_number').addEventListener('input', function (e) {
+            let v = e.target.value.replace(/\s/g, '');
+            e.target.value = v.match(/.{1,4}/g)?.join(' ') || v;
+        });
+
+        // Expiry date formatting
+        document.getElementById('expiry_date').addEventListener('input', function (e) {
+            let v = e.target.value.replace(/\D/g, '');
+            if (v.length >= 2) v = v.slice(0, 2) + '/' + v.slice(2, 4);
+            e.target.value = v;
+        });
+
+        // CVV numbers only
+        document.getElementById('cvv').addEventListener('input', function (e) {
+            e.target.value = e.target.value.replace(/\D/g, '').slice(0, 3);
+        });
+
+        // -----------------------------------------------------------------------
+        // Symptoms character counter
+        // -----------------------------------------------------------------------
+        symptomsInput.addEventListener('input', function () {
+            const count = this.value.length;
+            charCountSpan.textContent = count;
+            if (count > 500) { this.value = this.value.substring(0, 500); charCountSpan.textContent = 500; }
+            charCountSpan.parentElement.style.color = count > 450 ? '#EF4444' : 'var(--gray)';
+        });
+
+        // -----------------------------------------------------------------------
+        // Form submit validation
+        // -----------------------------------------------------------------------
+        document.querySelector('.booking-form').addEventListener('submit', function (e) {
+            if (!dateInput.value) {
+                e.preventDefault(); alert('Please select a date.'); dateInput.focus(); return;
+            }
+            if (!timeSelect.value) {
+                e.preventDefault(); alert('Please select a time slot.'); timeSelect.focus(); return;
+            }
+            if (!symptomsInput.value.trim()) {
+                e.preventDefault(); alert('Please provide symptoms or reason for visit.'); symptomsInput.focus(); return;
+            }
+            if (!paymentMethodSelect.value) {
+                e.preventDefault(); alert('Please select a payment method.'); paymentMethodSelect.focus(); return;
+            }
+            if (paymentMethodSelect.value === 'credit_card' || paymentMethodSelect.value === 'debit_card') {
+                const cardNo = document.getElementById('card_number').value.replace(/\s/g, '');
+                if (cardNo.length < 13 || cardNo.length > 19) {
+                    e.preventDefault(); alert('Please enter a valid card number.'); return;
                 }
-            })
-            .catch(() => {
-                resetTimeSelect('Error loading slots — please retry', true);
-                timeHelp.textContent = 'Network error. Please try again.';
-            });
-    });
-
-    function resetTimeSelect(placeholder, disable) {
-        timeSelect.innerHTML = `<option value="">${placeholder}</option>`;
-        timeSelect.disabled = !!disable;
-    }
-
-    // -----------------------------------------------------------------------
-    // Payment method toggle
-    // -----------------------------------------------------------------------
-    paymentMethodSelect.addEventListener('change', function () {
-        cardPaymentFields.style.display = 'none';
-        upiPaymentFields.style.display = 'none';
-        document.querySelectorAll('#cardPaymentFields input, #upiPaymentFields input')
-            .forEach(i => i.removeAttribute('required'));
-
-        if (this.value === 'credit_card' || this.value === 'debit_card') {
-            cardPaymentFields.style.display = 'block';
-            ['card_number', 'card_holder', 'expiry_date', 'cvv']
-                .forEach(id => document.getElementById(id).setAttribute('required', 'required'));
-        } else if (this.value === 'upi') {
-            upiPaymentFields.style.display = 'block';
-            document.getElementById('upi_id').setAttribute('required', 'required');
-        }
-    });
-
-    // Card number formatting
-    document.getElementById('card_number').addEventListener('input', function (e) {
-        let v = e.target.value.replace(/\s/g, '');
-        e.target.value = v.match(/.{1,4}/g)?.join(' ') || v;
-    });
-
-    // Expiry date formatting
-    document.getElementById('expiry_date').addEventListener('input', function (e) {
-        let v = e.target.value.replace(/\D/g, '');
-        if (v.length >= 2) v = v.slice(0, 2) + '/' + v.slice(2, 4);
-        e.target.value = v;
-    });
-
-    // CVV numbers only
-    document.getElementById('cvv').addEventListener('input', function (e) {
-        e.target.value = e.target.value.replace(/\D/g, '').slice(0, 3);
-    });
-
-    // -----------------------------------------------------------------------
-    // Symptoms character counter
-    // -----------------------------------------------------------------------
-    symptomsInput.addEventListener('input', function () {
-        const count = this.value.length;
-        charCountSpan.textContent = count;
-        if (count > 500) { this.value = this.value.substring(0, 500); charCountSpan.textContent = 500; }
-        charCountSpan.parentElement.style.color = count > 450 ? '#EF4444' : 'var(--gray)';
-    });
-
-    // -----------------------------------------------------------------------
-    // Form submit validation
-    // -----------------------------------------------------------------------
-    document.querySelector('.booking-form').addEventListener('submit', function (e) {
-        if (!dateInput.value) {
-            e.preventDefault(); alert('Please select a date.'); dateInput.focus(); return;
-        }
-        if (!timeSelect.value) {
-            e.preventDefault(); alert('Please select a time slot.'); timeSelect.focus(); return;
-        }
-        if (!symptomsInput.value.trim()) {
-            e.preventDefault(); alert('Please provide symptoms or reason for visit.'); symptomsInput.focus(); return;
-        }
-        if (!paymentMethodSelect.value) {
-            e.preventDefault(); alert('Please select a payment method.'); paymentMethodSelect.focus(); return;
-        }
-        if (paymentMethodSelect.value === 'credit_card' || paymentMethodSelect.value === 'debit_card') {
-            const cardNo = document.getElementById('card_number').value.replace(/\s/g, '');
-            if (cardNo.length < 13 || cardNo.length > 19) {
-                e.preventDefault(); alert('Please enter a valid card number.'); return;
+                if (!/^\d{2}\/\d{2}$/.test(document.getElementById('expiry_date').value)) {
+                    e.preventDefault(); alert('Please enter a valid expiry date (MM/YY).'); return;
+                }
+                if (document.getElementById('cvv').value.length !== 3) {
+                    e.preventDefault(); alert('Please enter a valid CVV.'); return;
+                }
+            } else if (paymentMethodSelect.value === 'upi') {
+                if (!document.getElementById('upi_id').value.includes('@')) {
+                    e.preventDefault(); alert('Please enter a valid UPI ID.'); return;
+                }
             }
-            if (!/^\d{2}\/\d{2}$/.test(document.getElementById('expiry_date').value)) {
-                e.preventDefault(); alert('Please enter a valid expiry date (MM/YY).'); return;
+            // Past-date double-check
+            const chosen = new Date(dateInput.value + 'T00:00:00');
+            const today = new Date(); today.setHours(0, 0, 0, 0);
+            if (chosen < today) {
+                e.preventDefault(); alert('Please select a future date.'); dateInput.focus(); return;
             }
-            if (document.getElementById('cvv').value.length !== 3) {
-                e.preventDefault(); alert('Please enter a valid CVV.'); return;
-            }
-        } else if (paymentMethodSelect.value === 'upi') {
-            if (!document.getElementById('upi_id').value.includes('@')) {
-                e.preventDefault(); alert('Please enter a valid UPI ID.'); return;
-            }
-        }
-        // Past-date double-check
-        const chosen = new Date(dateInput.value + 'T00:00:00');
-        const today = new Date(); today.setHours(0, 0, 0, 0);
-        if (chosen < today) {
-            e.preventDefault(); alert('Please select a future date.'); dateInput.focus(); return;
-        }
+        });
     });
-});
 </script>
 {% endblock %}

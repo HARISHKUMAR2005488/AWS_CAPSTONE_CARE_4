@@ -7,6 +7,7 @@ from decimal import Decimal, InvalidOperation
 from io import BytesIO
 
 import boto3
+from boto3.dynamodb.conditions import Key, Attr
 from botocore.exceptions import ClientError
 from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify, send_from_directory, send_file
 from werkzeug.security import check_password_hash, generate_password_hash
@@ -1957,6 +1958,138 @@ def book(doctor_id: str):
         available_slots=available_slots,
         min_date=date_class.today()
     )
+
+
+def _parse_hhmm(time_str):
+    """Parse 'HH:MM' string -> (hour:int, minute:int). Returns (9, 0) on error."""
+    try:
+        h, m = time_str.strip().split(':')
+        return int(h), int(m)
+    except Exception:
+        return 9, 0
+
+
+def _fmt_slot(h, m):
+    """Format (hour, minute) -> '9:00 AM' display string and '09:00' value string."""
+    period = 'AM' if h < 12 else 'PM'
+    display_h = h % 12 or 12
+    return f'{display_h}:{m:02d} {period}', f'{h:02d}:{m:02d}'
+
+
+def generate_available_slots(doctor_id, selected_date):
+    """
+    Generate available appointment slots for a doctor on a given date.
+    """
+    WEEKDAY_NAMES = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+    weekday_name = WEEKDAY_NAMES[selected_date.weekday()]
+
+    doctor = doctors_table.get_item(Key={"id": doctor_id}).get("Item")
+    if not doctor:
+        return []
+
+    # Check available_days (comma-separated partial names, e.g. "Mon,Tue,Wed")
+    if doctor.get("available_days"):
+        short = weekday_name[:3]
+        days_str = str(doctor["available_days"]).lower()
+        if short.lower() not in days_str and weekday_name.lower() not in days_str:
+            return []
+
+    # Parse available_time string like '09:00-17:00' or '9:00 AM - 5:00 PM'
+    start_h, start_m = 9, 0
+    end_h, end_m = 17, 0
+    duration = 30
+
+    avail_time = doctor.get("available_time")
+    if avail_time and '-' in avail_time:
+        parts = [p.strip() for p in avail_time.split('-', 1)]
+        if len(parts) == 2:
+            try:
+                def _parse_flexible(s):
+                    s = s.strip()
+                    is_pm = 'pm' in s.lower()
+                    s = s.upper().replace('AM', '').replace('PM', '').strip()
+                    h, m = _parse_hhmm(s)
+                    if is_pm and h != 12:
+                        h += 12
+                    return h, m
+                start_h, start_m = _parse_flexible(parts[0])
+                end_h, end_m = _parse_flexible(parts[1])
+            except Exception:
+                pass
+
+    slots = []
+    cur_h, cur_m = start_h, start_m
+    while (cur_h, cur_m) < (end_h, end_m):
+        label, value = _fmt_slot(cur_h, cur_m)
+        slots.append({'value': value, 'label': label})
+        total_min = cur_h * 60 + cur_m + duration
+        cur_h, cur_m = divmod(total_min, 60)
+
+    if not slots:
+        return []
+
+    from boto3.dynamodb.conditions import Attr
+    try:
+        response = appointments_table.scan(
+            FilterExpression=Attr('doctor_id').eq(doctor_id) & 
+                             Attr('appointment_date').eq(selected_date.strftime('%Y-%m-%d')) &
+                             Attr('status').is_in(['pending', 'approved', 'confirmed'])
+        )
+        booked = response.get('Items', [])
+    except Exception as e:
+        logger.error(f"Error fetching booked slots: {e}")
+        booked = []
+
+    booked_values = set()
+    for appt in booked:
+        t = appt.get('appointment_time')
+        if t:
+            if 'AM' in t.upper() or 'PM' in t.upper():
+                try:
+                    dt = datetime.strptime(t.strip(), '%I:%M %p')
+                    booked_values.add(dt.strftime('%H:%M'))
+                except Exception:
+                    booked_values.add(t)
+            else:
+                booked_values.add(t.strip())
+
+    slots = [s for s in slots if s['value'] not in booked_values]
+
+    # Remove past slots if today
+    if selected_date == datetime.today().date():
+        now = datetime.utcnow()
+        now_h, now_m = now.hour, now.minute
+        slots = [s for s in slots
+                 if (_parse_hhmm(s['value'])[0], _parse_hhmm(s['value'])[1]) > (now_h, now_m)]
+
+    return slots
+
+
+@app.route('/api/available-slots/<doctor_id>')
+def api_available_slots(doctor_id):
+    date_str = request.args.get('date', '').strip()
+    if not date_str:
+        return jsonify({'error': 'Date required'}), 400
+
+    try:
+        selected_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+    except ValueError:
+        return jsonify({'error': 'Invalid date format. Use YYYY-MM-DD.'}), 400
+
+    if selected_date < datetime.today().date():
+        return jsonify({'slots': [], 'message': 'Cannot book past dates.'})
+
+    doctor = doctors_table.get_item(Key={"id": doctor_id}).get("Item")
+    if not doctor:
+        return jsonify({'error': 'Doctor not found'}), 404
+
+    slots = generate_available_slots(doctor_id, selected_date)
+    return jsonify({
+        'slots': slots,
+        'available': len(slots) > 0,
+        'doctor_id': doctor_id,
+        'date': date_str
+    })
 
 
 @app.route("/api/doctor-availability/<doctor_id>")

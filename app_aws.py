@@ -88,6 +88,57 @@ def get_user(username: str):
     return resp.get("Item")
 
 
+def get_doctor_id(doctor_username: str) -> str | None:
+    """Reliably resolve the Doctors-table UUID for a logged-in doctor.
+
+    Resolution order:
+    1. `doctor_id` field stored on the Users-table record (fast path).
+    2. Scan Doctors table – match by `username` field.
+    3. Scan Doctors table – match by `name` field (legacy / display name).
+    4. If still not found, return None (caller decides whether to create).
+    When found via scan, the `doctor_id` is stored back to the Users record
+    so subsequent calls hit the fast path.
+    """
+    user_item = get_user(doctor_username)
+    if not user_item:
+        return None
+
+    doctor_id = user_item.get("doctor_id")
+    if doctor_id:
+        return doctor_id
+
+    # Slow-path: scan Doctors table
+    scan_resp = doctors_table.scan()
+    items = scan_resp.get("Items", [])
+
+    # Try matching by explicit 'username' field first
+    profile = next((d for d in items if d.get("username") == doctor_username), None)
+
+    # Fall back to matching display name to username (less reliable but kept for
+    # backward compat with older records that stored username as the name)
+    if not profile:
+        profile = next(
+            (d for d in items if (d.get("name") or "").lower() == doctor_username.lower()),
+            None,
+        )
+
+    if not profile:
+        return None
+
+    found_id = profile.get("id")
+    if found_id:
+        # Cache it on the Users record so we don't need to scan again
+        try:
+            users_table.update_item(
+                Key={"username": doctor_username},
+                UpdateExpression="SET doctor_id = :did",
+                ExpressionAttributeValues={":did": found_id},
+            )
+        except Exception:
+            pass  # non-fatal
+    return found_id
+
+
 def send_notification(subject: str, message: str) -> None:
     """Send notification via SNS topic"""
     if not SNS_TOPIC_ARN:
@@ -2466,20 +2517,12 @@ def doctor_update_profile():
         if not name or not specialization:
             return jsonify({"success": False, "message": "Name and specialization are required"}), 400
         
+        # Reliably resolve the doctor's UUID
+        doctor_id = get_doctor_id(doctor_username)
         if not doctor_id:
-            scan_resp = doctors_table.scan()
-            doctor_profile = next((d for d in scan_resp.get("Items", []) if d.get("name") == doctor_username), None)
-            doctor_id = doctor_profile.get("id") if doctor_profile else None
+            return jsonify({"success": False, "message": "Doctor profile not found. Please contact an admin."}), 404
 
-        if not doctor_id:
-            doctor_id = str(uuid.uuid4())
-            users_table.update_item(
-                Key={"username": doctor_username},
-                UpdateExpression="SET doctor_id = :doctor_id",
-                ExpressionAttributeValues={":doctor_id": doctor_id}
-            )
-
-        # Build update expression
+        # Build update expression for Doctors table
         update_expr = "SET #name = :name, #spec = :spec"
         expr_names = {
             "#name": "name",
@@ -2490,7 +2533,6 @@ def doctor_update_profile():
             ":spec": specialization
         }
         
-        # Add optional fields if provided
         if qualifications:
             update_expr += ", qualifications = :qual"
             expr_values[":qual"] = qualifications
@@ -2499,7 +2541,7 @@ def doctor_update_profile():
             update_expr += ", experience = :exp"
             expr_values[":exp"] = int(experience) if experience.isdigit() else 0
         
-        # Update doctor record in database
+        # Update Doctors table
         doctors_table.update_item(
             Key={"id": doctor_id},
             UpdateExpression=update_expr,
@@ -2507,11 +2549,21 @@ def doctor_update_profile():
             ExpressionAttributeValues=expr_values
         )
 
+        # Sync ALL changed fields back to Users table so Admin dashboard sees them
+        users_update_expr = "SET #name = :name, #spec = :spec"
+        users_expr_names = {"#name": "name", "#spec": "specialization"}
+        users_expr_values = {":name": name, ":spec": specialization}
+        if qualifications:
+            users_update_expr += ", qualifications = :qual"
+            users_expr_values[":qual"] = qualifications
+        if experience:
+            users_update_expr += ", experience = :exp"
+            users_expr_values[":exp"] = int(experience) if experience.isdigit() else 0
         users_table.update_item(
             Key={"username": doctor_username},
-            UpdateExpression="SET #name = :name",
-            ExpressionAttributeNames={"#name": "name"},
-            ExpressionAttributeValues={":name": name}
+            UpdateExpression=users_update_expr,
+            ExpressionAttributeNames=users_expr_names,
+            ExpressionAttributeValues=users_expr_values
         )
         
         logger.info(f"Doctor {doctor_username} (ID: {doctor_id}) updated profile successfully")
@@ -2548,18 +2600,8 @@ def doctor_update_contact():
         if not email and not phone:
             return jsonify({"success": False, "message": "At least one contact field is required"}), 400
         
-        if not doctor_id:
-            scan_resp = doctors_table.scan()
-            doctor_profile = next((d for d in scan_resp.get("Items", []) if d.get("name") == doctor_username), None)
-            doctor_id = doctor_profile.get("id") if doctor_profile else None
-
-        if not doctor_id:
-            doctor_id = str(uuid.uuid4())
-            users_table.update_item(
-                Key={"username": doctor_username},
-                UpdateExpression="SET doctor_id = :doctor_id",
-                ExpressionAttributeValues={":doctor_id": doctor_id}
-            )
+        # Reliably resolve the doctor's UUID
+        doctor_id = get_doctor_id(doctor_username)
 
         # Build update expression
         update_parts = []
@@ -2622,14 +2664,10 @@ def doctor_update_schedule():
         user_item = get_user(doctor_username)
         doctor_id = (user_item or {}).get("doctor_id")
         
+        # Reliably resolve the doctor's UUID
+        doctor_id = get_doctor_id(doctor_username)
         if not doctor_id:
-            # Fallback: try to find doctor by name
-            scan_resp = doctors_table.scan()
-            doctor_profile = next((d for d in scan_resp.get("Items", []) if d.get("name") == doctor_username), None)
-            doctor_id = doctor_profile.get("id") if doctor_profile else None
-        
-        if not doctor_id:
-            return jsonify({"success": False, "message": "Doctor profile not found"}), 404
+            return jsonify({"success": False, "message": "Doctor profile not found. Please contact an admin."}), 404
         
         # Get form data
         available_days = request.form.get("available_days", "").strip()

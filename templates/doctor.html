@@ -54,7 +54,7 @@
     }
 
     .patient-row:hover {
-        background-color: rgba(95, 254, 190, 0.1) !important;
+        background-color: rgba(0, 180, 216, 0.07) !important;
     }
 
     .patient-row td {
@@ -63,7 +63,7 @@
     }
 
     .patient-details-row {
-        background-color: #f8f9fa !important;
+        background-color: var(--gray-lighter) !important;
     }
 
     .patient-details-row td {
@@ -90,11 +90,11 @@
     }
 
     .patient-info-card-expanded {
-        background: white;
-        border-radius: 10px;
+        background: var(--white);
+        border-radius: var(--radius-lg);
         padding: 25px;
         margin-bottom: 25px;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+        box-shadow: var(--shadow-card);
     }
 
     .info-header-expanded {
@@ -106,7 +106,7 @@
 
     .patient-avatar-expanded {
         font-size: 70px;
-        color: #5FEABE;
+        color: var(--accent);
         line-height: 1;
     }
 
@@ -117,7 +117,7 @@
 
     .patient-details-expanded h3 {
         margin: 0 0 20px 0;
-        color: #1D1B1B;
+        color: var(--primary-dark);
         font-size: 24px;
         font-weight: 600;
     }
@@ -134,26 +134,26 @@
         align-items: center;
         gap: 10px;
         padding: 10px 12px;
-        background: #f8f9fa;
-        border-radius: 6px;
-        border-left: 3px solid #5FEABE;
+        background: var(--gray-lighter);
+        border-radius: var(--radius-sm);
+        border-left: 3px solid var(--accent);
     }
 
     .detail-item-expanded i {
-        color: #5FEABE;
+        color: var(--accent);
         width: 20px;
         font-size: 16px;
     }
 
     .detail-item-expanded span {
         font-size: 14px;
-        color: #333;
+        color: var(--text-primary);
     }
 
     .info-stats-expanded {
         margin-top: 25px;
         padding-top: 25px;
-        border-top: 2px solid #e0e0e0;
+        border-top: 2px solid var(--gray-light);
     }
 
     .stat-box-expanded {
@@ -161,26 +161,26 @@
         align-items: center;
         gap: 15px;
         padding: 15px 25px;
-        background: linear-gradient(135deg, #E4FECA 0%, #d4f4ba 100%);
-        border-radius: 10px;
-        box-shadow: 0 2px 8px rgba(95, 254, 190, 0.2);
+        background: linear-gradient(135deg, var(--bg-light) 0%, var(--bg-soft) 100%);
+        border-radius: var(--radius-md);
+        box-shadow: var(--shadow-sm);
     }
 
     .stat-box-expanded .stat-icon {
         font-size: 32px;
-        color: #5FEABE;
+        color: var(--primary);
     }
 
     .stat-box-expanded h4 {
         margin: 0;
         font-size: 28px;
-        color: #1D1B1B;
+        color: var(--primary-dark);
         font-weight: 700;
     }
 
     .stat-box-expanded p {
         margin: 0;
-        color: #666;
+        color: var(--gray);
         font-size: 14px;
         font-weight: 500;
     }
@@ -199,25 +199,25 @@
     }
 
     .section-header-expanded h3 {
-        color: #1D1B1B;
+        color: var(--primary-dark);
         margin: 0;
         font-size: 20px;
         font-weight: 600;
     }
 
     .section-header-expanded h3 i {
-        color: #5FEABE;
+        color: var(--accent);
         margin-right: 8px;
     }
 
     .appointment-count-badge-small {
-        background: #5FEABE;
-        color: #1D1B1B;
+        background: var(--primary);
+        color: var(--white);
         padding: 8px 18px;
-        border-radius: 20px;
+        border-radius: var(--radius-full);
         font-size: 14px;
         font-weight: 600;
-        box-shadow: 0 2px 6px rgba(95, 254, 190, 0.3);
+        box-shadow: var(--shadow-sm);
     }
 
     .appointment-count-badge-small i {
@@ -230,7 +230,7 @@
     }
 
     .view-records-btn.active {
-        background: #dc3545 !important;
+        background: var(--danger) !important;
         transform: scale(0.98);
     }
 
@@ -247,12 +247,12 @@
 
     .patient-cell i {
         font-size: 28px;
-        color: #5FEABE;
+        color: var(--accent);
     }
 
     .patient-cell strong {
         font-size: 15px;
-        color: #1D1B1B;
+        color: var(--primary-dark);
     }
 
     .appointments-history-section .appointments-table {
@@ -271,23 +271,23 @@
 
     .datetime-cell .date {
         font-weight: 600;
-        color: #1D1B1B;
+        color: var(--primary-dark);
     }
 
     .datetime-cell .time {
         font-size: 13px;
-        color: #666;
+        color: var(--gray);
     }
 
     .symptoms-text {
         display: block;
         line-height: 1.5;
-        color: #333;
+        color: var(--text-primary);
     }
 
     .notes-preview {
         line-height: 1.5;
-        color: #555;
+        color: var(--gray);
     }
 
     .loading-spinner {
@@ -300,11 +300,11 @@
     }
 
     .loading-spinner i {
-        color: #5FEABE;
+        color: var(--accent);
     }
 
     .loading-spinner p {
-        color: #666;
+        color: var(--gray);
         margin: 0;
         font-size: 14px;
     }
@@ -322,25 +322,25 @@
     }
 
     .medical-record-card {
-        background: white;
-        border: 2px solid #e0e0e0;
-        border-radius: 10px;
+        background: var(--white);
+        border: 2px solid var(--gray-light);
+        border-radius: var(--radius-md);
         padding: 15px;
         display: flex;
         gap: 15px;
         align-items: flex-start;
-        transition: all 0.3s ease;
+        transition: var(--transition);
     }
 
     .medical-record-card:hover {
-        border-color: #5FEABE;
-        box-shadow: 0 4px 12px rgba(95, 254, 190, 0.2);
+        border-color: var(--accent);
+        box-shadow: var(--shadow-md);
         transform: translateY(-2px);
     }
 
     .medical-record-card .record-icon {
         font-size: 36px;
-        color: #5FEABE;
+        color: var(--primary);
         width: 50px;
         text-align: center;
         flex-shrink: 0;
@@ -371,14 +371,14 @@
         margin: 0 0 8px 0;
         font-size: 15px;
         font-weight: 600;
-        color: #1D1B1B;
+        color: var(--primary-dark);
         word-break: break-word;
     }
 
     .medical-record-card .record-meta {
         margin: 0 0 8px 0;
         font-size: 13px;
-        color: #666;
+        color: var(--gray);
         display: flex;
         gap: 15px;
         flex-wrap: wrap;
@@ -391,14 +391,14 @@
     }
 
     .medical-record-card .record-meta i {
-        color: #5FEABE;
+        color: var(--accent);
         font-size: 12px;
     }
 
     .medical-record-card .record-description {
         margin: 0;
         font-size: 13px;
-        color: #777;
+        color: var(--gray);
         line-height: 1.4;
         display: -webkit-box;
         -webkit-line-clamp: 2;
@@ -425,13 +425,13 @@
 
     .btn-outline-primary {
         background: transparent;
-        border: 1px solid #5FEABE;
-        color: #5FEABE;
+        border: 1px solid var(--primary);
+        color: var(--primary);
     }
 
     .btn-outline-primary:hover {
-        background: #5FEABE;
-        color: white;
+        background: var(--primary);
+        color: var(--white);
     }
 </style>
 <div class="doctor-container">

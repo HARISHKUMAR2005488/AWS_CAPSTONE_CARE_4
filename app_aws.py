@@ -88,7 +88,7 @@ def get_user(username: str):
     return resp.get("Item")
 
 
-def get_doctor_id(doctor_username: str) -> str | None:
+def get_doctor_id(doctor_username: str):
     """Reliably resolve the Doctors-table UUID for a logged-in doctor.
 
     Resolution order:

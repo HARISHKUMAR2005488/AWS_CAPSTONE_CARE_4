@@ -2696,10 +2696,10 @@ def doctor_change_password():
     try:
         doctor_username = session["username"]
         
-        # Get form data
-        current_password = request.form.get("currentPassword", "").strip()
-        new_password = request.form.get("newPassword", "").strip()
-        confirm_password = request.form.get("confirmPassword", "").strip()
+        # Get form data (HTML inputs use name="current_password" / "new_password" / "confirm_password")
+        current_password = request.form.get("current_password", "").strip()
+        new_password     = request.form.get("new_password", "").strip()
+        confirm_password = request.form.get("confirm_password", "").strip()
         
         # Validate required fields
         if not current_password or not new_password or not confirm_password:
@@ -2713,27 +2713,51 @@ def doctor_change_password():
         if len(new_password) < 6:
             return jsonify({"success": False, "message": "Password must be at least 6 characters long"}), 400
         
-        # Get current doctor record
-        doctor_resp = doctors_table.get_item(Key={"id": doctor_username})
-        doctor = doctor_resp.get("Item")
+        # Get current user record from Users table (that's where auth happens)
+        user_item = get_user(doctor_username)
+        if not user_item:
+            return jsonify({"success": False, "message": "User not found"}), 404
         
-        if not doctor:
-            return jsonify({"success": False, "message": "Doctor not found"}), 404
+        # Verify current password against stored hash or plain text (matching login logic)
+        stored_hash  = user_item.get("password_hash", "")
+        stored_plain = user_item.get("password", "")
         
-        # Verify current password
-        stored_password = doctor.get("password", "")
-        if not check_password_hash(stored_password, current_password):
-            return jsonify({"success": False, "message": "Current password is incorrect"}), 400
+        if stored_hash:
+            if not check_password_hash(stored_hash, current_password):
+                return jsonify({"success": False, "message": "Current password is incorrect"}), 400
+        elif stored_plain:
+            if stored_plain != current_password:
+                return jsonify({"success": False, "message": "Current password is incorrect"}), 400
+        else:
+            return jsonify({"success": False, "message": "No password set on account"}), 400
         
         # Hash new password
         new_password_hash = generate_password_hash(new_password)
         
-        # Update password in database
-        doctors_table.update_item(
-            Key={"id": doctor_username},
-            UpdateExpression="SET password = :password",
-            ExpressionAttributeValues={":password": new_password_hash}
+        # Update Users table (primary auth table)
+        users_table.update_item(
+            Key={"username": doctor_username},
+            UpdateExpression="SET password_hash = :ph, #pw = :pp",
+            ExpressionAttributeNames={"#pw": "password"},
+            ExpressionAttributeValues={
+                ":ph": new_password_hash,
+                ":pp": ""          # clear plain-text password for security
+            }
         )
+        
+        # Also update the Doctors table entry if it stores a password field
+        user_item_refreshed = get_user(doctor_username)
+        doctor_id = (user_item_refreshed or {}).get("doctor_id")
+        if doctor_id:
+            try:
+                doctors_table.update_item(
+                    Key={"id": doctor_id},
+                    UpdateExpression="SET #pw = :ph",
+                    ExpressionAttributeNames={"#pw": "password"},
+                    ExpressionAttributeValues={":ph": new_password_hash}
+                )
+            except Exception:
+                pass   # non-fatal if Doctors table doesn't have this field
         
         logger.info(f"Doctor {doctor_username} changed password successfully")
         

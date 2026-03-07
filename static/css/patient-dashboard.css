@@ -5233,20 +5233,23 @@ body {
 .booking-progress {
     display: flex;
     justify-content: space-between;
+    align-items: flex-start;
     margin-bottom: 3rem;
     position: relative;
-    padding: 0 1rem;
+    padding: 0 2rem;
+    gap: 1rem;
 }
 
 .booking-progress::before {
     content: '';
     position: absolute;
     top: 20px;
-    left: 10%;
-    right: 10%;
-    height: 2px;
+    left: 15%;
+    right: 15%;
+    height: 3px;
     background: var(--gray-lighter);
     z-index: 0;
+    border-radius: 2px;
 }
 
 .progress-step {
@@ -5293,10 +5296,11 @@ body {
 
 /* Doctor Summary */
 .doctor-summary {
-    background: linear-gradient(135deg, var(--primary-lighter) 0%, var(--accent-yellow) 100%);
+    background: linear-gradient(135deg, #E0F7FA 0%, #B2EBF2 100%);
     border-radius: 16px;
     padding: 2rem;
-    margin-bottom: 3rem;
+    margin-bottom: 2.5rem;
+    border: 1px solid rgba(0, 188, 212, 0.2);
 }
 
 .doctor-summary-info h3 {
@@ -5304,6 +5308,14 @@ body {
     font-weight: var(--font-weight-bold);
     color: var(--dark);
     margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.doctor-summary-info h3::before {
+    content: '👨‍⚕️';
+    font-size: 1.5rem;
 }
 
 .summary-item {
@@ -5311,39 +5323,59 @@ body {
     align-items: center;
     gap: 1rem;
     margin-bottom: 1rem;
-    font-size: 1rem;
+    padding: 0.75rem;
+    background: rgba(255, 255, 255, 0.8);
+    border-radius: 10px;
+    font-size: 0.95rem;
+    transition: all 0.2s ease;
+}
+
+.summary-item:hover {
+    background: rgba(255, 255, 255, 1);
+    transform: translateX(4px);
 }
 
 .summary-item i {
-    width: 40px;
-    height: 40px;
-    background: var(--white);
-    color: var(--primary);
-    border-radius: 10px;
+    width: 36px;
+    height: 36px;
+    background: var(--primary);
+    color: var(--white);
+    border-radius: 8px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.125rem;
+    font-size: 1rem;
+    flex-shrink: 0;
 }
 
 .summary-item strong {
     font-weight: var(--font-weight-bold);
     color: var(--dark);
+    margin-right: 0.25rem;
 }
 
 /* Form Sections */
 .form-section {
-    margin-bottom: 3rem;
+    margin-bottom: 2.5rem;
+    padding-bottom: 2.5rem;
+    border-bottom: 1px solid var(--gray-lightest);
+}
+
+.form-section:last-of-type {
+    border-bottom: none;
+    padding-bottom: 0;
 }
 
 .form-section-title {
-    font-size: 1.5rem;
+    font-size: 1.35rem;
     font-weight: var(--font-weight-bold);
     color: var(--dark);
-    margin-bottom: 1.5rem;
+    margin-bottom: 1.75rem;
     display: flex;
     align-items: center;
     gap: 0.75rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid var(--primary-lighter);
 }
 
 .form-section-title i {
@@ -5355,6 +5387,7 @@ body {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 1.5rem;
+    margin-bottom: 1.5rem;
 }
 
 .form-group {
@@ -5602,6 +5635,90 @@ body {
     color: var(--dark);
     cursor: pointer;
     line-height: 1.6;
+}
+
+/* Payment and Transaction Sections */
+.payment-info-box {
+    background: linear-gradient(135deg, #F0FDF4 0%, #DCFCE7 100%);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    border: 1px solid #86EFAC;
+}
+
+.fee-display {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.fee-label {
+    color: var(--dark);
+    font-weight: var(--font-weight-medium);
+    font-size: 1rem;
+}
+
+.fee-amount {
+    font-size: 1.75rem;
+    font-weight: var(--font-weight-bold);
+    color: #16A34A;
+}
+
+.transaction-fee-box {
+    background: var(--gray-lightest);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.fee-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid var(--gray-lighter);
+    font-size: 1rem;
+}
+
+.fee-row:last-child {
+    border-bottom: none;
+}
+
+.fee-row.total {
+    margin-top: 0.5rem;
+    padding-top: 1rem;
+    border-top: 2px solid var(--gray-light);
+    font-size: 1.125rem;
+}
+
+.fee-row.total .fee-label,
+.fee-row.total .fee-value {
+    font-weight: var(--font-weight-bold);
+    color: var(--primary-dark);
+}
+
+.fee-value {
+    font-weight: var(--font-weight-bold);
+    color: var(--dark);
+}
+
+.payment-note {
+    background: #FEF3C7;
+    border-left: 4px solid #F59E0B;
+    border-radius: 10px;
+    padding: 1rem 1.25rem;
+    margin-top: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 0.9rem;
+    color: var(--dark);
+}
+
+.payment-note i {
+    color: #F59E0B;
+    font-size: 1.125rem;
+    flex-shrink: 0;
 }
 
 /* Booking Actions */

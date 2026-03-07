@@ -2,6 +2,10 @@
 
 {% block title %}Book Appointment - Care_4_U Hospitals{% endblock %}
 
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/patient-dashboard.css') }}?v=5.1">
+{% endblock %}
+
 {% block content %}
 <div class="booking-container">
     <div class="booking-card">
@@ -397,6 +401,34 @@
         document.getElementById('cvv').addEventListener('input', function (e) {
             e.target.value = e.target.value.replace(/\D/g, '').slice(0, 3);
         });
+
+        // -----------------------------------------------------------------------
+        // Booking progress tracker
+        // -----------------------------------------------------------------------
+        const progressSteps = document.querySelectorAll('.progress-step');
+        
+        function updateProgress() {
+            // Step 1: Date & Time selected
+            if (dateInput.value && timeSelect.value) {
+                progressSteps[0].classList.add('is-active');
+                progressSteps[1].classList.add('is-active');
+            } else {
+                progressSteps[0].classList.add('is-active');
+                progressSteps[1].classList.remove('is-active');
+                progressSteps[2].classList.remove('is-active');
+            }
+            
+            // Step 2: Medical Details filled
+            if (symptomsInput.value.trim().length > 10) {
+                progressSteps[2].classList.add('is-active');
+            } else {
+                progressSteps[2].classList.remove('is-active');
+            }
+        }
+        
+        dateInput.addEventListener('change', updateProgress);
+        timeSelect.addEventListener('change', updateProgress);
+        symptomsInput.addEventListener('input', updateProgress);
 
         // -----------------------------------------------------------------------
         // Symptoms character counter

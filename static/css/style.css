@@ -147,7 +147,7 @@ a:hover {
 
 main {
   flex: 1;
-  padding: 2rem 0;
+  padding: 0;
 }
 
 /* ===== NAVBAR ===== */
@@ -529,6 +529,7 @@ main {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 1.5rem;
+  align-items: stretch;
 }
 
 .info-card {
@@ -538,6 +539,9 @@ main {
   box-shadow: var(--shadow-card);
   border: 1px solid rgba(0, 180, 216, .2);
   transition: var(--transition);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
 }
 
 .info-card:hover {
@@ -588,6 +592,8 @@ main {
   font-size: .88rem;
   font-weight: 600;
   transition: var(--transition);
+  margin-top: auto;
+  align-self: flex-start;
 }
 
 .btn-card:hover {

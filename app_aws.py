@@ -916,6 +916,68 @@ def home():
     )
 
 
+def _build_analytics(appts_items, users_items, doctors_items):
+    """Compute analytics data dict required by admin.html."""
+    from datetime import datetime as _dt, timedelta as _td, date as _date
+    from collections import Counter
+
+    today = _date.today()
+
+    # Appointments trend — last 7 days
+    trend_labels = []
+    trend_values = []
+    for i in range(6, -1, -1):
+        d = today - _td(days=i)
+        trend_labels.append(d.strftime("%b %d"))
+        count = 0
+        for appt in appts_items:
+            date_val = appt.get("date") or appt.get("appointment_date")
+            try:
+                if isinstance(date_val, str):
+                    appt_date = _dt.strptime(date_val[:10], "%Y-%m-%d").date()
+                elif isinstance(date_val, _date):
+                    appt_date = date_val
+                else:
+                    continue
+                if appt_date == d:
+                    count += 1
+            except (ValueError, TypeError):
+                pass
+        trend_values.append(count)
+
+    # Status breakdown
+    approved_count = sum(1 for a in appts_items if (a.get("status") or "pending").lower() == "approved")
+    rejected_count = sum(1 for a in appts_items if (a.get("status") or "pending").lower() == "rejected")
+    pending_count  = sum(1 for a in appts_items if (a.get("status") or "pending").lower() == "pending")
+
+    # New users registered in the last 7 days
+    seven_days_ago = today - _td(days=7)
+    new_users_total = 0
+    for user in users_items:
+        created_at = user.get("created_at") or user.get("created_date")
+        if created_at:
+            try:
+                u_date = _dt.strptime(str(created_at)[:10], "%Y-%m-%d").date()
+                if u_date >= seven_days_ago:
+                    new_users_total += 1
+            except (ValueError, TypeError):
+                pass
+
+    # Top 5 doctors by appointment count
+    doctor_counter = Counter(appt.get("doctor_id") or "Unknown" for appt in appts_items)
+    doctor_name_map = {d.get("id"): d.get("name", d.get("id", "Unknown")) for d in doctors_items}
+    top_5 = doctor_counter.most_common(5)
+    top_doctors_labels = [doctor_name_map.get(doc_id, doc_id) for doc_id, _ in top_5]
+    top_doctors_values = [cnt for _, cnt in top_5]
+
+    return {
+        "appointments_trend": {"labels": trend_labels, "values": trend_values},
+        "status_breakdown": {"approved": approved_count, "pending": pending_count, "rejected": rejected_count},
+        "new_users_trend": {"total": new_users_total},
+        "top_doctors": {"labels": top_doctors_labels, "values": top_doctors_values},
+    }
+
+
 @app.route("/dashboard")
 @app.route("/user-dashboard")
 @app.route("/admin-dashboard")
@@ -991,6 +1053,11 @@ def dashboard():
             total_doctors=total_doctors,
             total_appointments=total_appointments,
             pending_appointments=pending_appointments,
+            analytics=_build_analytics(appts_items, users_items, doctors_items),
+            audit_logs=[],
+            audit_role_filter=request.args.get("role", ""),
+            audit_action_filter=request.args.get("action", ""),
+            audit_action_options=[],
         )
 
     if role == "doctor":

@@ -5197,16 +5197,18 @@ body {
    ======================================== */
 
 .booking-container {
+  display: block;
   width: 100%;
-  max-width: min(1240px, calc(100vw - 2rem));
+  max-width: 1400px;
   margin: 0 auto;
-  padding: 2rem 1.25rem 3rem;
+  padding: 1.25rem clamp(0.75rem, 2.5vw, 1.5rem) 2.5rem;
 }
 
 .booking-card {
     background: var(--white);
     border-radius: 20px;
   width: 100%;
+  max-width: none;
   padding: clamp(1.5rem, 2vw, 2.5rem);
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
 }
@@ -5787,7 +5789,7 @@ body {
 @media (max-width: 768px) {
   .booking-container {
     max-width: 100%;
-    padding: 1rem 0.75rem 2rem;
+    padding: 0.75rem 0.5rem 1.5rem;
   }
 
     .booking-card {

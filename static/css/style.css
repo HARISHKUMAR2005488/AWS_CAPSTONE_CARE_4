@@ -2265,7 +2265,7 @@ textarea:focus {
   padding: 3rem 0;
 }
 
-.booking-container {
+.booking-section .booking-container {
   display: grid;
   grid-template-columns: 1fr 2fr;
   gap: 2rem;
@@ -2335,7 +2335,7 @@ textarea:focus {
     grid-template-columns: 1fr 1fr;
   }
 
-  .booking-container {
+  .booking-section .booking-container {
     grid-template-columns: 1fr;
   }
 

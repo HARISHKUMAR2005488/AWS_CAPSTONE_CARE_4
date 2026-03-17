@@ -40,6 +40,7 @@
                 {% else %}
                 <li><a href="{{ url_for('user_dashboard') }}">My Dashboard</a></li>
                 {% endif %}
+                {% if nav_notifications is defined and nav_unread_count is defined %}
                 <li class="notification-nav-item">
                     <a href="{{ url_for('notifications_page') }}" class="notification-link" aria-label="Notifications">
                         <i class="fas fa-bell"></i>
@@ -71,6 +72,7 @@
                         <a href="{{ url_for('notifications_page') }}" class="notification-dropdown-footer">View all</a>
                     </div>
                 </li>
+                {% endif %}
                 <li><a href="{{ url_for('logout') }}">Logout</a></li>
                 {% else %}
                 <li><a href="{{ url_for('login') }}">Login</a></li>

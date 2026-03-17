@@ -31,7 +31,11 @@ function toggleChatBox() {
 function sendChatMessageFloating(event) {
     event.preventDefault();
 
-    const input = document.getElementById('chatbotInput');
+    const input = document.getElementById('chatbotInput') || document.getElementById('chatInputFloating');
+    if (!input) {
+        console.error('Chat input element not found for floating chatbot');
+        return;
+    }
     const messagesContainer = document.getElementById('chatMessagesFloating');
     const userMessage = input.value.trim();
 
@@ -164,7 +168,11 @@ function escapeHtml(text) {
 
 // Fill chat input from suggestion chips
 function fillChatInput(text) {
-    const input = document.getElementById('chatbotInput');
+    const input = document.getElementById('chatbotInput') || document.getElementById('chatInputFloating');
+    if (!input) {
+        console.error('Chat input element not found for suggestion fill');
+        return;
+    }
     input.value = text;
     input.focus();
 }

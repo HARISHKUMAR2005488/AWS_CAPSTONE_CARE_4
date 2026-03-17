@@ -13,6 +13,11 @@
             inputId: 'chatbotInput',
             micButtonId: 'chatbotMicBtn',
             statusId: 'voiceStatusChatbot'
+        },
+        {
+            inputId: 'chatInputFloating',
+            micButtonId: 'chatbotMicBtn',
+            statusId: 'voiceStatusChatbot'
         }
     ];
 
@@ -105,6 +110,11 @@
             return;
         }
 
+        if (buttonEl.dataset.voiceBound === '1') {
+            return;
+        }
+        buttonEl.dataset.voiceBound = '1';
+
         buttonEl.addEventListener('click', function () {
             stopAnyActiveRecognition();
 
@@ -158,7 +168,31 @@
         });
     }
 
+    function bindFromDataAttributes() {
+        const micButtons = document.querySelectorAll('.voice-mic-btn[data-target-input]');
+        micButtons.forEach(function (buttonEl) {
+            const inputId = buttonEl.getAttribute('data-target-input');
+            if (!inputId) {
+                return;
+            }
+
+            const fallbackInputId = inputId === 'chatbotInput' ? 'chatInputFloating' : '';
+            const resolvedInput = document.getElementById(inputId) || (fallbackInputId ? document.getElementById(fallbackInputId) : null);
+            if (!resolvedInput) {
+                return;
+            }
+
+            const statusId = inputId === 'symptomsInput' ? 'voiceStatusSymptoms' : 'voiceStatusChatbot';
+            bindVoiceInput({
+                inputId: resolvedInput.id,
+                micButtonId: buttonEl.id,
+                statusId: statusId
+            });
+        });
+    }
+
     document.addEventListener('DOMContentLoaded', function () {
         voiceBindings.forEach(bindVoiceInput);
+        bindFromDataAttributes();
     });
 })();

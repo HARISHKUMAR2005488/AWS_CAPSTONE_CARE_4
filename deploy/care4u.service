@@ -1,22 +1,19 @@
 [Unit]
-Description=Care_4_U Flask App (Gunicorn)
+Description=Care4U Flask App (Gunicorn)
 After=network.target
 
 [Service]
-User=ec2-user
-Group=ec2-user
-WorkingDirectory=/home/ec2-user/AWS_CAPSTONE_CARE_4
-Environment="PATH=/home/ec2-user/AWS_CAPSTONE_CARE_4/venv/bin"
-EnvironmentFile=/home/ec2-user/AWS_CAPSTONE_CARE_4/.env
-ExecStart=/home/ec2-user/AWS_CAPSTONE_CARE_4/venv/bin/gunicorn \
-    --workers 3 \
-    --bind unix:/home/ec2-user/AWS_CAPSTONE_CARE_4/care4u.sock \
-    --access-logfile /home/ec2-user/AWS_CAPSTONE_CARE_4/logs/access.log \
-    --error-logfile /home/ec2-user/AWS_CAPSTONE_CARE_4/logs/error.log \
-    app_aws:app
+Type=simple
+User=ubuntu
+Group=www-data
+WorkingDirectory=/var/www/care4u
+Environment="PATH=/var/www/care4u/.venv/bin"
+EnvironmentFile=/var/www/care4u/.env
+ExecStart=/var/www/care4u/.venv/bin/gunicorn --config /var/www/care4u/deploy/gunicorn.conf.py ${APP_MODULE:-app:app}
 
 Restart=always
 RestartSec=5
+TimeoutStopSec=30
 
 [Install]
 WantedBy=multi-user.target

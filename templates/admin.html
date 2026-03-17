@@ -2,6 +2,113 @@
 
 {% block title %}Admin Dashboard - Care_4_U Hospitals{% endblock %}
 
+{% block head %}
+<style>
+    .stat-card {
+        border: 1px solid rgba(0, 119, 182, 0.12);
+        box-shadow: 0 8px 24px rgba(0, 119, 182, 0.08);
+        transition: transform .2s ease, box-shadow .2s ease;
+    }
+
+    .stat-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 12px 28px rgba(0, 119, 182, 0.14);
+    }
+
+    .analytics-section {
+        margin: 1.25rem 0 1.75rem;
+    }
+
+    .analytics-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: .8rem;
+        margin-bottom: .9rem;
+        flex-wrap: wrap;
+    }
+
+    .analytics-header h2 {
+        margin: 0;
+    }
+
+    .analytics-meta {
+        display: flex;
+        gap: .8rem;
+        flex-wrap: wrap;
+    }
+
+    .analytics-chip {
+        background: #caf0f8;
+        color: #005b8a;
+        border-radius: 999px;
+        padding: .32rem .7rem;
+        font-size: .84rem;
+        font-weight: 600;
+    }
+
+    .analytics-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 1rem;
+    }
+
+    .chart-card {
+        background: #ffffff;
+        border: 1px solid rgba(0, 119, 182, 0.16);
+        border-radius: 12px;
+        padding: .85rem;
+        box-shadow: 0 8px 20px rgba(0, 119, 182, 0.08);
+    }
+
+    .chart-card h3 {
+        margin: 0 0 .65rem;
+        color: #0077b6;
+        font-size: 1rem;
+    }
+
+    .chart-wrap {
+        position: relative;
+        height: 260px;
+    }
+
+    .audit-filters {
+        display: flex;
+        gap: .6rem;
+        flex-wrap: wrap;
+        align-items: center;
+    }
+
+    .audit-filters select,
+    .audit-filters button {
+        padding: .45rem .65rem;
+        border-radius: 8px;
+        border: 1px solid rgba(0, 119, 182, 0.24);
+        background: #fff;
+    }
+
+    .audit-action {
+        font-weight: 600;
+        color: #0077b6;
+    }
+
+    .audit-meta {
+        font-size: .85rem;
+        color: #5f6f7d;
+    }
+
+    @media (max-width: 1024px) {
+        .analytics-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .chart-wrap {
+            height: 240px;
+        }
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="admin-container">
     <!-- Dashboard Header -->
@@ -94,6 +201,95 @@
                 <span>System Settings</span>
             </button>
         </div>
+    </div>
+
+    <!-- Analytics Insights -->
+    <div class="analytics-section">
+        <div class="analytics-header">
+            <h2><i class="fas fa-chart-pie"></i> Analytics & Insights</h2>
+            <div class="analytics-meta">
+                <span class="analytics-chip">New Users (7d): {{ analytics.new_users_trend.total }}</span>
+                <span class="analytics-chip">Approved: {{ analytics.status_breakdown.approved }}</span>
+                <span class="analytics-chip">Pending: {{ analytics.status_breakdown.pending }}</span>
+            </div>
+        </div>
+        <div class="analytics-grid">
+            <div class="chart-card">
+                <h3>Appointments (Last 7 Days)</h3>
+                <div class="chart-wrap"><canvas id="appointmentsTrendChart"></canvas></div>
+            </div>
+            <div class="chart-card">
+                <h3>Status Distribution</h3>
+                <div class="chart-wrap"><canvas id="statusBreakdownChart"></canvas></div>
+            </div>
+            <div class="chart-card">
+                <h3>Top 5 Doctors by Appointments</h3>
+                <div class="chart-wrap"><canvas id="topDoctorsChart"></canvas></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Activity Logs -->
+    <div class="recent-section">
+        <div class="section-header">
+            <h2><i class="fas fa-history"></i> Recent Activity Logs</h2>
+            <form method="GET" action="{{ url_for('admin_dashboard') }}" class="audit-filters">
+                <select name="role">
+                    <option value="" {% if not audit_role_filter %}selected{% endif %}>All Roles</option>
+                    <option value="admin" {% if audit_role_filter == 'admin' %}selected{% endif %}>Admin</option>
+                    <option value="doctor" {% if audit_role_filter == 'doctor' %}selected{% endif %}>Doctor</option>
+                    <option value="patient" {% if audit_role_filter == 'patient' %}selected{% endif %}>Patient</option>
+                </select>
+                <select name="action">
+                    <option value="" {% if not audit_action_filter %}selected{% endif %}>All Actions</option>
+                    {% for action_name in audit_action_options %}
+                    <option value="{{ action_name }}" {% if audit_action_filter == action_name %}selected{% endif %}>{{ action_name }}</option>
+                    {% endfor %}
+                </select>
+                <button type="submit" class="btn btn-primary">Apply</button>
+                <a href="{{ url_for('admin_dashboard') }}" class="btn btn-secondary">Clear</a>
+            </form>
+        </div>
+
+        {% if audit_logs %}
+        <div class="appointments-table">
+            <table>
+                <thead>
+                    <tr>
+                        <th>User</th>
+                        <th>Action</th>
+                        <th>Target</th>
+                        <th>Role</th>
+                        <th>Timestamp</th>
+                        <th>IP</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in audit_logs %}
+                    <tr>
+                        <td>{{ log.user.username if log.user else 'Unknown' }}</td>
+                        <td><span class="audit-action">{{ log.action }}</span></td>
+                        <td>
+                            {% if log.target_type %}
+                            {{ log.target_type }}{% if log.target_id %} #{{ log.target_id }}{% endif %}
+                            {% else %}
+                            -
+                            {% endif %}
+                        </td>
+                        <td>{{ log.role|title }}</td>
+                        <td><span class="audit-meta">{{ log.timestamp.strftime('%b %d, %Y %I:%M %p') }}</span></td>
+                        <td>{{ log.ip_address or '-' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="no-data">
+            <i class="fas fa-history"></i>
+            <p>No activity logs found for selected filters.</p>
+        </div>
+        {% endif %}
     </div>
 
     <!-- Users List (Categorized by Role) -->
@@ -935,6 +1131,7 @@
 {% endblock %}
 
 {% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
     // Upload Admin Profile Picture
     function uploadAdminProfilePicture() {
@@ -1710,6 +1907,108 @@
             hideLoading();
         });
     };
+
+    // Analytics charts
+    const analytics = {{ analytics|tojson }};
+    const theme = {
+        primary: '#0077b6',
+        accent: '#00b4d8',
+        light: '#caf0f8'
+    };
+
+    const axisTick = {
+        color: '#4a5a67',
+        font: { size: 11 }
+    };
+
+    const gridColor = 'rgba(0, 119, 182, 0.08)';
+
+    const trendCtx = document.getElementById('appointmentsTrendChart');
+    if (trendCtx) {
+        new Chart(trendCtx, {
+            type: 'line',
+            data: {
+                labels: analytics.appointments_trend.labels,
+                datasets: [{
+                    label: 'Appointments',
+                    data: analytics.appointments_trend.values,
+                    borderColor: theme.primary,
+                    backgroundColor: 'rgba(0, 180, 216, 0.18)',
+                    fill: true,
+                    tension: 0.35,
+                    pointRadius: 3,
+                    pointBackgroundColor: theme.accent
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { ticks: axisTick, grid: { color: gridColor } },
+                    y: { ticks: axisTick, grid: { color: gridColor }, beginAtZero: true }
+                }
+            }
+        });
+    }
+
+    const statusCtx = document.getElementById('statusBreakdownChart');
+    if (statusCtx) {
+        new Chart(statusCtx, {
+            type: 'pie',
+            data: {
+                labels: ['Pending', 'Approved', 'Rejected'],
+                datasets: [{
+                    data: [
+                        analytics.status_breakdown.pending,
+                        analytics.status_breakdown.approved,
+                        analytics.status_breakdown.rejected
+                    ],
+                    backgroundColor: [theme.light, theme.accent, theme.primary],
+                    borderColor: '#ffffff',
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom', labels: { color: '#2f3d4c' } }
+                }
+            }
+        });
+    }
+
+    const topDoctorsCtx = document.getElementById('topDoctorsChart');
+    if (topDoctorsCtx) {
+        new Chart(topDoctorsCtx, {
+            type: 'bar',
+            data: {
+                labels: analytics.top_doctors.labels,
+                datasets: [{
+                    label: 'Appointments',
+                    data: analytics.top_doctors.values,
+                    backgroundColor: [
+                        theme.primary,
+                        '#0097c7',
+                        theme.accent,
+                        '#68d4ea',
+                        theme.light
+                    ],
+                    borderRadius: 8
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { ticks: axisTick, grid: { display: false } },
+                    y: { ticks: axisTick, grid: { color: gridColor }, beginAtZero: true }
+                }
+            }
+        });
+    }
 
 </script>
 {% endblock %}

@@ -18,6 +18,8 @@ class User(UserMixin, db.Model):
     profile_picture = db.Column(db.String(200))  # Path to user's profile picture
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     appointments = db.relationship('Appointment', backref='patient', lazy=True)
+    notifications = db.relationship('Notification', backref='user', lazy=True, cascade='all, delete-orphan')
+    audit_logs = db.relationship('AuditLog', backref='user', lazy=True, cascade='all, delete-orphan')
     
     def __repr__(self):
         return f'<User {self.username}>'
@@ -45,15 +47,15 @@ class Doctor(db.Model):
 class Appointment(db.Model):
     __tablename__ = 'appointments'
     id = db.Column(db.Integer, primary_key=True)
-    patient_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    doctor_id = db.Column(db.Integer, db.ForeignKey('doctors.id'), nullable=False)
+    patient_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, index=True)
+    doctor_id = db.Column(db.Integer, db.ForeignKey('doctors.id'), nullable=False, index=True)
     appointment_date = db.Column(db.Date, nullable=False)
     appointment_time = db.Column(db.String(50), nullable=False)
     symptoms = db.Column(db.Text)
     # Allowed values: pending, approved, rejected, completed, cancelled
     # Legacy value 'confirmed' treated as 'approved' in all display/logic layers
-    status = db.Column(db.String(20), default='pending')
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    status = db.Column(db.String(20), default='pending', index=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     notes = db.Column(db.Text)
 
@@ -99,13 +101,13 @@ class DoctorAvailability(db.Model):
 class MedicalRecord(db.Model):
     __tablename__ = 'medical_records'
     id = db.Column(db.Integer, primary_key=True)
-    patient_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    patient_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, index=True)
     filename = db.Column(db.String(255), nullable=False)
     original_filename = db.Column(db.String(255), nullable=False)
     description = db.Column(db.Text)
     file_type = db.Column(db.String(50))
     file_size = db.Column(db.Integer)
-    upload_date = db.Column(db.DateTime, default=datetime.utcnow)
+    upload_date = db.Column(db.DateTime, default=datetime.utcnow, index=True)
     
     # Relationship to patient
     patient = db.relationship('User', backref=db.backref('medical_records', lazy=True))
@@ -147,15 +149,15 @@ class Prescription(db.Model):
         unique=True
     )
     # Patient user id (for fast patient-scoped queries)
-    patient_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    patient_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, index=True)
     # Doctor user id (the User who created this, not Doctor.id)
-    doctor_user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    doctor_user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, index=True)
     # Clinical content
     diagnosis     = db.Column(db.Text, nullable=False)
     prescription  = db.Column(db.Text, nullable=False)
     notes         = db.Column(db.Text, nullable=True)
     follow_up_date = db.Column(db.Date, nullable=True)
-    created_at    = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at    = db.Column(db.DateTime, default=datetime.utcnow, index=True)
     updated_at    = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     # Relationships
@@ -187,3 +189,67 @@ class Prescription(db.Model):
 
     def __repr__(self):
         return f'<Prescription appt={self.appointment_id}>'
+
+
+class Report(db.Model):
+    __tablename__ = 'reports'
+    id = db.Column(db.Integer, primary_key=True)
+    patient_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    doctor_id = db.Column(db.Integer, db.ForeignKey('doctors.id'), nullable=False)
+    file_name = db.Column(db.String(255), nullable=False)
+    file_path = db.Column(db.String(500), nullable=False)
+    uploaded_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    description = db.Column(db.Text, nullable=True)
+
+    # Compatibility links to existing appointment/prescription flows.
+    appointment_id = db.Column(db.Integer, db.ForeignKey('appointments.id'), nullable=True, index=True)
+    prescription_id = db.Column(db.Integer, db.ForeignKey('prescriptions.id'), nullable=True, index=True)
+
+    patient = db.relationship('User', foreign_keys=[patient_id], backref=db.backref('reports', lazy=True))
+    doctor = db.relationship('Doctor', foreign_keys=[doctor_id], backref=db.backref('reports', lazy=True))
+    appointment = db.relationship('Appointment', backref=db.backref('reports', lazy=True))
+    prescription = db.relationship('Prescription', backref=db.backref('reports', lazy=True))
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'patient_id': self.patient_id,
+            'doctor_id': self.doctor_id,
+            'file_name': self.file_name,
+            'file_path': self.file_path,
+            'uploaded_at': self.uploaded_at.strftime('%b %d, %Y %I:%M %p'),
+            'description': self.description or ''
+        }
+
+    def __repr__(self):
+        return f'<Report {self.id} patient={self.patient_id}>'
+
+
+class AuditLog(db.Model):
+    __tablename__ = 'audit_logs'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, index=True)
+    action = db.Column(db.String(120), nullable=False)
+    target_type = db.Column(db.String(30), nullable=True)
+    target_id = db.Column(db.Integer, nullable=True)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow, nullable=False, index=True)
+    ip_address = db.Column(db.String(45), nullable=True)
+    role = db.Column(db.String(20), nullable=False, index=True)
+
+    def __repr__(self):
+        return f'<AuditLog user={self.user_id} action={self.action}>'
+
+
+class Notification(db.Model):
+    __tablename__ = 'notifications'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, index=True)
+    title = db.Column(db.String(200), nullable=False)
+    message = db.Column(db.Text, nullable=False)
+    type = db.Column(db.String(20), default='info', nullable=False)
+    related_id = db.Column(db.Integer, nullable=True)
+    is_read = db.Column(db.Boolean, default=False, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False, index=True)
+
+    def __repr__(self):
+        return f'<Notification {self.id} user={self.user_id}>'

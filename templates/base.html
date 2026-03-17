@@ -16,7 +16,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <!-- Main Stylesheet -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=5.1">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=5.2">
 
     {% block head %}{% endblock %}
 </head>
@@ -40,6 +40,37 @@
                 {% else %}
                 <li><a href="{{ url_for('user_dashboard') }}">My Dashboard</a></li>
                 {% endif %}
+                <li class="notification-nav-item">
+                    <a href="{{ url_for('notifications_page') }}" class="notification-link" aria-label="Notifications">
+                        <i class="fas fa-bell"></i>
+                        {% if nav_unread_count > 0 %}
+                        <span class="notification-badge">{{ nav_unread_count if nav_unread_count < 100 else '99+' }}</span>
+                        {% endif %}
+                    </a>
+                    <div class="notification-dropdown" aria-label="Notification preview">
+                        <div class="notification-dropdown-header">
+                            <span>Notifications</span>
+                            {% if nav_unread_count > 0 %}
+                            <form method="POST" action="{{ url_for('mark_all_notifications_read') }}">
+                                <button type="submit" class="notification-action-link">Mark all read</button>
+                            </form>
+                            {% endif %}
+                        </div>
+                        <div class="notification-dropdown-list">
+                            {% if nav_notifications %}
+                            {% for item in nav_notifications %}
+                            <a href="{{ url_for('notifications_page') }}" class="notification-dropdown-item {% if not item.is_read %}unread{% endif %}">
+                                <strong>{{ item.title }}</strong>
+                                <span>{{ item.message }}</span>
+                            </a>
+                            {% endfor %}
+                            {% else %}
+                            <div class="notification-dropdown-empty">No notifications yet.</div>
+                            {% endif %}
+                        </div>
+                        <a href="{{ url_for('notifications_page') }}" class="notification-dropdown-footer">View all</a>
+                    </div>
+                </li>
                 <li><a href="{{ url_for('logout') }}">Logout</a></li>
                 {% else %}
                 <li><a href="{{ url_for('login') }}">Login</a></li>

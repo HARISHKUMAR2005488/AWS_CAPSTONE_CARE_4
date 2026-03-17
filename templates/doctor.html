@@ -971,6 +971,24 @@
                 const rec = data.record;
                 const canCreate = data.can_create;
                 const canEdit = data.can_edit;
+                const renderReports = (reports) => {
+                    if (!reports || !reports.length) {
+                        return '<div class="form-group"><label>Attached Report</label><p style="color:var(--gray);margin:0;">No report file attached.</p></div>';
+                    }
+                    const items = reports.map((r) => `
+                        <div style="display:flex;align-items:center;justify-content:space-between;gap:.6rem;padding:.45rem .6rem;border:1px solid var(--border);border-radius:6px;margin-top:.4rem;">
+                            <div style="display:flex;align-items:center;gap:.45rem;min-width:0;">
+                                <i class="fas fa-file-medical" style="color:var(--primary);"></i>
+                                <span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${r.file_name}</span>
+                            </div>
+                            <div style="display:flex;gap:.4rem;">
+                                <a href="${r.view_url}" target="_blank" rel="noopener" class="btn btn-outline" style="font-size:.75rem;padding:.25rem .5rem;">View</a>
+                                <a href="${r.download_url}" class="btn btn-primary" style="font-size:.75rem;padding:.25rem .5rem;">Download</a>
+                            </div>
+                        </div>
+                    `).join('');
+                    return `<div class="form-group"><label>Attached Report</label>${items}</div>`;
+                };
 
                 if (rec) {
                     // Show existing record (editable)
@@ -992,6 +1010,7 @@
                             <label>Follow-up Date (optional)</label>
                             <input type="date" id="rx_followup" style="width:100%;padding:.5rem;border:1px solid var(--border);border-radius:6px;" value="${rec.follow_up_date || ''}">
                         </div>
+                        ${renderReports(rec.reports || [])}
                         <small style="color:var(--gray);">Created: ${rec.created_at}</small>
                     </div>
                     <div class="modal-actions" style="display:flex;gap:.5rem;justify-content:flex-end;margin-top:1rem;">
@@ -1018,6 +1037,15 @@
                             <label>Follow-up Date (optional)</label>
                             <input type="date" id="rx_followup" style="width:100%;padding:.5rem;border:1px solid var(--border);border-radius:6px;">
                         </div>
+                        <div class="form-group">
+                            <label><i class="fas fa-file-upload"></i> Upload Report (optional)</label>
+                            <input type="file" id="rx_report_file" accept=".pdf,.jpg,.jpeg,.png" style="width:100%;padding:.45rem;border:1px solid var(--border);border-radius:6px;background:#fff;">
+                            <small style="color:var(--gray);">Allowed: PDF, JPG, JPEG, PNG. Max 5MB.</small>
+                        </div>
+                        <div class="form-group">
+                            <label>Report Description (optional)</label>
+                            <input type="text" id="rx_report_description" placeholder="Short note about the uploaded file" style="width:100%;padding:.5rem;border:1px solid var(--border);border-radius:6px;">
+                        </div>
                     </div>
                     <div class="modal-actions" style="display:flex;gap:.5rem;justify-content:flex-end;margin-top:1rem;">
                         <button class="btn btn-secondary" onclick="document.getElementById('prescriptionModal').style.display='none'">Cancel</button>
@@ -1037,6 +1065,16 @@
         fd.append('notes', document.getElementById('rx_notes').value.trim());
         const followup = document.getElementById('rx_followup').value;
         if (followup) fd.append('follow_up_date', followup);
+        if (!isEdit) {
+            const reportFile = document.getElementById('rx_report_file');
+            const reportDesc = document.getElementById('rx_report_description');
+            if (reportFile && reportFile.files && reportFile.files[0]) {
+                fd.append('report_file', reportFile.files[0]);
+            }
+            if (reportDesc && reportDesc.value) {
+                fd.append('report_description', reportDesc.value.trim());
+            }
+        }
 
         const msg = document.getElementById('rxModalMsg');
         msg.textContent = '';

@@ -1,13 +1,31 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, send_from_directory, Response
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, send_from_directory, send_file, Response
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 from datetime import datetime, date, timedelta
+import mimetypes
 import json
 import os
+from sqlalchemy import func, case
+from sqlalchemy.orm import joinedload, selectinload
+
+try:
+    from flask_caching import Cache
+except ImportError:
+    Cache = None
+
+try:
+    import boto3
+except ImportError:
+    boto3 = None
+
+try:
+    from PIL import Image
+except ImportError:
+    Image = None
 
 from config import Config
-from database import db, User, Doctor, Appointment, TimeSlot, MedicalRecord, Feedback, DoctorAvailability, Prescription
+from database import db, User, Doctor, Appointment, TimeSlot, MedicalRecord, Feedback, DoctorAvailability, Prescription, Report, AuditLog, Notification
 
 # ---------------------------------------------------------------------------
 # APPOINTMENT STATUS LIFECYCLE
@@ -15,6 +33,9 @@ from database import db, User, Doctor, Appointment, TimeSlot, MedicalRecord, Fee
 # Legacy DB value 'confirmed' is treated as 'approved' everywhere.
 # ---------------------------------------------------------------------------
 VALID_STATUSES = {'pending', 'approved', 'rejected', 'completed', 'cancelled'}
+
+ALLOWED_REPORT_EXTENSIONS = {'pdf', 'jpg', 'jpeg', 'png'}
+MAX_REPORT_FILE_SIZE = 5 * 1024 * 1024  # 5 MB
 
 # Maps (current_status, role) → set of allowed next statuses
 ALLOWED_TRANSITIONS = {
@@ -58,6 +79,136 @@ def validate_transition(appointment, new_status, role):
             )
 
     return True, ''
+
+
+def send_notification_email(user, title, message):
+    """SES-ready stub: currently logs notification email details for future AWS integration."""
+    app.logger.info(
+        '[NotificationEmailStub] to=%s title=%s message=%s',
+        user.email,
+        title,
+        message
+    )
+
+
+def create_notification(user_id, title, message, notification_type='info', related_id=None, send_email=False):
+    """Create an in-app notification and optionally trigger the SES-ready email stub."""
+    user = User.query.get(user_id)
+    if not user:
+        return None
+
+    notification = Notification(
+        user_id=user_id,
+        title=title,
+        message=message,
+        type=notification_type,
+        related_id=related_id,
+        is_read=False
+    )
+    db.session.add(notification)
+
+    if send_email and user.email:
+        send_notification_email(user, title, message)
+
+    return notification
+
+
+def log_action(user, action, target_type=None, target_id=None):
+    """Write an audit trail row for critical user actions."""
+    if not user or not getattr(user, 'id', None) or not action:
+        return
+
+    raw_ip = request.headers.get('X-Forwarded-For', request.remote_addr or '')
+    client_ip = raw_ip.split(',')[0].strip() if raw_ip else None
+    role = (user.user_type or '').strip().lower()
+    if role == 'user':
+        role = 'patient'
+
+    db.session.add(AuditLog(
+        user_id=user.id,
+        action=action,
+        target_type=target_type,
+        target_id=target_id,
+        ip_address=client_ip,
+        role=role or 'patient'
+    ))
+
+
+def upload_to_s3(file_obj, filename, bucket_name=None, region_name=None):
+    """Optional S3 helper. Not required for local mode, but ready for future switch."""
+    if boto3 is None:
+        raise RuntimeError('boto3 is not installed in this environment.')
+
+    bucket = bucket_name or os.getenv('AWS_S3_BUCKET')
+    region = region_name or os.getenv('AWS_REGION', 'us-east-1')
+    if not bucket:
+        raise RuntimeError('AWS_S3_BUCKET is not configured.')
+
+    s3_client = boto3.client('s3', region_name=region)
+    file_obj.seek(0)
+    s3_client.upload_fileobj(
+        file_obj,
+        bucket,
+        filename,
+        ExtraArgs={
+            'ContentType': file_obj.mimetype or 'application/octet-stream'
+        }
+    )
+
+    # Public URL example (keep object ACL/policy aligned with your security policy).
+    return f'https://{bucket}.s3.{region}.amazonaws.com/{filename}'
+
+
+def save_file(file_storage, user_id):
+    """Save report locally now; function signature stays stable for future S3 migration."""
+    if not file_storage or not file_storage.filename:
+        return None
+
+    original_name = secure_filename(file_storage.filename)
+    if not original_name or '.' not in original_name:
+        raise ValueError('Invalid file name.')
+
+    ext = original_name.rsplit('.', 1)[1].lower()
+    if ext not in ALLOWED_REPORT_EXTENSIONS:
+        raise ValueError('Only PDF, JPG, JPEG, PNG files are allowed.')
+
+    # Explicit size guard even if MAX_CONTENT_LENGTH is configured.
+    file_storage.stream.seek(0, os.SEEK_END)
+    size = file_storage.stream.tell()
+    file_storage.stream.seek(0)
+    if size > MAX_REPORT_FILE_SIZE:
+        raise ValueError('File size exceeds 5MB limit.')
+
+    timestamp = datetime.utcnow().strftime('%Y%m%d%H%M%S')
+    stored_name = f'{user_id}_{timestamp}_{original_name}'
+
+    upload_dir = os.path.join(app.root_path, 'static', 'uploads', 'reports')
+    os.makedirs(upload_dir, exist_ok=True)
+
+    absolute_path = os.path.join(upload_dir, stored_name)
+    file_storage.save(absolute_path)
+
+    # Store a path relative to /static for portability.
+    relative_path = os.path.join('uploads', 'reports', stored_name).replace('\\', '/')
+    return {
+        'file_name': original_name,
+        'file_path': relative_path
+    }
+
+
+def _compress_image_inplace(file_path):
+    """Lightweight image compression (no-op if Pillow is unavailable or file is unsupported)."""
+    if Image is None:
+        return
+    try:
+        with Image.open(file_path) as img:
+            if img.mode in ('RGBA', 'P'):
+                img = img.convert('RGB')
+            img.thumbnail((1400, 1400))
+            img.save(file_path, optimize=True, quality=82)
+    except Exception:
+        # Keep original file if optimization fails.
+        return
 
 
 # ---------------------------------------------------------------------------
@@ -190,14 +341,190 @@ def generate_available_slots(doctor_id, selected_date):
     return slots
 
 
+def get_recommended_doctors(patient_id, limit=3):
+    """Recommend doctors using patient's history first, then globally most booked doctors."""
+    patient_rows = db.session.query(
+        Appointment.doctor_id,
+        func.count(Appointment.id).label('booking_count')
+    ).filter(
+        Appointment.patient_id == patient_id,
+        Appointment.status.in_(['pending', 'approved', 'confirmed', 'completed'])
+    ).group_by(Appointment.doctor_id).order_by(
+        func.count(Appointment.id).desc()
+    ).limit(limit).all()
+
+    recommended = []
+    used_doctor_ids = set()
+
+    for row in patient_rows:
+        doctor = Doctor.query.get(row.doctor_id)
+        if not doctor:
+            continue
+        used_doctor_ids.add(doctor.id)
+        recommended.append({
+            'id': doctor.id,
+            'name': doctor.name,
+            'specialization': doctor.specialization,
+            'reason': 'Based on your previous visits',
+            'booking_count': int(row.booking_count or 0)
+        })
+
+    remaining = max(limit - len(recommended), 0)
+    if remaining > 0:
+        global_rows = db.session.query(
+            Appointment.doctor_id,
+            func.count(Appointment.id).label('booking_count')
+        ).filter(
+            Appointment.status.in_(['pending', 'approved', 'confirmed', 'completed'])
+        ).group_by(Appointment.doctor_id).order_by(
+            func.count(Appointment.id).desc()
+        ).limit(10).all()
+
+        for row in global_rows:
+            if row.doctor_id in used_doctor_ids:
+                continue
+            doctor = Doctor.query.get(row.doctor_id)
+            if not doctor:
+                continue
+            recommended.append({
+                'id': doctor.id,
+                'name': doctor.name,
+                'specialization': doctor.specialization,
+                'reason': 'Popular with other patients',
+                'booking_count': int(row.booking_count or 0)
+            })
+            used_doctor_ids.add(doctor.id)
+            if len(recommended) >= limit:
+                break
+
+    return recommended[:limit]
+
+
+def get_best_time_slots(limit=5):
+    """Suggest commonly used appointment times while avoiding today's already busy slots."""
+    today = date.today()
+    busy_today = {
+        row[0] for row in db.session.query(Appointment.appointment_time).filter(
+            Appointment.appointment_date == today,
+            Appointment.status.in_(['pending', 'approved', 'confirmed'])
+        ).all()
+        if row[0]
+    }
+
+    popular_rows = db.session.query(
+        Appointment.appointment_time,
+        func.count(Appointment.id).label('slot_count')
+    ).filter(
+        Appointment.status.in_(['pending', 'approved', 'confirmed', 'completed']),
+        Appointment.appointment_time.isnot(None)
+    ).group_by(Appointment.appointment_time).order_by(
+        func.count(Appointment.id).desc()
+    ).limit(20).all()
+
+    suggestions = []
+    for slot, slot_count in popular_rows:
+        if slot in busy_today:
+            continue
+        suggestions.append({'time': slot, 'popularity': int(slot_count or 0)})
+        if len(suggestions) >= limit:
+            break
+
+    if len(suggestions) < limit:
+        fallback_slots = ['09:00 AM', '10:00 AM', '11:00 AM', '02:00 PM', '04:00 PM']
+        existing = {s['time'] for s in suggestions}
+        for slot in fallback_slots:
+            if slot in busy_today or slot in existing:
+                continue
+            suggestions.append({'time': slot, 'popularity': 0})
+            if len(suggestions) >= limit:
+                break
+
+    return suggestions[:limit]
+
+
+def get_patient_activity_status(patient_id):
+    """Return reminder text based on patient's booking recency."""
+    last_appointment = Appointment.query.filter_by(patient_id=patient_id).order_by(
+        Appointment.appointment_date.desc()
+    ).first()
+
+    if not last_appointment:
+        return 'You have not booked any appointment yet. Consider scheduling your first health checkup.'
+
+    if not last_appointment.appointment_date:
+        return None
+
+    days_since = (date.today() - last_appointment.appointment_date).days
+    if days_since >= 90:
+        return f'It has been {days_since} days since your last visit. A routine follow-up is recommended.'
+    if days_since >= 45:
+        return f'It has been {days_since} days since your last appointment. Consider booking a preventive checkup.'
+    return None
+
+
 app = Flask(__name__)
 app.config.from_object(Config)
+app.config['MAX_CONTENT_LENGTH'] = MAX_REPORT_FILE_SIZE
+
+cache = Cache(config={'CACHE_TYPE': 'SimpleCache'}) if Cache else None
+if cache:
+    cache.init_app(app)
 
 # Initialize extensions
 db.init_app(app)
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
 login_manager.login_message_category = 'info'
+
+
+@app.errorhandler(413)
+def request_entity_too_large(_error):
+    if request.path.startswith('/appointment/') and request.path.endswith('/prescription'):
+        return jsonify({'success': False, 'message': 'File size exceeds 5MB limit.'}), 413
+    flash('Uploaded file is too large. Maximum allowed size is 5MB.', 'danger')
+    return redirect(url_for('user_dashboard'))
+
+
+@app.errorhandler(404)
+def not_found(_error):
+    if request.path.startswith('/api/'):
+        return jsonify({'success': False, 'message': 'Resource not found'}), 404
+    return render_template('index.html'), 404
+
+
+@app.errorhandler(500)
+def internal_server_error(error):
+    app.logger.error(f'Unhandled server error: {error}')
+    if request.path.startswith('/api/'):
+        return jsonify({'success': False, 'message': 'Internal server error'}), 500
+    flash('Something went wrong. Please try again.', 'danger')
+    return redirect(url_for('index'))
+
+
+@app.after_request
+def add_static_cache_headers(response):
+    if request.path.startswith('/static/'):
+        response.headers.setdefault('Cache-Control', 'public, max-age=604800')
+    elif request.path.startswith('/uploads/'):
+        response.headers.setdefault('Cache-Control', 'public, max-age=86400')
+    return response
+
+
+@app.context_processor
+def inject_notification_context():
+    """Provide navbar notification badge + latest items for authenticated users."""
+    if not current_user.is_authenticated:
+        return {'nav_unread_count': 0, 'nav_notifications': []}
+
+    unread_count = Notification.query.filter_by(user_id=current_user.id, is_read=False).count()
+    latest = Notification.query.filter_by(user_id=current_user.id).order_by(
+        Notification.created_at.desc()
+    ).limit(5).all()
+
+    return {
+        'nav_unread_count': unread_count,
+        'nav_notifications': latest
+    }
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -233,7 +560,18 @@ def login():
         user = User.query.filter_by(email=email).first()
         
         if user and check_password_hash(user.password, password):
+            if user.user_type == 'deactivated':
+                flash('Your account has been deactivated. Please contact support.', 'danger')
+                return redirect(url_for('login'))
+
             login_user(user, remember='remember' in request.form)
+            try:
+                log_action(user, 'login', target_type='user', target_id=user.id)
+                db.session.commit()
+            except Exception as exc:
+                db.session.rollback()
+                app.logger.warning(f'Failed to write audit log for login user={user.id}: {exc}')
+
             next_page = request.args.get('next')
             
             if user.user_type == 'admin':
@@ -331,6 +669,14 @@ def signup():
 @app.route('/logout')
 @login_required
 def logout():
+    user_for_log = current_user if current_user.is_authenticated else None
+    try:
+        log_action(user_for_log, 'logout', target_type='user', target_id=getattr(user_for_log, 'id', None))
+        db.session.commit()
+    except Exception as exc:
+        db.session.rollback()
+        app.logger.warning(f'Failed to write audit log for logout: {exc}')
+
     logout_user()
     return redirect(url_for('index'))
 
@@ -338,6 +684,12 @@ def logout():
 def doctors():
     specialization = request.args.get('specialization')
     search = request.args.get('search')
+
+    cache_key = f"doctors:{specialization or 'all'}:{search or ''}"
+    if cache:
+        cached_payload = cache.get(cache_key)
+        if cached_payload:
+            return render_template('doctors.html', **cached_payload)
     
     query = Doctor.query.filter_by(is_available=True)
     
@@ -347,35 +699,42 @@ def doctors():
     if search:
         query = query.filter(Doctor.name.ilike(f'%{search}%'))
     
-    doctors_list = query.all()
-    specializations = db.session.query(Doctor.specialization).distinct().all()
-    
-    # Calculate ratings for each doctor
-    doctors_with_ratings = []
-    for doc in doctors_list:
-        feedback = Feedback.query.filter_by(doctor_id=doc.id).all()
-        if feedback:
-            average_rating = sum([f.rating for f in feedback]) / len(feedback)
-            total_reviews = len(feedback)
-        else:
-            average_rating = 0
-            total_reviews = 0
-        
-        doctors_with_ratings.append({
+    doctors_list = query.limit(100).all()
+    specializations = db.session.query(Doctor.specialization).distinct().limit(100).all()
+
+    doctor_ids = [doc.id for doc in doctors_list]
+    rating_map = {}
+    if doctor_ids:
+        rating_rows = db.session.query(
+            Feedback.doctor_id,
+            func.avg(Feedback.rating).label('avg_rating'),
+            func.count(Feedback.id).label('review_count')
+        ).filter(Feedback.doctor_id.in_(doctor_ids)).group_by(Feedback.doctor_id).all()
+        rating_map = {
+            row.doctor_id: {
+                'average_rating': round(float(row.avg_rating or 0), 1),
+                'total_reviews': int(row.review_count or 0)
+            }
+            for row in rating_rows
+        }
+
+    doctors_with_ratings = [
+        {
             'doctor': doc,
-            'average_rating': round(average_rating, 1),
-            'total_reviews': total_reviews
-        })
-    
-    # Debug logging
-    print(f"DEBUG: Found {len(doctors_with_ratings)} doctors")
-    for item in doctors_with_ratings:
-        doc = item['doctor']
-        print(f"  - {doc.name}, {doc.specialization}, Rating: {item['average_rating']}/5 ({item['total_reviews']} reviews)")
-    
-    return render_template('doctors.html', 
-                         doctors_with_ratings=doctors_with_ratings, 
-                         specializations=[s[0] for s in specializations])
+            'average_rating': rating_map.get(doc.id, {}).get('average_rating', 0),
+            'total_reviews': rating_map.get(doc.id, {}).get('total_reviews', 0)
+        }
+        for doc in doctors_list
+    ]
+
+    payload = {
+        'doctors_with_ratings': doctors_with_ratings,
+        'specializations': [s[0] for s in specializations]
+    }
+    if cache:
+        cache.set(cache_key, payload, timeout=300)
+
+    return render_template('doctors.html', **payload)
 
 @app.route('/book-appointment/<int:doctor_id>', methods=['GET', 'POST'])
 @login_required
@@ -438,6 +797,30 @@ def book_appointment(doctor_id):
                 status='pending'
             )
             db.session.add(appointment)
+            db.session.flush()
+
+            log_action(current_user, 'appointment_created', target_type='appointment', target_id=appointment.id)
+
+            appointment_day = appt_date_obj.strftime('%b %d, %Y')
+            create_notification(
+                current_user.id,
+                'Appointment Booked',
+                f'Your appointment request with Dr. {doctor.name} for {appointment_day} at {submitted_value} is pending approval.',
+                notification_type='appointment',
+                related_id=appointment.id
+            )
+
+            doctor_user = User.query.filter_by(user_type='doctor', doctor_id=doctor_id).first()
+            if doctor_user:
+                create_notification(
+                    doctor_user.id,
+                    'New Appointment Request',
+                    f'{current_user.username} booked an appointment for {appointment_day} at {submitted_value}.',
+                    notification_type='appointment',
+                    related_id=appointment.id,
+                    send_email=True
+                )
+
             db.session.commit()
             flash('Appointment booked successfully! Awaiting doctor approval.', 'success')
             return redirect(url_for('user_dashboard'))
@@ -459,17 +842,46 @@ def user_dashboard():
     elif current_user.user_type == 'doctor':
         return redirect(url_for('doctor_dashboard'))
     
-    appointments = Appointment.query.filter_by(
+    appointments = Appointment.query.options(
+        joinedload(Appointment.doctor)
+    ).filter_by(
         patient_id=current_user.id
     ).order_by(Appointment.appointment_date.desc()).all()
+
+    # Fill presentation fields expected by the existing dashboard template.
+    for appt in appointments:
+        appt.doctor_name = f"Dr. {appt.doctor.name}" if appt.doctor else 'Doctor'
+        appt.specialization = appt.doctor.specialization if appt.doctor else None
+
+    completed_tasks = sum(1 for appt in appointments if appt.status in {'completed'})
+    total_tasks = len(appointments)
+
+    assigned_doctor = None
+    for appt in appointments:
+        if appt.doctor:
+            assigned_doctor = appt.doctor
+            break
+
+    recommended_doctors = get_recommended_doctors(current_user.id, limit=3)
+    suggested_time_slots = get_best_time_slots(limit=5)
+    health_reminder = get_patient_activity_status(current_user.id)
     
     # Get feedback data for appointments
-    feedback_dict = {}
-    for appointment in appointments:
-        feedback = Feedback.query.filter_by(appointment_id=appointment.id).first()
-        feedback_dict[appointment.id] = feedback
+    appointment_ids = [appt.id for appt in appointments]
+    feedback_rows = Feedback.query.filter(Feedback.appointment_id.in_(appointment_ids)).all() if appointment_ids else []
+    feedback_dict = {row.appointment_id: row for row in feedback_rows}
     
-    return render_template('user.html', appointments=appointments, feedback_dict=feedback_dict)
+    return render_template(
+        'user_new.html',
+        appointments=appointments,
+        feedback_dict=feedback_dict,
+        completed_tasks=completed_tasks,
+        total_tasks=total_tasks,
+        assigned_doctor=assigned_doctor,
+        recommended_doctors=recommended_doctors,
+        suggested_time_slots=suggested_time_slots,
+        health_reminder=health_reminder
+    )
 
 @app.route('/submit-feedback/<int:appointment_id>', methods=['POST'])
 @login_required
@@ -528,29 +940,33 @@ def doctor_dashboard():
     
     # Get today's appointments
     today = date.today()
-    today_appointments = Appointment.query.filter_by(
+    today_appointments = Appointment.query.options(
+        joinedload(Appointment.patient)
+    ).filter_by(
         doctor_id=doctor.id,
         appointment_date=today
     ).order_by(Appointment.appointment_time).all()
     
     # Get upcoming appointments
-    upcoming_appointments = Appointment.query.filter(
+    upcoming_appointments = Appointment.query.options(
+        joinedload(Appointment.patient)
+    ).filter(
         Appointment.doctor_id == doctor.id,
         Appointment.appointment_date > today,
         Appointment.status != 'cancelled'
     ).order_by(Appointment.appointment_date, Appointment.appointment_time).limit(10).all()
     
     # Get all appointments for statistics
-    all_appointments = Appointment.query.filter_by(doctor_id=doctor.id).all()
+    all_appointments = Appointment.query.with_entities(Appointment.status).filter_by(doctor_id=doctor.id).all()
     total_appointments = len(all_appointments)
-    pending_count = len([a for a in all_appointments if a.status == 'pending'])
-    confirmed_count = len([a for a in all_appointments if a.status == 'confirmed'])
-    completed_count = len([a for a in all_appointments if a.status == 'completed'])
+    pending_count = sum(1 for status, in all_appointments if status == 'pending')
+    confirmed_count = sum(1 for status, in all_appointments if status == 'confirmed')
+    completed_count = sum(1 for status, in all_appointments if status == 'completed')
     
     # Get feedback statistics
-    all_feedback = Feedback.query.filter_by(doctor_id=doctor.id).all()
+    all_feedback = Feedback.query.with_entities(Feedback.rating).filter_by(doctor_id=doctor.id).all()
     if all_feedback:
-        average_rating = sum([f.rating for f in all_feedback]) / len(all_feedback)
+        average_rating = sum([f[0] for f in all_feedback]) / len(all_feedback)
         total_reviews = len(all_feedback)
     else:
         average_rating = 0
@@ -569,31 +985,220 @@ def doctor_dashboard():
                          today=today)
 
 @app.route('/admin/dashboard')
+@app.route('/admin-dashboard')
 @login_required
 def admin_dashboard():
     if current_user.user_type != 'admin':
         flash('Access denied', 'danger')
         return redirect(url_for('index'))
-    
-    # Get statistics
-    total_patients = User.query.filter_by(user_type='patient').count()
-    total_doctors = Doctor.query.count()
-    total_appointments = Appointment.query.count()
-    pending_appointments = Appointment.query.filter_by(status='pending').count()
-    
-    # Get recent appointments
-    recent_appointments = Appointment.query.order_by(
-        Appointment.created_at.desc()
+
+    def _last_n_days(n):
+        today = date.today()
+        return [today - timedelta(days=offset) for offset in range(n - 1, -1, -1)]
+
+    def _appointments_by_day_last_7_days():
+        days = _last_n_days(7)
+        rows = db.session.query(
+            Appointment.appointment_date.label('appt_day'),
+            func.count(Appointment.id).label('count')
+        ).filter(
+            Appointment.appointment_date >= days[0],
+            Appointment.appointment_date <= days[-1]
+        ).group_by(Appointment.appointment_date).all()
+
+        counts = {row.appt_day: row.count for row in rows}
+        return {
+            'labels': [d.strftime('%a') for d in days],
+            'values': [int(counts.get(d, 0)) for d in days]
+        }
+
+    def _status_breakdown():
+        status_row = db.session.query(
+            func.sum(case((Appointment.status == 'pending', 1), else_=0)).label('pending_count'),
+            func.sum(case((Appointment.status.in_(['approved', 'confirmed']), 1), else_=0)).label('approved_count'),
+            func.sum(case((Appointment.status == 'rejected', 1), else_=0)).label('rejected_count')
+        ).first()
+
+        return {
+            'pending': int(status_row.pending_count or 0),
+            'approved': int(status_row.approved_count or 0),
+            'rejected': int(status_row.rejected_count or 0)
+        }
+
+    def _top_doctors(limit=5):
+        rows = db.session.query(
+            Doctor.name.label('doctor_name'),
+            func.count(Appointment.id).label('appointment_count')
+        ).outerjoin(
+            Appointment, Appointment.doctor_id == Doctor.id
+        ).group_by(
+            Doctor.id, Doctor.name
+        ).order_by(
+            func.count(Appointment.id).desc(), Doctor.name.asc()
+        ).limit(limit).all()
+
+        return {
+            'labels': [row.doctor_name for row in rows],
+            'values': [int(row.appointment_count) for row in rows]
+        }
+
+    def _new_users_last_7_days():
+        days = _last_n_days(7)
+        start_dt = datetime.combine(days[0], datetime.min.time())
+        end_dt = datetime.combine(days[-1], datetime.max.time())
+
+        rows = db.session.query(
+            func.date(User.created_at).label('created_day'),
+            func.count(User.id).label('count')
+        ).filter(
+            User.created_at >= start_dt,
+            User.created_at <= end_dt
+        ).group_by(func.date(User.created_at)).all()
+
+        counts = {}
+        for row in rows:
+            day_text = str(row.created_day)
+            try:
+                day_key = datetime.strptime(day_text, '%Y-%m-%d').date()
+            except ValueError:
+                continue
+            counts[day_key] = row.count
+
+        values = [int(counts.get(d, 0)) for d in days]
+        return {
+            'labels': [d.strftime('%a') for d in days],
+            'values': values,
+            'total': int(sum(values))
+        }
+
+    analytics_key = 'admin:analytics:v1'
+    analytics_bundle = cache.get(analytics_key) if cache else None
+    if not analytics_bundle:
+        # Summary metrics
+        total_patients = User.query.filter_by(user_type='patient').count()
+        total_doctors = Doctor.query.count()
+        total_appointments = Appointment.query.count()
+        pending_appointments = Appointment.query.filter_by(status='pending').count()
+
+        # Dashboard datasets
+        appointments_trend = _appointments_by_day_last_7_days()
+        status_breakdown = _status_breakdown()
+        top_doctors = _top_doctors(limit=5)
+        new_users_trend = _new_users_last_7_days()
+
+        analytics_bundle = {
+            'total_patients': total_patients,
+            'total_doctors': total_doctors,
+            'total_appointments': total_appointments,
+            'pending_appointments': pending_appointments,
+            'appointments_trend': appointments_trend,
+            'status_breakdown': status_breakdown,
+            'top_doctors': top_doctors,
+            'new_users_trend': new_users_trend
+        }
+        if cache:
+            cache.set(analytics_key, analytics_bundle, timeout=600)
+
+    total_patients = analytics_bundle['total_patients']
+    total_doctors = analytics_bundle['total_doctors']
+    total_appointments = analytics_bundle['total_appointments']
+    pending_appointments = analytics_bundle['pending_appointments']
+    appointments_trend = analytics_bundle['appointments_trend']
+    status_breakdown = analytics_bundle['status_breakdown']
+    top_doctors = analytics_bundle['top_doctors']
+    new_users_trend = analytics_bundle['new_users_trend']
+
+    # Existing page data (kept for backward compatibility with current admin template)
+    recent_appointments = Appointment.query.options(
+        joinedload(Appointment.patient),
+        joinedload(Appointment.doctor)
+    ).order_by(
+        Appointment.appointment_date.desc(), Appointment.appointment_time.desc()
     ).limit(10).all()
-    doctors = Doctor.query.order_by(Doctor.created_at.desc()).all()
-    
-    return render_template('admin_new.html',
-                         total_patients=total_patients,
-                         total_doctors=total_doctors,
-                         total_appointments=total_appointments,
-                         pending_appointments=pending_appointments,
-                         recent_appointments=recent_appointments,
-                         doctors=doctors)
+
+    users = User.query.order_by(User.created_at.desc()).all()
+    normalized_users = []
+    doctor_rows = Doctor.query.with_entities(
+        Doctor.id,
+        Doctor.specialization,
+        Doctor.qualifications,
+        Doctor.experience,
+        Doctor.consultation_fee,
+        Doctor.available_days,
+        Doctor.available_time
+    ).all()
+    doctor_map = {
+        row.id: {
+            'specialization': row.specialization,
+            'qualifications': row.qualifications,
+            'experience': row.experience,
+            'consultation_fee': row.consultation_fee,
+            'available_days': row.available_days,
+            'available_time': row.available_time,
+        }
+        for row in doctor_rows
+    }
+    for user in users:
+        role = 'user' if user.user_type == 'patient' else user.user_type
+        doctor_profile = doctor_map.get(user.doctor_id) if user.doctor_id else None
+        normalized_users.append({
+            'username': user.username,
+            'email': user.email,
+            'phone': user.phone,
+            'role': role,
+            'fullname': user.username,
+            'age': None,
+            'gender': None,
+            'address': user.address,
+            'blood_group': None,
+            'medical_history': None,
+            'emergency_contact': None,
+            'specialization': doctor_profile['specialization'] if doctor_profile else '',
+            'qualifications': doctor_profile['qualifications'] if doctor_profile else '',
+            'experience': doctor_profile['experience'] if doctor_profile else '',
+            'consultation_fee': doctor_profile['consultation_fee'] if doctor_profile else '',
+            'available_days': doctor_profile['available_days'] if doctor_profile else '',
+            'available_time': doctor_profile['available_time'] if doctor_profile else ''
+        })
+
+    # Audit log filters (admin-only) and limited recent result set
+    role_filter = request.args.get('role', '').strip().lower()
+    action_filter = request.args.get('action', '').strip()
+
+    audit_query = AuditLog.query.order_by(AuditLog.timestamp.desc())
+    if role_filter in {'admin', 'doctor', 'patient'}:
+        audit_query = audit_query.filter(AuditLog.role == role_filter)
+    if action_filter:
+        audit_query = audit_query.filter(AuditLog.action == action_filter)
+
+    recent_audit_logs = audit_query.limit(20).all()
+    audit_actions = [
+        row[0] for row in db.session.query(AuditLog.action)
+        .distinct()
+        .order_by(AuditLog.action.asc())
+        .limit(100)
+        .all()
+    ]
+
+    return render_template(
+        'admin.html',
+        total_patients=total_patients,
+        total_doctors=total_doctors,
+        total_appointments=total_appointments,
+        pending_appointments=pending_appointments,
+        recent_appointments=recent_appointments,
+        users=normalized_users,
+        audit_logs=recent_audit_logs,
+        audit_role_filter=role_filter,
+        audit_action_filter=action_filter,
+        audit_action_options=audit_actions,
+        analytics={
+            'appointments_trend': appointments_trend,
+            'status_breakdown': status_breakdown,
+            'top_doctors': top_doctors,
+            'new_users_trend': new_users_trend
+        }
+    )
 
 @app.route('/admin/appointments')
 @login_required
@@ -616,6 +1221,7 @@ def update_appointment(appointment_id):
         return jsonify({'success': False, 'message': 'Access denied'})
 
     appointment = Appointment.query.get_or_404(appointment_id)
+    old_status = appointment.status
     new_status = request.form.get('status', '').strip().lower()
 
     if new_status not in VALID_STATUSES:
@@ -628,6 +1234,22 @@ def update_appointment(appointment_id):
     try:
         appointment.status = new_status
         appointment.updated_at = datetime.utcnow()
+
+        if new_status in {'approved', 'rejected'}:
+            log_action(current_user, f'appointment_{new_status}', target_type='appointment', target_id=appointment.id)
+        else:
+            log_action(current_user, 'appointment_status_updated', target_type='appointment', target_id=appointment.id)
+
+        if old_status != new_status:
+            create_notification(
+                appointment.patient_id,
+                'Appointment Status Updated',
+                f'Appointment #{appointment.id} status changed from {old_status.title()} to {new_status.title()}.',
+                notification_type='appointment',
+                related_id=appointment.id,
+                send_email=True
+            )
+
         db.session.commit()
         flash(f'Appointment status updated to {new_status.title()}.', 'success')
         return jsonify({'success': True, 'message': f'Status updated to {new_status}'})
@@ -920,6 +1542,21 @@ def doctor_my_availability():
 # MEDICAL RECORD / PRESCRIPTION ROUTES
 # ===========================================================================
 
+
+def _serialize_reports_for_appointment(appointment_id):
+    reports = Report.query.filter_by(appointment_id=appointment_id).order_by(Report.uploaded_at.desc()).all()
+    return [
+        {
+            'id': r.id,
+            'file_name': r.file_name,
+            'description': r.description or '',
+            'uploaded_at': r.uploaded_at.strftime('%b %d, %Y %I:%M %p'),
+            'view_url': url_for('get_report', report_id=r.id),
+            'download_url': url_for('get_report', report_id=r.id, download=1)
+        }
+        for r in reports
+    ]
+
 @app.route('/appointment/<int:appointment_id>/prescription', methods=['POST'])
 @login_required
 def create_prescription(appointment_id):
@@ -957,6 +1594,8 @@ def create_prescription(appointment_id):
     prescription = request.form.get('prescription', '').strip()
     notes        = request.form.get('notes', '').strip() or None
     follow_up_str = request.form.get('follow_up_date', '').strip()
+    report_description = request.form.get('report_description', '').strip() or None
+    report_file = request.files.get('report_file')
 
     if not diagnosis:
         return jsonify({'success': False, 'message': 'Diagnosis is required.'}), 400
@@ -971,6 +1610,10 @@ def create_prescription(appointment_id):
             return jsonify({'success': False, 'message': 'Invalid follow-up date format (YYYY-MM-DD).'}), 400
 
     try:
+        saved_report = None
+        if report_file and report_file.filename:
+            saved_report = save_file(report_file, current_user.id)
+
         rec = Prescription(
             appointment_id = appointment_id,
             patient_id     = appointment.patient_id,
@@ -981,8 +1624,37 @@ def create_prescription(appointment_id):
             follow_up_date = follow_up_date,
         )
         db.session.add(rec)
+        db.session.flush()
+
+        log_action(current_user, 'medical_record_created', target_type='record', target_id=rec.id)
+
+        if saved_report:
+            db.session.add(Report(
+                patient_id=appointment.patient_id,
+                doctor_id=doctor.id,
+                appointment_id=appointment.id,
+                prescription_id=rec.id,
+                file_name=saved_report['file_name'],
+                file_path=saved_report['file_path'],
+                description=report_description
+            ))
+
+        create_notification(
+            appointment.patient_id,
+            'Medical Record Available',
+            f'A new medical record was added for appointment #{appointment.id}.',
+            notification_type='medical',
+            related_id=appointment.id,
+            send_email=True
+        )
+
         db.session.commit()
-        return jsonify({'success': True, 'message': 'Medical record created successfully.', 'record': rec.to_dict()})
+        payload = rec.to_dict()
+        payload['reports'] = _serialize_reports_for_appointment(appointment_id)
+        return jsonify({'success': True, 'message': 'Medical record created successfully.', 'record': payload})
+    except ValueError as exc:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': str(exc)}), 400
     except Exception as e:
         db.session.rollback()
         app.logger.error(f'Error creating prescription for appt {appointment_id}: {e}')
@@ -1016,12 +1688,47 @@ def get_prescription(appointment_id):
         return jsonify({'success': False, 'message': 'Access denied.'}), 403
 
     rec = Prescription.query.filter_by(appointment_id=appointment_id).first()
+    payload = rec.to_dict() if rec else None
+    if payload is not None:
+        payload['reports'] = _serialize_reports_for_appointment(appointment_id)
+
     return jsonify({
         'success':    True,
-        'record':     rec.to_dict() if rec else None,
+        'record':     payload,
         'can_edit':   can_edit and rec is not None,
         'can_create': can_edit and rec is None,
     })
+
+
+@app.route('/report/<int:report_id>')
+@login_required
+def get_report(report_id):
+    """Securely stream report file (inline view or attachment download) to authorized users only."""
+    report = Report.query.get_or_404(report_id)
+
+    is_admin = current_user.user_type == 'admin'
+    is_patient_owner = current_user.user_type == 'patient' and report.patient_id == current_user.id
+    is_assigned_doctor = current_user.user_type == 'doctor' and current_user.doctor_id == report.doctor_id
+
+    if not (is_admin or is_patient_owner or is_assigned_doctor):
+        flash('Access denied.', 'danger')
+        return redirect(url_for('user_dashboard'))
+
+    safe_stored_name = os.path.basename(report.file_path or '')
+    file_abs_path = os.path.join(app.root_path, 'static', 'uploads', 'reports', safe_stored_name)
+    if not os.path.exists(file_abs_path):
+        flash('Requested file does not exist.', 'warning')
+        return redirect(url_for('user_dashboard'))
+
+    guessed_type = mimetypes.guess_type(report.file_name)[0] or 'application/octet-stream'
+    as_download = request.args.get('download', '0') == '1'
+
+    return send_file(
+        file_abs_path,
+        mimetype=guessed_type,
+        as_attachment=as_download,
+        download_name=report.file_name
+    )
 
 
 @app.route('/appointment/<int:appointment_id>/prescription', methods=['PATCH'])
@@ -1232,6 +1939,8 @@ def upload_document():
             file_size=file_size
         )
         db.session.add(medical_record)
+        db.session.flush()
+        log_action(current_user, 'file_uploaded', target_type='record', target_id=medical_record.id)
         db.session.commit()
         
         return jsonify({'success': True, 'message': 'Document uploaded', 'description': description})
@@ -1270,6 +1979,7 @@ def upload_profile_picture():
         # Save the file
         file_path = os.path.join(profile_pic_dir, safe_name)
         file.save(file_path)
+        _compress_image_inplace(file_path)
         
         # Store the relative path in database
         relative_path = f'profile_pictures/{safe_name}'
@@ -1280,6 +1990,7 @@ def upload_profile_picture():
             doctor = Doctor.query.get(current_user.doctor_id)
             if doctor:
                 doctor.profile_image = relative_path
+                log_action(current_user, 'profile_updated', target_type='user', target_id=current_user.id)
                 db.session.commit()
                 return jsonify({'success': True, 'message': 'Profile picture updated successfully'})
             else:
@@ -1287,6 +1998,7 @@ def upload_profile_picture():
         else:
             # Update user's profile picture (patient or admin)
             current_user.profile_picture = relative_path
+            log_action(current_user, 'profile_updated', target_type='user', target_id=current_user.id)
             db.session.commit()
             return jsonify({'success': True, 'message': 'Profile picture updated successfully'})
             
@@ -1325,6 +2037,28 @@ def cancel_appointment(appointment_id):
     try:
         appointment.status = 'cancelled'
         appointment.updated_at = datetime.utcnow()
+
+        doctor_user = User.query.filter_by(user_type='doctor', doctor_id=appointment.doctor_id).first()
+        if doctor_user:
+            create_notification(
+                doctor_user.id,
+                'Appointment Cancelled',
+                f'Appointment #{appointment.id} was cancelled by {current_user.username}.',
+                notification_type='appointment',
+                related_id=appointment.id,
+                send_email=True
+            )
+
+        if current_user.user_type == 'admin':
+            create_notification(
+                appointment.patient_id,
+                'Appointment Cancelled by Admin',
+                f'Your appointment #{appointment.id} has been cancelled by an administrator.',
+                notification_type='appointment',
+                related_id=appointment.id,
+                send_email=True
+            )
+
         db.session.commit()
         flash('Appointment cancelled successfully.', 'success')
     except Exception as e:
@@ -1358,10 +2092,27 @@ def doctor_update_appointment(appointment_id):
         return jsonify({'success': False, 'message': err})
 
     try:
+        old_status = appointment.status
         appointment.status = new_status
         appointment.updated_at = datetime.utcnow()
         if notes:
             appointment.notes = notes
+
+        if new_status in {'approved', 'rejected'}:
+            log_action(current_user, f'appointment_{new_status}', target_type='appointment', target_id=appointment.id)
+        else:
+            log_action(current_user, 'appointment_status_updated', target_type='appointment', target_id=appointment.id)
+
+        if old_status != new_status:
+            create_notification(
+                appointment.patient_id,
+                'Appointment Status Updated',
+                f'Dr. {doctor.name} changed appointment #{appointment.id} from {old_status.title()} to {new_status.title()}.',
+                notification_type='appointment',
+                related_id=appointment.id,
+                send_email=True
+            )
+
         db.session.commit()
         return jsonify({
             'success': True,
@@ -1514,6 +2265,7 @@ def doctor_update_schedule():
         doctor.available_days = available_days
         doctor.available_time = available_time
         doctor.consultation_fee = fee
+        log_action(current_user, 'profile_updated', target_type='user', target_id=current_user.id)
         
         db.session.commit()
         
@@ -1528,6 +2280,115 @@ def doctor_update_schedule():
         db.session.rollback()
         app.logger.error(f'Exception updating doctor schedule: {exc}', exc_info=True)
         return jsonify({'success': False, 'message': 'An error occurred'}), 500
+
+
+@app.route('/admin/deactivate-user/<int:user_id>', methods=['POST'])
+@login_required
+def deactivate_user(user_id):
+    """Soft-deactivate a non-admin account and notify the user."""
+    if current_user.user_type != 'admin':
+        return jsonify({'success': False, 'message': 'Access denied'}), 403
+
+    user = User.query.get_or_404(user_id)
+    if user.user_type == 'admin':
+        return jsonify({'success': False, 'message': 'Admin accounts cannot be deactivated'}), 400
+
+    if user.user_type == 'deactivated':
+        log_action(current_user, 'user_deactivation_skipped', target_type='user', target_id=user.id)
+        db.session.commit()
+        return jsonify({'success': True, 'message': 'User is already deactivated'})
+
+    try:
+        user.user_type = 'deactivated'
+        log_action(current_user, 'user_deactivated', target_type='user', target_id=user.id)
+        create_notification(
+            user.id,
+            'Account Deactivated',
+            'Your account has been deactivated by an administrator. Please contact support for help.',
+            notification_type='security',
+            send_email=True
+        )
+        db.session.commit()
+        return jsonify({'success': True, 'message': 'User account deactivated successfully'})
+    except Exception as exc:
+        db.session.rollback()
+        app.logger.error(f'Failed to deactivate user {user_id}: {exc}', exc_info=True)
+        return jsonify({'success': False, 'message': 'Failed to deactivate user'}), 500
+
+
+@app.route('/admin/activate-user/<int:user_id>', methods=['POST'])
+@login_required
+def activate_user(user_id):
+    """Reactivate a deactivated user (default role patient unless explicit valid role provided)."""
+    if current_user.user_type != 'admin':
+        return jsonify({'success': False, 'message': 'Access denied'}), 403
+
+    user = User.query.get_or_404(user_id)
+    restore_role = request.form.get('role', 'patient').strip().lower()
+    if restore_role not in {'patient', 'doctor'}:
+        restore_role = 'patient'
+
+    if restore_role == 'doctor' and not user.doctor_id:
+        restore_role = 'patient'
+
+    try:
+        user.user_type = restore_role
+        log_action(current_user, 'user_activated', target_type='user', target_id=user.id)
+        db.session.commit()
+        return jsonify({'success': True, 'message': f'User account activated as {restore_role}.'})
+    except Exception as exc:
+        db.session.rollback()
+        app.logger.error(f'Failed to activate user {user_id}: {exc}', exc_info=True)
+        return jsonify({'success': False, 'message': 'Failed to activate user'}), 500
+
+
+@app.route('/notifications')
+@login_required
+def notifications_page():
+    page = request.args.get('page', 1, type=int)
+    per_page = 10
+
+    notifications = Notification.query.filter_by(user_id=current_user.id).order_by(
+        Notification.created_at.desc()
+    ).paginate(page=page, per_page=per_page, error_out=False)
+
+    return render_template('notifications.html', notifications=notifications)
+
+
+@app.route('/notifications/read/<int:notification_id>', methods=['POST'])
+@login_required
+def mark_notification_read(notification_id):
+    notification = Notification.query.get_or_404(notification_id)
+
+    if notification.user_id != current_user.id:
+        flash('Access denied.', 'danger')
+        return redirect(url_for('notifications_page'))
+
+    try:
+        notification.is_read = True
+        db.session.commit()
+        flash('Notification marked as read.', 'success')
+    except Exception:
+        db.session.rollback()
+        flash('Failed to mark notification as read.', 'danger')
+
+    return redirect(url_for('notifications_page'))
+
+
+@app.route('/notifications/read-all', methods=['POST'])
+@login_required
+def mark_all_notifications_read():
+    try:
+        Notification.query.filter_by(user_id=current_user.id, is_read=False).update(
+            {'is_read': True}, synchronize_session=False
+        )
+        db.session.commit()
+        flash('All notifications marked as read.', 'success')
+    except Exception:
+        db.session.rollback()
+        flash('Failed to update notifications.', 'danger')
+
+    return redirect(url_for('notifications_page'))
 
 # AI Health Assistant Chatbot Endpoint
 @app.route('/user/chat-assistant', methods=['POST'])

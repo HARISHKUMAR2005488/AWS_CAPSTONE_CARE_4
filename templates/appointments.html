@@ -101,14 +101,21 @@
                     <i class="fas fa-notes-medical"></i> Medical Information
                 </h3>
                 <div class="form-group">
-                    <label for="symptoms">
+                    <label for="symptomsInput">
                         <i class="fas fa-stethoscope"></i>
                         Symptoms / Reason for Visit <span class="form-required">*</span>
                     </label>
-                    <textarea id="symptoms" name="symptoms" class="form-input form-textarea" rows="4"
-                        placeholder="Please describe your symptoms or reason for the appointment..."
-                        aria-label="Symptoms or Reason for Visit" aria-required="true" required></textarea>
+                    <div class="voice-input-wrap voice-input-wrap-textarea">
+                        <textarea id="symptomsInput" name="symptoms" class="form-input form-textarea" rows="4"
+                            placeholder="Please describe your symptoms or reason for the appointment..."
+                            aria-label="Symptoms or Reason for Visit" aria-required="true" required></textarea>
+                        <button type="button" id="symptomsMicBtn" class="voice-mic-btn" data-target-input="symptomsInput"
+                            title="Start voice typing" aria-label="Voice type symptoms">
+                            <span aria-hidden="true">🎤</span>
+                        </button>
+                    </div>
                     <span class="form-help">Be as detailed as possible to help the doctor prepare for your visit</span>
+                    <span class="voice-status" id="voiceStatusSymptoms" aria-live="polite"></span>
                     <span class="form-feedback"></span>
                     <span class="form-char-count"><span id="charCount">0</span>/500 characters</span>
                 </div>
@@ -296,7 +303,7 @@
         const timeSelect = document.getElementById('appointment_time');
         const timeFeedback = document.getElementById('time-feedback');
         const timeHelp = document.getElementById('time-help');
-        const symptomsInput = document.getElementById('symptoms');
+        const symptomsInput = document.getElementById('symptomsInput');
         const charCountSpan = document.getElementById('charCount');
         const paymentMethodSelect = document.getElementById('payment_method');
         const cardPaymentFields = document.getElementById('cardPaymentFields');
@@ -481,4 +488,5 @@
         });
     });
 </script>
+<script src="{{ url_for('static', filename='js/voice-input.js') }}"></script>
 {% endblock %}

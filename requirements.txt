@@ -11,6 +11,7 @@ Werkzeug==2.3.7
 # --- Flask Extensions (used by app.py + database.py) ---
 Flask-SQLAlchemy==3.0.5
 Flask-Login==0.6.3
+Flask-Caching==2.3.0
 
 # --- AWS SDK ---
 boto3==1.28.57

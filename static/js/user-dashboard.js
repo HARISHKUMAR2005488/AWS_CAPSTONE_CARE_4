@@ -31,7 +31,7 @@ function toggleChatBox() {
 function sendChatMessageFloating(event) {
     event.preventDefault();
 
-    const input = document.getElementById('chatInputFloating');
+    const input = document.getElementById('chatbotInput');
     const messagesContainer = document.getElementById('chatMessagesFloating');
     const userMessage = input.value.trim();
 
@@ -164,7 +164,7 @@ function escapeHtml(text) {
 
 // Fill chat input from suggestion chips
 function fillChatInput(text) {
-    const input = document.getElementById('chatInputFloating');
+    const input = document.getElementById('chatbotInput');
     input.value = text;
     input.focus();
 }

@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block title %}Notifications - Care_4_U Hospitals{% endblock %}
+
+{% block content %}
+<div class="notifications-page">
+    <div class="notifications-header">
+        <h2>My Notifications</h2>
+        {% if notifications.items %}
+        <form method="POST" action="{{ url_for('mark_all_notifications_read') }}">
+            <button type="submit" class="btn btn-outline">Mark all as read</button>
+        </form>
+        {% endif %}
+    </div>
+
+    {% if notifications.items %}
+    <div class="notifications-list">
+        {% for item in notifications.items %}
+        <article class="notification-card {% if not item.is_read %}unread{% endif %}">
+            <h3>{{ item.title }}</h3>
+            <p>{{ item.message }}</p>
+            <div class="notification-meta">
+                {{ item.created_at.strftime('%b %d, %Y %I:%M %p') }}
+                {% if item.type %}
+                | {{ item.type|title }}
+                {% endif %}
+            </div>
+            {% if not item.is_read %}
+            <form method="POST" action="{{ url_for('mark_notification_read', notification_id=item.id) }}">
+                <button type="submit" class="btn btn-sm">Mark as read</button>
+            </form>
+            {% endif %}
+        </article>
+        {% endfor %}
+    </div>
+
+    {% if notifications.pages > 1 %}
+    <nav class="notification-pagination" aria-label="Notification pages">
+        {% if notifications.has_prev %}
+        <a href="{{ url_for('notifications_page', page=notifications.prev_num) }}" class="btn btn-outline">Previous</a>
+        {% endif %}
+
+        <span class="btn btn-outline">Page {{ notifications.page }} of {{ notifications.pages }}</span>
+
+        {% if notifications.has_next %}
+        <a href="{{ url_for('notifications_page', page=notifications.next_num) }}" class="btn btn-outline">Next</a>
+        {% endif %}
+    </nav>
+    {% endif %}
+
+    {% else %}
+    <div class="notification-empty">No notifications yet.</div>
+    {% endif %}
+</div>
+{% endblock %}

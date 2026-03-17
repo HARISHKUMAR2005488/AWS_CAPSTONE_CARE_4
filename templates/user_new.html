@@ -41,7 +41,7 @@
         }
     </style>
 
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=5.1">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=5.2">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/patient-dashboard.css') }}?v=5.1">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
@@ -310,6 +310,73 @@
                             </div>
                         </div>
 
+                        <div class="dashboard-card">
+                            <div class="card-header-new">
+                                <h3><i class="fas fa-user-md"></i> Recommended Doctors</h3>
+                            </div>
+                            <div class="card-body">
+                                {% if recommended_doctors %}
+                                <div class="activity-list">
+                                    {% for doc in recommended_doctors %}
+                                    <div class="activity-item">
+                                        <div class="activity-icon activity-icon-approved">
+                                            <i class="fas fa-stethoscope"></i>
+                                        </div>
+                                        <div class="activity-details">
+                                            <h5>Dr. {{ doc.name }}</h5>
+                                            <p>{{ doc.specialization }} • {{ doc.reason }}</p>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                                {% else %}
+                                <div class="empty-state-small">
+                                    <i class="fas fa-user-md"></i>
+                                    <p>No recommendations yet</p>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="dashboard-card">
+                            <div class="card-header-new">
+                                <h3><i class="fas fa-clock"></i> Suggested Time Slots</h3>
+                            </div>
+                            <div class="card-body">
+                                {% if suggested_time_slots %}
+                                <div class="quick-actions-grid">
+                                    {% for slot in suggested_time_slots %}
+                                    <a href="{{ url_for('doctors') }}" class="quick-action-item quick-action-blue" style="text-decoration:none;">
+                                        <div class="quick-action-icon"><i class="fas fa-calendar-alt"></i></div>
+                                        <span>{{ slot.time }}</span>
+                                    </a>
+                                    {% endfor %}
+                                </div>
+                                {% else %}
+                                <div class="empty-state-small">
+                                    <i class="fas fa-clock"></i>
+                                    <p>No slot suggestions available</p>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="dashboard-card">
+                            <div class="card-header-new">
+                                <h3><i class="fas fa-bell"></i> Health Reminder</h3>
+                            </div>
+                            <div class="card-body">
+                                {% if health_reminder %}
+                                <p style="margin:0;color:#334155;line-height:1.5;">{{ health_reminder }}</p>
+                                <a href="{{ url_for('doctors') }}" class="btn btn-primary btn-sm" style="margin-top:.8rem;display:inline-block;">
+                                    <i class="fas fa-calendar-plus"></i> Book Now
+                                </a>
+                                {% else %}
+                                <p style="margin:0;color:#16a34a;">Great job. You are up to date with your recent visits.</p>
+                                {% endif %}
+                            </div>
+                        </div>
+
                         <!-- Assigned Doctor -->
                         {% if assigned_doctor %}
                         <div class="dashboard-card doctor-profile-card">
@@ -493,12 +560,17 @@
         </div>
         <div class="chat-input-floating">
             <form id="chatFormFloating" onsubmit="sendChatMessageFloating(event)">
-                <textarea id="chatInputFloating" placeholder="Type your message or describe your symptoms..." rows="2"
+                <textarea id="chatbotInput" placeholder="Type your message or describe your symptoms..." rows="2"
                     required></textarea>
+                <button type="button" id="chatbotMicBtn" class="voice-mic-btn" data-target-input="chatbotInput"
+                    title="Start voice typing" aria-label="Voice type chatbot message">
+                    <span aria-hidden="true">🎤</span>
+                </button>
                 <button type="submit" class="btn-send" title="Send message">
                     <i class="fas fa-paper-plane"></i>
                 </button>
             </form>
+            <span class="voice-status" id="voiceStatusChatbot" aria-live="polite"></span>
             <div class="chat-suggestions">
                 <button class="suggestion-chip" onclick="fillChatInput('How do I book an appointment?')">
                     <i class="fas fa-calendar"></i> Book appointment
@@ -1245,11 +1317,26 @@
                         body.innerHTML = '<p style="color:var(--gray);">No medical record has been created for this appointment yet.</p>';
                         return;
                     }
+                    const reportsHtml = (rec.reports && rec.reports.length)
+                        ? `<div class="summary-row" style="display:block;">
+                            <span><strong>Attached Reports</strong></span>
+                            ${rec.reports.map((r) => `
+                                <div style="display:flex;align-items:center;justify-content:space-between;gap:.5rem;margin-top:.45rem;padding:.45rem .55rem;border:1px solid #e6e8eb;border-radius:6px;">
+                                    <span style="display:flex;align-items:center;gap:.4rem;min-width:0;"><i class="fas fa-file-medical"></i>${r.file_name}</span>
+                                    <span style="display:flex;gap:.4rem;">
+                                        <a href="${r.view_url}" target="_blank" rel="noopener" class="btn btn-secondary" style="font-size:.72rem;padding:.25rem .55rem;">View</a>
+                                        <a href="${r.download_url}" class="btn btn-primary" style="font-size:.72rem;padding:.25rem .55rem;">Download</a>
+                                    </span>
+                                </div>
+                            `).join('')}
+                        </div>`
+                        : '';
                     body.innerHTML = `
                     <div class="summary-row"><span><strong>Diagnosis</strong></span><span>${rec.diagnosis}</span></div>
                     <div class="summary-row"><span><strong>Prescription</strong></span><span>${rec.prescription}</span></div>
                     ${rec.notes ? `<div class="summary-row"><span><strong>Notes</strong></span><span>${rec.notes}</span></div>` : ''}
                     ${rec.follow_up_date ? `<div class="summary-row"><span><strong>Follow-up Date</strong></span><span>${rec.follow_up_date}</span></div>` : ''}
+                    ${reportsHtml}
                     <div class="summary-row"><span><strong>Created</strong></span><span>${rec.created_at}</span></div>
                     <div style="margin-top:1rem;text-align:right;">
                         <a href="/appointment/${appointmentId}/prescription/pdf"
@@ -1277,6 +1364,7 @@
     </div>
 
     <script src="{{ url_for('static', filename='js/user-dashboard.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/voice-input.js') }}"></script>
 </body>
 
 </html>

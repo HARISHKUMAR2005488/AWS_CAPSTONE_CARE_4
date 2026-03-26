@@ -25,7 +25,7 @@ app.secret_key = os.getenv("FLASK_SECRET_KEY", "ncFW7IxB9QdiiVyJAVwRNRHgl9GkqO0Q
 app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
 app.config.update(
     PREFERRED_URL_SCHEME=os.getenv("PREFERRED_URL_SCHEME", "https"),
-    SESSION_COOKIE_SECURE=os.getenv("SESSION_COOKIE_SECURE", "1") == "1",
+    SESSION_COOKIE_SECURE=os.getenv("SESSION_COOKIE_SECURE", "0") == "1",
     SESSION_COOKIE_SAMESITE=os.getenv("SESSION_COOKIE_SAMESITE", "Lax"),
 )
 
@@ -888,7 +888,12 @@ def login():
                 )
                 
                 flash("Logged in successfully", "success")
-                return redirect(url_for("dashboard"))
+                role = (item.get("role") or item.get("user_type") or "user").strip().lower()
+                if role == "admin":
+                    return redirect(url_for("admin_dashboard"))
+                if role == "doctor":
+                    return redirect(url_for("doctor_dashboard"))
+                return redirect(url_for("user_dashboard"))
 
         flash("Invalid credentials", "danger")
         return redirect(url_for("login"))

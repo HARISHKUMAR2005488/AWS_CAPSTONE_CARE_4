@@ -78,7 +78,7 @@ sudo chown -R "${APP_USER}:${APP_GROUP}" "${APP_DIR}"
 sudo chmod 640 "${APP_DIR}/.env" || true
 
 echo "[9/9] Completed."
-echo "Public URL: http://$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4 || echo '<ec2-public-ip>')"
+echo "Public URL: https://$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4 || echo '<ec2-public-ip>')"
 echo "Useful commands:"
 echo "  sudo systemctl status care4u"
 echo "  sudo journalctl -u care4u -f"

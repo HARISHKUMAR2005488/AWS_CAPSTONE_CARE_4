@@ -11,6 +11,7 @@ from boto3.dynamodb.conditions import Key, Attr
 from botocore.exceptions import ClientError
 from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify, send_from_directory, send_file
 from werkzeug.security import check_password_hash, generate_password_hash
+from werkzeug.middleware.proxy_fix import ProxyFix
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 from reportlab.pdfbase import pdfmetrics
@@ -18,6 +19,15 @@ from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
 app.secret_key = os.getenv("FLASK_SECRET_KEY", "ncFW7IxB9QdiiVyJAVwRNRHgl9GkqO0QipSLcbgT")
+
+# Trust one reverse proxy hop (Nginx/ALB) so Flask sees the correct client
+# IP/scheme and generates HTTPS URLs when traffic is terminated upstream.
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
+app.config.update(
+    PREFERRED_URL_SCHEME=os.getenv("PREFERRED_URL_SCHEME", "https"),
+    SESSION_COOKIE_SECURE=os.getenv("SESSION_COOKIE_SECURE", "1") == "1",
+    SESSION_COOKIE_SAMESITE=os.getenv("SESSION_COOKIE_SAMESITE", "Lax"),
+)
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)

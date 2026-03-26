@@ -4641,3 +4641,145 @@ textarea.form-control {
   background: linear-gradient(135deg, #b91c1c, #ea580c);
 }
 
+/* Doctor dashboard layout fixes (scoped) */
+body:has(.doctor-container) .container {
+  max-width: 100%;
+  width: 100%;
+  padding: 0;
+}
+
+body:has(.doctor-container) main {
+  min-width: 0;
+}
+
+.doctor-container {
+  width: 100%;
+  max-width: 100%;
+}
+
+.doctor-container .doctor-dashboard-wrapper {
+  width: 100%;
+  min-width: 0;
+  align-items: stretch;
+}
+
+.doctor-container .doctor-main-content,
+.doctor-container .content-view {
+  min-width: 0;
+  width: 100%;
+}
+
+.doctor-container .overview-grid {
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.doctor-container .appointments-cards,
+.doctor-container .requests-container {
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+}
+
+.doctor-container .appointments-table {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.doctor-container .appointments-table table {
+  min-width: 760px;
+}
+
+.doctor-container .settings-grid {
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+}
+
+.doctor-container .settings-card {
+  max-width: none;
+  width: 100%;
+}
+
+@media (max-width: 1024px) {
+  .doctor-container .doctor-main-content {
+    padding: 1.25rem;
+  }
+
+  .doctor-container .doctor-sidebar {
+    width: 200px;
+  }
+}
+
+@media (max-width: 768px) {
+  .doctor-container .doctor-header {
+    padding: .85rem 1rem;
+  }
+
+  .doctor-container .header-left,
+  .doctor-container .header-right {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .doctor-container .logo-section span,
+  .doctor-container .doctor-details-header p {
+    display: none;
+  }
+
+  .doctor-container .doctor-main-content {
+    padding: .85rem;
+  }
+
+  .doctor-container .section-header {
+    align-items: flex-start;
+  }
+
+  .doctor-container .overview-grid {
+    grid-template-columns: 1fr;
+    gap: .85rem;
+  }
+
+  .doctor-container .appointment-item {
+    flex-direction: column;
+  }
+
+  .doctor-container .appointment-time-badge {
+    flex-direction: row;
+    gap: .5rem;
+    align-self: flex-start;
+  }
+
+  .doctor-container .appointment-actions,
+  .doctor-container .card-actions,
+  .doctor-container .request-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .doctor-container .appointments-table table {
+    min-width: 680px;
+  }
+
+  .doctor-container .weekly-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 480px) {
+  .doctor-container .doctor-nav {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: .4rem;
+  }
+
+  .doctor-container .nav-item {
+    justify-content: center;
+  }
+
+  .doctor-container .appointments-cards,
+  .doctor-container .requests-container,
+  .doctor-container .settings-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .doctor-container .appointments-table table {
+    min-width: 620px;
+  }
+}
+

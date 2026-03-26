@@ -24,6 +24,34 @@
     let activeRecognition = null;
     let activeButton = null;
 
+    function isInsecureVoiceContext() {
+        const host = window.location.hostname;
+        const isLocalhost = host === 'localhost' || host === '127.0.0.1';
+        return !window.isSecureContext && !isLocalhost;
+    }
+
+    function mapVoiceError(reason) {
+        if (reason === 'not-allowed' || reason === 'service-not-allowed') {
+            if (isInsecureVoiceContext()) {
+                return 'Voice input needs HTTPS on this site. Please open the secure URL.';
+            }
+            return 'Microphone permission was denied. Allow mic access in browser site settings and try again.';
+        }
+        if (reason === 'audio-capture') {
+            return 'No microphone was detected. Connect a mic and try again.';
+        }
+        if (reason === 'network') {
+            return 'Network issue while capturing voice. Please check connection and retry.';
+        }
+        if (reason === 'no-speech') {
+            return 'No speech detected. Please try again.';
+        }
+        if (reason === 'aborted') {
+            return 'Voice input stopped. Please try again.';
+        }
+        return 'Voice input failed. Please type your message.';
+    }
+
     function setStatus(statusEl, text) {
         if (statusEl) {
             statusEl.textContent = text || '';
@@ -110,6 +138,14 @@
             return;
         }
 
+        if (isInsecureVoiceContext()) {
+            buttonEl.disabled = true;
+            buttonEl.title = 'Voice requires HTTPS';
+            buttonEl.setAttribute('aria-label', 'Voice requires HTTPS');
+            setStatus(statusEl, 'Voice input is disabled on HTTP. Use HTTPS to enable microphone.');
+            return;
+        }
+
         if (buttonEl.dataset.voiceBound === '1') {
             return;
         }
@@ -149,7 +185,7 @@
 
             recognition.onerror = function (event) {
                 const reason = event && event.error ? event.error : 'unknown';
-                showVoiceError(inputEl, statusEl, 'Voice error: ' + reason + '. Please type instead.');
+                showVoiceError(inputEl, statusEl, mapVoiceError(reason));
                 clearListeningState(buttonEl, statusEl);
             };
 

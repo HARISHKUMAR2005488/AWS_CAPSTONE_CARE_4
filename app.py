@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, send_from_directory, send_file, Response
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
+from werkzeug.middleware.proxy_fix import ProxyFix
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 from datetime import datetime, date, timedelta
@@ -465,6 +466,9 @@ def get_patient_activity_status(patient_id):
 app = Flask(__name__)
 app.config.from_object(Config)
 app.config['MAX_CONTENT_LENGTH'] = MAX_REPORT_FILE_SIZE
+
+# Trust one reverse proxy hop so URL generation and security attributes use HTTPS.
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
 
 cache = Cache(config={'CACHE_TYPE': 'SimpleCache'}) if Cache else None
 if cache:

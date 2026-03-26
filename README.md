@@ -782,7 +782,7 @@ sudo systemctl status hospitalcare
 
 #### 8. Access Your Application
 
-Visit your EC2 instance's public IP address: `http://your-ec2-public-ip`
+Visit your EC2 instance's public IP address: `https://your-ec2-public-ip`
 
 ### Elastic Beanstalk Deployment
 

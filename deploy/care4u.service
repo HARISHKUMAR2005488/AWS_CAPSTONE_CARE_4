@@ -4,12 +4,12 @@ After=network.target
 
 [Service]
 Type=simple
-User=ubuntu
-Group=www-data
+User=ec2-user
+Group=nginx
 WorkingDirectory=/var/www/care4u
 Environment="PATH=/var/www/care4u/.venv/bin"
 EnvironmentFile=/var/www/care4u/.env
-ExecStart=/var/www/care4u/.venv/bin/gunicorn --config /var/www/care4u/deploy/gunicorn.conf.py ${APP_MODULE:-app_aws:app}
+ExecStart=/var/www/care4u/.venv/bin/gunicorn --config /var/www/care4u/deploy/gunicorn.conf.py app_aws:app
 
 Restart=always
 RestartSec=5

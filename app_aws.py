@@ -25,13 +25,52 @@ app.secret_key = os.getenv("FLASK_SECRET_KEY", "ncFW7IxB9QdiiVyJAVwRNRHgl9GkqO0Q
 app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
 app.config.update(
     PREFERRED_URL_SCHEME=os.getenv("PREFERRED_URL_SCHEME", "https"),
-    SESSION_COOKIE_SECURE=os.getenv("SESSION_COOKIE_SECURE", "0") == "1",
+    SESSION_COOKIE_SECURE=os.getenv("SESSION_COOKIE_SECURE", "1") == "1",
     SESSION_COOKIE_SAMESITE=os.getenv("SESSION_COOKIE_SAMESITE", "Lax"),
+    SESSION_COOKIE_HTTPONLY=True,
+    PERMANENT_SESSION_LIFETIME=int(os.getenv("SESSION_LIFETIME", "604800")),  # 7 days
 )
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+
+@app.before_request
+def redirect_http_to_https():
+    """Redirect HTTP → HTTPS when behind ALB/Nginx with TLS termination.
+    
+    The X-Forwarded-Proto header is set by ALB/Nginx to indicate the
+    original protocol used by the client. If it's 'http', we redirect.
+    Disable this by setting FORCE_HTTPS=0 in the environment.
+    """
+    force_https = os.getenv("FORCE_HTTPS", "1") != "0"
+    if force_https and request.headers.get("X-Forwarded-Proto", "https") == "http":
+        from flask import redirect as _redirect
+        url = request.url.replace("http://", "https://", 1)
+        return _redirect(url, code=301)
+
+
+@app.after_request
+def add_security_headers(response):
+    """Add security headers for HTTPS best practices on AWS."""
+    # Strict-Transport-Security: tell browsers to always use HTTPS
+    if request.is_secure or request.headers.get("X-Forwarded-Proto") == "https":
+        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+    # Prevent MIME type sniffing
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    # Clickjacking protection
+    response.headers["X-Frame-Options"] = "SAMEORIGIN"
+    # XSS protection
+    response.headers["X-XSS-Protection"] = "1; mode=block"
+    # Referrer policy
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    # Static file caching
+    if request.path.startswith("/static/"):
+        response.headers.setdefault("Cache-Control", "public, max-age=604800")
+    elif request.path.startswith("/uploads/"):
+        response.headers.setdefault("Cache-Control", "public, max-age=86400")
+    return response
 
 
 # Context processor to make current_user available in templates
@@ -534,6 +573,20 @@ def has_username_index() -> bool:
     except ClientError as exc:
         logger.error("Failed to describe table for GSI check: %s", exc)
         return False
+
+
+@app.route("/health")
+def health_check():
+    """Simple health check endpoint for AWS ALB target group.
+    
+    Returns 200 OK if the app is running. No authentication required.
+    ALB uses this to determine if the instance is healthy.
+    """
+    return jsonify({
+        "status": "healthy",
+        "service": "care4u",
+        "timestamp": datetime.utcnow().isoformat()
+    }), 200
 
 
 @app.route("/aws-health")
@@ -3533,6 +3586,25 @@ def change_password():
 
 
 if __name__ == "__main__":
+    import ssl as _ssl
+
     debug_mode = os.getenv("FLASK_DEBUG", "0") == "1"
     listen_port = int(os.getenv("PORT", "5000"))
-    app.run(host="0.0.0.0", port=listen_port, debug=debug_mode)
+    use_ssl = os.getenv("FLASK_SSL", "1") != "0"
+
+    ssl_cert = os.path.join(os.path.dirname(os.path.abspath(__file__)), "ssl", "cert.pem")
+    ssl_key = os.path.join(os.path.dirname(os.path.abspath(__file__)), "ssl", "key.pem")
+
+    if use_ssl and os.path.exists(ssl_cert) and os.path.exists(ssl_key):
+        ssl_context = _ssl.SSLContext(_ssl.PROTOCOL_TLS_SERVER)
+        ssl_context.load_cert_chain(ssl_cert, ssl_key)
+        # Enable secure cookies when running with SSL
+        app.config["SESSION_COOKIE_SECURE"] = True
+        logger.info(f"Starting HTTPS server on port {listen_port}")
+        print(f" * Running on https://0.0.0.0:{listen_port}  (HTTPS enabled)")
+        app.run(host="0.0.0.0", port=listen_port, debug=debug_mode, ssl_context=ssl_context)
+    else:
+        logger.info(f"Starting HTTP server on port {listen_port} (SSL certs not found or FLASK_SSL=0)")
+        print(f" * SSL certificates not found or FLASK_SSL=0. Running on http://0.0.0.0:{listen_port}")
+        app.run(host="0.0.0.0", port=listen_port, debug=debug_mode)
+

@@ -1,5 +1,5 @@
 [Unit]
-Description=Care4U Flask App (Gunicorn)
+Description=Care4U Flask App (Gunicorn) — HTTPS via Nginx
 After=network.target
 
 [Service]
@@ -9,7 +9,7 @@ Group=www-data
 WorkingDirectory=/var/www/care4u
 Environment="PATH=/var/www/care4u/.venv/bin"
 EnvironmentFile=/var/www/care4u/.env
-ExecStart=/var/www/care4u/.venv/bin/gunicorn --config /var/www/care4u/deploy/gunicorn.conf.py ${APP_MODULE:-app:app}
+ExecStart=/var/www/care4u/.venv/bin/gunicorn --config /var/www/care4u/deploy/gunicorn.conf.py ${APP_MODULE:-app_aws:app}
 
 Restart=always
 RestartSec=5

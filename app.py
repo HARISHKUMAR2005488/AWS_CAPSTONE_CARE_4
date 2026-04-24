@@ -2631,4 +2631,19 @@ def generate_assistant_response(symptoms, is_emergency, specializations, severit
     return response
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+    import ssl as _ssl
+
+    port = int(os.environ.get('PORT', 5000))
+    use_ssl = os.environ.get('FLASK_SSL', '1') != '0'
+
+    ssl_cert = os.path.join(os.path.dirname(__file__), 'ssl', 'cert.pem')
+    ssl_key = os.path.join(os.path.dirname(__file__), 'ssl', 'key.pem')
+
+    if use_ssl and os.path.exists(ssl_cert) and os.path.exists(ssl_key):
+        ssl_context = _ssl.SSLContext(_ssl.PROTOCOL_TLS_SERVER)
+        ssl_context.load_cert_chain(ssl_cert, ssl_key)
+        print(f' * Running on https://localhost:{port}  (HTTPS enabled)')
+        app.run(debug=True, host='0.0.0.0', port=port, ssl_context=ssl_context)
+    else:
+        print(f' * SSL certificates not found or FLASK_SSL=0. Running on http://localhost:{port}')
+        app.run(debug=True, host='0.0.0.0', port=port)

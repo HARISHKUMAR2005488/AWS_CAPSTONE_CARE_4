@@ -31,3 +31,6 @@ urllib3==1.26.16
 
 # --- WSGI Server (for EC2 / production deployment) ---
 gunicorn==21.2.0
+
+# --- SSL / HTTPS (self-signed certificate generation) ---
+pyOpenSSL==26.0.0

@@ -38,3 +38,6 @@ Thumbs.db
 
 # Logs
 *.log
+
+# SSL certificates (self-signed, generated locally)
+ssl/
